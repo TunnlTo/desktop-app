@@ -1,26 +1,56 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>Tunnl.to - Home</title>
-    <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
-  </head>
-  <style>
-    html,
-    body {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-  </style>
-  <body>
-    <div class="container text-center">
-      <h1>Tunnl.to</h1>
-      <br />
-      <a class="btn btn-primary" href="add-wireguard.html" role="button">Add WireGuard Tunnel</a>
-    </div>
 
-    <script src="js/bootstrap/bootstrap.bundle.js"></script>
-  </body>
+<head>
+  <title>Tunnl.to - Home</title>
+  <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
+</head>
+<style>
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+</style>
+
+<body>
+  <div class="container text-center">
+    <h1>Tunnl.to</h1>
+    <a class="btn btn-primary mt-5" href="add-wireguard.html" role="button">Add WireGuard Tunnel</a>
+    <div class="d-flex flex-row justify-content-center mt-5">
+      <div class="p-2">
+        <select id="select" class="form-select" aria-label="Default select example"></select>
+      </div>
+      <div class="p-2">
+        <button type="button" class="btn btn-success">Enable</button>
+      </div>
+      <div class="p-2">
+        <button type="button" class="btn btn-secondary">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/bootstrap/bootstrap.bundle.js"></script>
+  <script>
+    // Get a list of tunnels from localstorage
+    const localStorageData = { ...localStorage };
+    const select = document.getElementById('select');
+    for (let x in localStorageData) {
+      if (x.startsWith('tunnel-wireguard-')) {
+        // Remove the descriptor at the start of the string
+        x = x.replace('tunnel-wireguard-', '');
+
+        // Add the tunnel name as an option in the select dropdown
+        var opt = document.createElement('option');
+        opt.value = x;
+        opt.innerHTML = x;
+        select.appendChild(opt);
+      }
+    }
+  </script>
+</body>
+
 </html>

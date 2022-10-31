@@ -84,64 +84,47 @@
 
 	<script src="js/bootstrap/bootstrap.bundle.js"></script>
 	<script>
-		(function () {
-			'use strict'
-			const localStorageData = { ...localStorage };
+		const forms = document.querySelectorAll('.requires-validation')
+		Array.from(forms)
+			.forEach(function (form) {
+				form.addEventListener('submit', function (event) {
+					if (!form.checkValidity()) {
+						event.preventDefault()
+						event.stopPropagation()
+						console.log('Form not validated');
+					} else {
+						console.log('Form was validated');
 
-			let options = [];
-			for (let x in localStorageData) {
-				if (x.startsWith('tunnel-wireguard-')) {
-					x = x.replace('tunnel-wireguard-', '');
-					options.push({ 'name': x });
-					//const tunnelName = JSON.parse(localStorageData[x]).dns;
-					console.log(`Pushed ${x} to array`);
-				}
-			}
-			console.log(options);
+						// Get the form values
+						const tunnelName = document.getElementById('tunnelName').value;
+						const privateKey = document.getElementById('privateKey').value;
+						const interfaceAddress = document.getElementById('interfaceAddress').value;
+						const dns = document.getElementById('dns').value;
+						const publicKey = document.getElementById('publicKey').value;
+						const endpoint = document.getElementById('endpoint').value;
+						const allowedApps = document.getElementById('allowedApps').value;
+						const allowedIps = document.getElementById('allowedIps').value;
 
-			const forms = document.querySelectorAll('.requires-validation')
-			Array.from(forms)
-				.forEach(function (form) {
-					form.addEventListener('submit', function (event) {
-						if (!form.checkValidity()) {
-							event.preventDefault()
-							event.stopPropagation()
-							console.log('Form not validated');
-						} else {
-							console.log('Form was validated');
-
-							// Get the form values
-							const tunnelName = document.getElementById('tunnelName').value;
-							const privateKey = document.getElementById('privateKey').value;
-							const interfaceAddress = document.getElementById('interfaceAddress').value;
-							const dns = document.getElementById('dns').value;
-							const publicKey = document.getElementById('publicKey').value;
-							const endpoint = document.getElementById('endpoint').value;
-							const allowedApps = document.getElementById('allowedApps').value;
-							const allowedIps = document.getElementById('allowedIps').value;
-
-							// Save to local storage
-							const wireGuardTunnel = {
-								tunnelName: tunnelName,
-								privateKey: privateKey,
-								interfaceAddress: interfaceAddress,
-								dns: dns,
-								publicKey: publicKey,
-								endpoint: endpoint,
-								allowedApps: allowedApps,
-								allowedIps: allowedIps
-							}
-							localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
-							console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
-
-							// It will redirect at this point as set by the form action
+						// Save to local storage
+						const wireGuardTunnel = {
+							tunnelName: tunnelName,
+							privateKey: privateKey,
+							interfaceAddress: interfaceAddress,
+							dns: dns,
+							publicKey: publicKey,
+							endpoint: endpoint,
+							allowedApps: allowedApps,
+							allowedIps: allowedIps
 						}
+						localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
+						console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
 
-						form.classList.add('was-validated')
-					}, false)
-				})
-		})()
+						// It will redirect at this point as set by the form action
+					}
 
+					form.classList.add('was-validated')
+				}, false)
+			})
 	</script>
 </body>
 
