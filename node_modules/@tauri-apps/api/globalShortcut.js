@@ -1,0 +1,1 @@
+import"./tslib.es6-9bc0804d.js";import"./tauri-3d655ecc.js";import"./tauri-a4b3335a.js";export{i as isRegistered,r as register,a as registerAll,u as unregister,b as unregisterAll}from"./globalShortcut-4a985527.js";

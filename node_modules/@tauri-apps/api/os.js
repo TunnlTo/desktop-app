@@ -1,0 +1,1 @@
+import"./tslib.es6-9bc0804d.js";import"./os-check-27fe6e2b.js";import"./tauri-3d655ecc.js";export{E as EOL,a as arch,p as platform,b as tempdir,t as type,v as version}from"./os-31a780fa.js";import"./tauri-a4b3335a.js";

@@ -1,0 +1,1 @@
+import"./tslib.es6-9bc0804d.js";import"./tauri-3d655ecc.js";export{B as Body,C as Client,R as Response,a as ResponseType,f as fetch,g as getClient}from"./http-58a1c419.js";import"./tauri-a4b3335a.js";

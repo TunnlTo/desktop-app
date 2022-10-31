@@ -1,0 +1,1 @@
+"use strict";Object.defineProperty(exports,"__esModule",{value:!0}),require("./tslib.es6-2b0ec40b.cjs");var e=require("./event-bd0d063d.cjs");require("./tauri-e0732f45.cjs"),require("./tauri-3e5097f4.cjs"),Object.defineProperty(exports,"TauriEvent",{enumerable:!0,get:function(){return e.TauriEvent}}),exports.emit=e.emit,exports.listen=e.listen,exports.once=e.once;

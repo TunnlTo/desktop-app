@@ -1,0 +1,1 @@
+import{_ as i,a as t}from"./tslib.es6-9bc0804d.js";import{i as r}from"./tauri-a4b3335a.js";function o(o){return i(this,void 0,void 0,(function(){return t(this,(function(i){return[2,r("tauri",o)]}))}))}export{o as i};
