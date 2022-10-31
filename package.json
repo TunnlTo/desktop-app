@@ -1,10 +1,12 @@
 {
   "name": "tunnl-to",
   "scripts": {
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "dev": "live-server dist --port=5555 --no-browser"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.1.0"
+    "@tauri-apps/api": "^1.1.0",
+    "live-server": "^1.2.2"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.1.1"

@@ -1,5 +1,9 @@
 <!DOCTYPE html>
 <html>
+  <head>
+    <title>Bootstrap demo</title>
+    <link href="css/bootstrap/bootstrap.css" rel="stylesheet">
+  </head>
   <style>
     html,
     body {
@@ -16,6 +20,19 @@
     }
   </style>
   <body>
-    <h1>tunnl-to</h1>
+    <h1>Hello, world!</h1>
+    <h3 id="helloh3">Awaiting Rust...</h3>
+    <script src="js/bootstrap/bootstrap.bundle.js"></script>
+    <script>
+      // access the pre-bundled global API functions
+      const { invoke } = window.__TAURI__.tauri
+
+      // now we can call our Command!
+      // Right-click the application background and open the developer tools.
+      // You will see "Hello, World!" printed in the console!
+      invoke('greet', { name: 'Rust!' })
+        // `invoke` returns a Promise
+        .then((response) => document.getElementById("helloh3").innerHTML = response);
+    </script>
   </body>
 </html>

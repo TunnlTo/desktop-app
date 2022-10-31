@@ -2,9 +2,10 @@
   "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
     "beforeBuildCommand": "",
-    "beforeDevCommand": "",
-    "devPath": "../dist",
-    "distDir": "../dist"
+    "beforeDevCommand": "npm run dev",
+    "devPath": "http://localhost:5555",
+    "distDir": "../dist",
+    "withGlobalTauri": true
   },
   "package": {
     "productName": "tunnl-to",
@@ -29,7 +30,7 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tauri.dev",
+      "identifier": "com.tunnl.to",
       "longDescription": "",
       "macOS": {
         "entitlements": null,
