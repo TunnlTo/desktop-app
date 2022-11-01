@@ -22,46 +22,76 @@
 		<div id="tunnelOptions" class="visually-hidden d-flex flex-row justify-content-center mt-5">
 			<div class="p-2">
 				<!-- As we're using a flex as the parent div, the select will auto expand based on the longest tunnel name -->
-				<select id="select" class="form-select" aria-label="Default select example"></select>
+				<select id="select" onchange="saveSelectedTunnel()" class="form-select"
+					aria-label="Default select example"></select>
 			</div>
 			<div class="p-2">
 				<button type="button" class="btn btn-success">Enable</button>
 			</div>
 			<div class="p-2">
-				<button type="button" class="btn btn-secondary">Edit</button>
+				<button type="button" class="btn btn-secondary" onclick="editClick()">Edit</button>
 			</div>
 		</div>
-		<a class="btn btn-primary mt-5" href="add-wireguard.html" role="button">Add Tunnel</a>
+		<a class="btn btn-primary mt-5" href="wireguard.html" role="button">Add Tunnel</a>
 	</div>
 
 	<script src="js/bootstrap/bootstrap.bundle.js"></script>
 	<script>
-		// Get a list of tunnels from localstorage
-		const localStorageData = { ...localStorage };
+		function start() {
+			// Setup some UI helpers
+			const select = document.getElementById('select');
+			const tunnelOptions = document.getElementById('tunnelOptions');
+			let tunnelOptionHidden = true;
 
-		// Setup some UI helpers
-		const select = document.getElementById('select');
-		const tunnelOptions = document.getElementById('tunnelOptions');
-		let tunnelOptionHidden = true;
+			// Get a list of tunnels from localstorage
+			const localStorageData = { ...localStorage };
 
-		// Iterate through the localstorage keys to see if any tunnels are listed
-		for (let x in localStorageData) {
-			if (x.startsWith('tunnel-wireguard-')) {
-				// Remove the descriptor at the start of the string
-				x = x.replace('tunnel-wireguard-', '');
+			// Iterate through the localstorage keys to see if any tunnels are listed
+			for (let x in localStorageData) {
+				if (x.startsWith('tunnel-wireguard-')) {
+					// Remove the descriptor at the start of the string
+					x = x.replace('tunnel-wireguard-', '');
 
-				// Add the tunnel name as an option in the select dropdown
-				var opt = document.createElement('option');
-				opt.value = x;
-				opt.innerHTML = x;
-				select.appendChild(opt);
+					// Add the tunnel name as an option in the select dropdown
+					var opt = document.createElement('option');
+					opt.value = x;
+					opt.innerHTML = x;
+					select.appendChild(opt);
 
-				// Show the tunnel options
-				if (tunnelOptionHidden) {
-					tunnelOptions.classList.remove('visually-hidden');
-					tunnelOptionHidden = false;
+					// Show the tunnel options
+					if (tunnelOptionHidden) {
+						tunnelOptions.classList.remove('visually-hidden');
+						tunnelOptionHidden = false;
+					}
 				}
 			}
+
+			// Set the selected tunnel based on local storage
+			const selectedTunnel = getSelectedTunnel();
+			if (selectedTunnel !== null) {
+				setSelectedTunnel(selectedTunnel);
+			}
+		}
+		start();
+
+		function editClick() {
+			// Navigate to the wireguard page
+			window.location.href = `wireguard.html?edit=true&tunnelName=${getSelectedTunnel()}`;
+		}
+
+		function saveSelectedTunnel() {
+			// Save the value of the tunnel select to local storage
+			localStorage.setItem('selectedTunnel', document.getElementById('select').value);
+		}
+
+		function getSelectedTunnel() {
+			// Look up local storage for the currenctly selected tunnel
+			return localStorage.getItem('selectedTunnel');
+		}
+
+		function setSelectedTunnel() {
+			// Set the select to the last selected tunnel
+			document.getElementById('select').value = getSelectedTunnel();
 		}
 	</script>
 </body>
