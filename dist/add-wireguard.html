@@ -18,8 +18,10 @@
 
 <body>
 	<div class="container">
-		<form class="requires-validation" novalidate action="index.html">
+		<form id="form" class="requires-validation" novalidate action="index.html">
 			<div class="row">
+				<h3 class="mb-4">Add a WireGuard Tunnel</h3>
+
 				<!-- Left column start -->
 				<div class="col">
 					<div class="mb-3">
@@ -36,10 +38,13 @@
 						<label for="publicKey" class="form-label">Public Key</label>
 						<input id="publicKey" type="text" class="form-control" id="publicKey" required />
 					</div>
-					<div class="mb-3">
+					<div class="mb-4">
 						<label for="allowedApps" class="form-label">Allowed Apps</label>
 						<input id="allowedApps" type="text" class="form-control" id="allowedApps"
-							placeholder="chrome, msoffice" required />
+							placeholder="chrome, msoffice, c:\example.exe" required />
+					</div>
+					<div>
+						<a class="btn btn-secondary" href="index.html" role="button">Back</a>
 					</div>
 				</div>
 				<!-- Left column end -->
@@ -59,24 +64,16 @@
 						<input id="endpoint" type="text" class="form-control" id="endpoint"
 							placeholder="10.0.0.100:51820" required />
 					</div>
-					<div class="mb-3">
+					<div class="mb-4">
 						<label for="allowedIps" class="form-label">Allowed IP's</label>
 						<input id="allowedIps" type="text" class="form-control" id="allowedIps"
 							placeholder="0.0.0.0/0" />
 					</div>
+					<div class="text-end">
+						<button class="btn btn-primary" type="submit">Save</button>
+					</div>
 				</div>
 				<!-- Right column end  -->
-
-				<!-- Button row start -->
-				<div class="row mt-3">
-					<div class="col">
-						<a class="btn btn-secondary" href="index.html" role="button">Back</a>
-					</div>
-					<div class="col text-end">
-						<button class="btn btn-primary" type="submit">Submit form</button>
-					</div>
-				</div>
-				<!-- Button row end -->
 
 			</div>
 		</form>
@@ -84,47 +81,51 @@
 
 	<script src="js/bootstrap/bootstrap.bundle.js"></script>
 	<script>
-		const forms = document.querySelectorAll('.requires-validation')
-		Array.from(forms)
-			.forEach(function (form) {
-				form.addEventListener('submit', function (event) {
-					if (!form.checkValidity()) {
-						event.preventDefault()
-						event.stopPropagation()
-						console.log('Form not validated');
-					} else {
-						console.log('Form was validated');
+		const forms = document.getElementById('form');
+		form.addEventListener('submit', function (event) {
+			if (!form.checkValidity()) {
+				// Form not valid
+				event.preventDefault()
+				event.stopPropagation()
+			} else {
+				// Form is valid
+				// Get the form values
+				const tunnelName = document.getElementById('tunnelName').value;
+				const privateKey = document.getElementById('privateKey').value;
+				const interfaceAddress = document.getElementById('interfaceAddress').value;
+				let dns = document.getElementById('dns').value;
+				const publicKey = document.getElementById('publicKey').value;
+				const endpoint = document.getElementById('endpoint').value;
+				const allowedApps = document.getElementById('allowedApps').value;
+				let allowedIps = document.getElementById('allowedIps').value;
 
-						// Get the form values
-						const tunnelName = document.getElementById('tunnelName').value;
-						const privateKey = document.getElementById('privateKey').value;
-						const interfaceAddress = document.getElementById('interfaceAddress').value;
-						const dns = document.getElementById('dns').value;
-						const publicKey = document.getElementById('publicKey').value;
-						const endpoint = document.getElementById('endpoint').value;
-						const allowedApps = document.getElementById('allowedApps').value;
-						const allowedIps = document.getElementById('allowedIps').value;
+				// If the unrequired fields are blank, we fill them in
+				if (dns === '') {
+					dns = '1.1.1.1, 8.8.8.8';
+				}
+				if (allowedIps === '') {
+					allowedIps = '0.0.0.0/0';
+				}
 
-						// Save to local storage
-						const wireGuardTunnel = {
-							tunnelName: tunnelName,
-							privateKey: privateKey,
-							interfaceAddress: interfaceAddress,
-							dns: dns,
-							publicKey: publicKey,
-							endpoint: endpoint,
-							allowedApps: allowedApps,
-							allowedIps: allowedIps
-						}
-						localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
-						console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
+				// Save to local storage
+				const wireGuardTunnel = {
+					tunnelName: tunnelName,
+					privateKey: privateKey,
+					interfaceAddress: interfaceAddress,
+					dns: dns,
+					publicKey: publicKey,
+					endpoint: endpoint,
+					allowedApps: allowedApps,
+					allowedIps: allowedIps
+				}
+				localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
+				console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
 
-						// It will redirect at this point as set by the form action
-					}
+				// The page will redirect at this point as set by the form action
+			}
 
-					form.classList.add('was-validated')
-				}, false)
-			})
+			form.classList.add('was-validated')
+		}, false)
 	</script>
 </body>
 
