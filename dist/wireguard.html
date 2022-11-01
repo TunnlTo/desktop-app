@@ -193,6 +193,9 @@
 			}
 			localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
 			console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
+
+			// Update the selected tunnel so this new tunnel is selected on the home page
+			localStorage.setItem('selectedTunnel', tunnelName);
 		}
 
 		function deleteClick() {
