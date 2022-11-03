@@ -68,7 +68,6 @@ fn enable_wiresock(
 
 #[tauri::command]
 fn disable_wiresock() -> bool {
-    // taskkill /F /IM wiresock-client.exe /T
     Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
