@@ -26,7 +26,7 @@
 					aria-label="Default select example"></select>
 			</div>
 			<div class="p-2">
-				<button type="button" class="btn btn-success" onclick="enableTunnel()">Enable</button>
+				<button id="toggleButton" type="button" class="btn btn-success" onclick="toggleTunnel()">Enable</button>
 			</div>
 			<div class="p-2">
 				<button type="button" class="btn btn-secondary" onclick="editClick()">Edit</button>
@@ -94,26 +94,50 @@
 			document.getElementById('select').value = getSelectedTunnel();
 		}
 
-		async function enableTunnel() {
-			// Get the currently selected tunnel
-			const tunnelName = getSelectedTunnel();
-
-			// Get the tunnel data
-			const tunnelData = JSON.parse(localStorage.getItem(`tunnel-wireguard-${tunnelName}`));
-
+		async function toggleTunnel() {
 			// access the tauri pre-bundled global API functions
-			const { invoke } = window.__TAURI__.tauri
-			const result = await invoke('create_wiresock_conf', {
-				tunnelName: tunnelData.tunnelName,
-				privateKey: tunnelData.privateKey,
-				interfaceAddress: tunnelData.interfaceAddress,
-				dns: tunnelData.dns,
-				publicKey: tunnelData.publicKey,
-				endpoint: tunnelData.endpoint,
-				allowedApps: tunnelData.allowedApps,
-				allowedIPs: tunnelData.allowedIPs
-			})
-			console.log(result);
+			const { invoke } = window.__TAURI__.tauri;
+
+			const toggleButton = document.getElementById('toggleButton');
+			if (toggleButton.innerHTML === 'Enable') {
+				// Enable the tunnel
+
+				// Get the currently selected tunnel
+				const tunnelName = getSelectedTunnel();
+
+				// Get the tunnel data
+				const tunnelData = JSON.parse(localStorage.getItem(`tunnel-wireguard-${tunnelName}`));
+
+				// Send the message down to Tauri Rust function
+				const result = await invoke('enable_wiresock', {
+					privateKey: tunnelData.privateKey,
+					interfaceAddress: tunnelData.interfaceAddress,
+					dns: tunnelData.dns,
+					publicKey: tunnelData.publicKey,
+					endpoint: tunnelData.endpoint,
+					allowedApps: tunnelData.allowedApps,
+					allowedIPs: tunnelData.allowedIPs
+				})
+				if (result) {
+					// Connection success so update the UI
+					toggleButton.classList.remove('btn-success');
+					toggleButton.classList.add('btn-danger');
+					toggleButton.innerHTML = 'Disable';
+				} else {
+					// Connection did not work. TODO: Show some UI
+				}
+			} else {
+				// Disable the tunnel
+				const result = await invoke('disable_wiresock');
+				if (result) {
+					// Update the UI
+					toggleButton.classList.remove('btn-danger');
+					toggleButton.classList.add('btn-success');
+					toggleButton.innerHTML = 'Enable';
+				} else {
+					// Failed to disable the connection. TODO: Show some UI
+				}
+			}
 		}
 	</script>
 </body>
