@@ -65,8 +65,8 @@
 							placeholder="10.0.0.100:51820" required />
 					</div>
 					<div class="mb-4">
-						<label for="allowedIps" class="form-label">Allowed IP's</label>
-						<input id="allowedIps" type="text" class="form-control" id="allowedIps"
+						<label for="allowedIPs" class="form-label">Allowed IP's</label>
+						<input id="allowedIPs" type="text" class="form-control" id="allowedIPs"
 							placeholder="0.0.0.0/0" />
 					</div>
 					<div class="d-flex flex-row-reverse">
@@ -110,12 +110,12 @@
 	<script src="js/bootstrap/bootstrap.bundle.js"></script>
 	<script>
 		// Check to see if we're editing an existing tunnel or adding a new one
-		if (findGetParameter('edit') === 'true') {
+		if (getUrlParam('edit') === 'true') {
 			// Show the delete button
 			document.getElementById('deleteDiv').classList.remove('visually-hidden');
 
 			// Get the values of the tunnel from local storage
-			const tunnelName = findGetParameter('tunnelName');
+			const tunnelName = getUrlParam('tunnelName');
 			const tunnelData = localStorage.getItem(`tunnel-wireguard-${tunnelName}`);
 
 			// Add the values to the form
@@ -126,7 +126,7 @@
 			document.getElementById('publicKey').value = JSON.parse(tunnelData).publicKey;
 			document.getElementById('endpoint').value = JSON.parse(tunnelData).endpoint;
 			document.getElementById('allowedApps').value = JSON.parse(tunnelData).allowedApps;
-			document.getElementById('allowedIps').value = JSON.parse(tunnelData).allowedIps;
+			document.getElementById('allowedIPs').value = JSON.parse(tunnelData).allowedIPs;
 		};
 
 		// Setup 'submit' event listener on the form for validation and saving data
@@ -147,7 +147,7 @@
 		}, false)
 
 		// Retrieve selected paramater values from the url
-		function findGetParameter(parameterName) {
+		function getUrlParam(parameterName) {
 			var result = null,
 				tmp = [];
 			location.search
@@ -170,14 +170,14 @@
 			const publicKey = document.getElementById('publicKey').value;
 			const endpoint = document.getElementById('endpoint').value;
 			const allowedApps = document.getElementById('allowedApps').value;
-			let allowedIps = document.getElementById('allowedIps').value;
+			let allowedIPs = document.getElementById('allowedIPs').value;
 
 			// If the unrequired fields are blank, we fill them in
 			if (dns === '') {
 				dns = '1.1.1.1, 8.8.8.8';
 			}
-			if (allowedIps === '') {
-				allowedIps = '0.0.0.0/0';
+			if (allowedIPs === '') {
+				allowedIPs = '0.0.0.0/0';
 			}
 
 			// Save to local storage
@@ -189,7 +189,7 @@
 				publicKey: publicKey,
 				endpoint: endpoint,
 				allowedApps: allowedApps,
-				allowedIps: allowedIps
+				allowedIPs: allowedIPs
 			}
 			localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
 			console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
@@ -200,7 +200,7 @@
 
 		function deleteClick() {
 			// Get the tunnel name
-			const tunnelName = findGetParameter('tunnelName');
+			const tunnelName = getUrlParam('tunnelName');
 			console.log(`removing ${tunnelName} from local storage`);
 
 			// Delete it from local storage

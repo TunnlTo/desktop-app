@@ -26,7 +26,7 @@
 					aria-label="Default select example"></select>
 			</div>
 			<div class="p-2">
-				<button type="button" class="btn btn-success">Enable</button>
+				<button type="button" class="btn btn-success" onclick="enableTunnel()">Enable</button>
 			</div>
 			<div class="p-2">
 				<button type="button" class="btn btn-secondary" onclick="editClick()">Edit</button>
@@ -92,6 +92,28 @@
 		function setSelectedTunnel() {
 			// Set the select to the last selected tunnel
 			document.getElementById('select').value = getSelectedTunnel();
+		}
+
+		async function enableTunnel() {
+			// Get the currently selected tunnel
+			const tunnelName = getSelectedTunnel();
+
+			// Get the tunnel data
+			const tunnelData = JSON.parse(localStorage.getItem(`tunnel-wireguard-${tunnelName}`));
+
+			// access the tauri pre-bundled global API functions
+			const { invoke } = window.__TAURI__.tauri
+			const result = await invoke('create_wiresock_conf', {
+				tunnelName: tunnelData.tunnelName,
+				privateKey: tunnelData.privateKey,
+				interfaceAddress: tunnelData.interfaceAddress,
+				dns: tunnelData.dns,
+				publicKey: tunnelData.publicKey,
+				endpoint: tunnelData.endpoint,
+				allowedApps: tunnelData.allowedApps,
+				allowedIPs: tunnelData.allowedIPs
+			})
+			console.log(result);
 		}
 	</script>
 </body>
