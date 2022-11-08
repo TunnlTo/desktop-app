@@ -110,11 +110,38 @@ fn disable_wiresock() -> Result<String, String> {
     Ok("WireSock stopped".into())
 }
 
+#[tauri::command]
+fn check_wiresock_process() -> Result<String, String> {
+    // Check to see if the wiresock process is running
+    let mut child = Command::new("tasklist")
+        .arg("/FI")
+        .arg(r#"IMAGENAME eq wiresock-client.exe"#)
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("Unable to start tasklist process");
+
+    // Check the stdout data
+    if let Some(stdout) = &mut child.stdout {
+        let lines = BufReader::new(stdout).lines().enumerate().take(20);
+        for (counter, line) in lines {
+            let line_string = &line.unwrap();
+            if line_string.contains("wiresock-client.exe") {
+                println!("WireSock process is running");
+                return Ok("WIRESOCK_IS_RUNNING".into());
+            }
+            println!("{}, {:?}", counter, line_string);
+        }
+    }
+
+    Ok("WIRESOCK_NOT_RUNNING".into())
+}
+
 fn main() {
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
-            disable_wiresock
+            disable_wiresock,
+            check_wiresock_process
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

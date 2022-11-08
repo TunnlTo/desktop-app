@@ -54,7 +54,7 @@
 	<script>
 		const { invoke } = window.__TAURI__.tauri;
 
-		function start() {
+		async function start() {
 			// Setup some UI helpers
 			const select = document.getElementById('select');
 			const tunnelOptions = document.getElementById('tunnelOptions');
@@ -87,6 +87,12 @@
 			const selectedTunnel = getSelectedTunnel();
 			if (selectedTunnel !== null) {
 				setSelectedTunnel(selectedTunnel);
+			}
+
+			// Check to see if the WireSock process is already running
+			if (await isWiresockRunning()) {
+				// WireSock is already running. Update the UI
+				showDisableButton();
 			}
 		}
 		start();
@@ -142,9 +148,7 @@
 				}
 
 				// Connection success so update the UI
-				toggleButton.classList.remove('btn-success');
-				toggleButton.classList.add('btn-danger');
-				toggleButton.innerHTML = 'Disable';
+				showDisableButton();
 			} else {
 				// Disable the tunnel
 				try {
@@ -161,6 +165,14 @@
 			}
 		}
 
+		function showDisableButton() {
+			const toggleButton = document.getElementById('toggleButton');
+
+			toggleButton.classList.remove('btn-success');
+			toggleButton.classList.add('btn-danger');
+			toggleButton.innerHTML = 'Disable';
+		}
+
 		function toggleToast(message) {
 			// Show a Toast message to the user
 			const toastElement = document.getElementById('toast');
@@ -174,15 +186,25 @@
 			toast.show();
 		}
 
-		async function test() {
+		async function isWiresockRunning() {
 			try {
-				await invoke('test');
+				const result = await invoke('check_wiresock_process');
+				console.info(result);
+				if (result === 'WIRESOCK_IS_RUNNING') {
+					return true;
+				} else if (result === 'WIRESOCK_NOT_RUNNING') {
+					return false;
+				} else {
+					toggleToast(`Error checking WireSock process: ${result}`);
+					return false;
+				}
 			} catch (error) {
-				console.error(`Invoking test returned error: ${error}`);
+				console.error(`Invoking check_wiresock_process returned error: ${error}`);
 				// Show the error to the user
-				return toggleToast(`Error in test function: ${error}`);
+				return toggleToast(error);
 			}
-			console.info('test complete')
+
+
 		}
 	</script>
 </body>
