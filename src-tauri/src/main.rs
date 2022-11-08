@@ -4,14 +4,14 @@
 )]
 
 use std::fs::File;
-use std::io::Write;
+use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
-use std::process::Command;
+use std::process::{Command, Stdio};
 extern crate winreg;
 
 #[tauri::command]
 #[allow(non_snake_case)]
-fn enable_wiresock(
+async fn enable_wiresock(
     privateKey: &str,
     interfaceAddress: &str,
     dns: &str,
@@ -19,17 +19,17 @@ fn enable_wiresock(
     endpoint: &str,
     allowedApps: &str,
     allowedIPs: &str,
-) -> bool {
-    // Write a wiresock config file to disk
+) -> Result<String, String> {
+    // Write a wiresock config file to disk and then start the Wiresock client
 
     // Get the users home directory
     let mut tunnel_config_path = PathBuf::new();
     match home::home_dir() {
         Some(path) => tunnel_config_path.push(path),
-        None => println!("Could not find the home dir"), // TODO: Do something better here
+        None => return Err("Unable to retrieve the user home directory.".into()),
     }
 
-    // Create the path to the wiresock config file
+    // Create a path to the wiresock config file
     tunnel_config_path.push("AppData");
     tunnel_config_path.push("Local");
     tunnel_config_path.push("Tunnl.to");
@@ -50,39 +50,56 @@ fn enable_wiresock(
     writeln!(&mut w, "PersistentKeepalive = 25").unwrap();
     writeln!(&mut w, "AllowedApps = {}", allowedApps).unwrap();
 
-    // Get the Wiresock install location
+    // Get the Wiresock install location from the Windows registry
     use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ};
     let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
     let subkey = hklm
-        .open_subkey_with_flags(r#"SOFTWARE\NTKernelResources\WinpkFilterForVPNClient"#, KEY_READ)
+        .open_subkey_with_flags(
+            r#"SOFTWARE\NTKernelResources\WinpkFilterForVPNClient"#,
+            KEY_READ,
+        )
         .expect("Failed to open subkey");
     let mut wiresock_location: String = subkey
         .get_value("InstallLocation")
-        .expect("Failed to read product name");
-    // Complete the path to the wiresock executable
+        .expect("Failed to read registry key");
+    // Build the full path to the wiresock executable
     let exe: &str = "/bin/wiresock-client.exe";
     wiresock_location.push_str(exe);
 
-    // Command::new args require strings so prepare path to Wiresock config file
+    // Create a string of the WireSock config file path
     let wiresock_config_path = &tunnel_config_path.into_os_string().into_string().unwrap();
 
-    // Enable Wiresock
-    let child = Command::new(wiresock_location)
+    // Enable Wiresock and output the stdout
+    let mut child = Command::new(wiresock_location)
         .arg("run")
         .arg("-config")
         .arg(wiresock_config_path)
         .arg("-log-level")
         .arg("debug")
+        .stdout(Stdio::piped())
         .spawn()
-        .expect("command failed to start");
-    let child_id = child.id();
-    println!("Child ID: {}", child_id);
+        .expect("Unable to start WireSock process");
 
-    return true;
+    // Look at all the stdout data that comes in
+    if let Some(stdout) = &mut child.stdout {
+        let lines = BufReader::new(stdout).lines().enumerate().take(20);
+        for (counter, line) in lines {
+            let line_string = &line.unwrap();
+            if line_string.contains("Handshake response received from") {
+                return Ok("WireSock started successfully".into());
+            } else if line_string.contains("WireSock WireGuard VPN Client is running already") {
+                return Err("WireSock WireGuard VPN Client is running already".into());
+            }
+            println!("{}, {:?}", counter, line_string);
+        }
+    }
+
+    Err("Unknown error starting WireSock process".into())
 }
 
 #[tauri::command]
-fn disable_wiresock() -> bool {
+fn disable_wiresock() -> Result<String, String> {
+    // TODO: Add error catching
     Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
@@ -90,12 +107,15 @@ fn disable_wiresock() -> bool {
         .arg("/T")
         .spawn()
         .expect("command failed to start");
-    return true;
+    Ok("WireSock stopped".into())
 }
 
 fn main() {
     tauri::Builder::default()
-        .invoke_handler(tauri::generate_handler![enable_wiresock, disable_wiresock])
+        .invoke_handler(tauri::generate_handler![
+            enable_wiresock,
+            disable_wiresock
+        ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
