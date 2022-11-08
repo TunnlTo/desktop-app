@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi"
+     xmlns:fire="http://schemas.microsoft.com/wix/FirewallExtension">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+	<Fragment>
+	<ComponentGroup Id="CMPG_UserModeBinaries">
+		<Component Id="CMP_WiresockClientServiceExe" Guid="*" Directory ="BINARIES">
+			<File Id="FILE_WiresockClientServiceExe" KeyPath="yes" Source="$(var.SourceRoot)bin\exe\$(var.ServicePlatform)\$(var.Configuration)\wiresock-client.exe"/>
+			<!--<ServiceInstall Id="InstallWireSockService" Name="wiresock-client-service" DisplayName="Wiresock WireGuard VPN Client Service" Description="Wiresock LightWeight WireGuard VPN Client Service" Start="auto" Arguments="service -config wiresock.conf -log-level none" ErrorControl="normal" Type="ownProcess" />-->
+			<!--<ServiceControl Id="ControlWireSockService" Name="wiresock-client-service" Start="install" Stop="both" Remove="uninstall" Wait="no" />-->
+			<!--<fire:FirewallException Id="FirewallWireSockService" Name="WireSock WireGuard Client VPN Service" Description="Allow WireSock LightWeight WireGuard Client VPN Service" File="FILE_WiresockClientServiceExe" Scope="any"/>-->
+		</Component>
+		<Component Id="CMP_WgBoosterDll" Guid="*" Directory ="BINARIES">
+			<File Id="FILE_WgBoosterDll" KeyPath="yes" Source="$(var.SourceRoot)bin\exe\$(var.ServicePlatform)\$(var.Configuration)\wgbooster.dll"/>
+			<Environment Id="PATH" Name="PATH" System="yes" Action="set" Part="last" Permanent="no" Value="[BINARIES]" />
+		</Component>
+		<Component Id="CMP_WireSockLic" Guid="*" Directory ="LICENSE">
+			<File Id="FILE_WireSockLic" KeyPath="yes" Source="$(var.SolutionDir)\license\wiresock_eula.rtf"/>
+		</Component>
+		<Component Id="CMP_WireSockLog" Directory="MyAppDataFolder" Guid="{7ED10166-3276-4F9F-BCE5-B17FD34EA714}">
+			<CreateFolder />
+		</Component>
+    </ComponentGroup>
+	</Fragment>
+</Wix>

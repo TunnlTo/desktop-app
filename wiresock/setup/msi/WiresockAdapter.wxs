@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+  <?include $(sys.CURRENTDIR)\Config.wxi?>
+  <Fragment>
+    <SetProperty Id="installWiresockAdapterDriver" Value="&quot;[WIRESOCKADAPTER]devcon.exe&quot; install &quot;[WIRESOCKADAPTER]wiresock.inf&quot; wiresock" Sequence="execute" Before="installWiresockAdapterDriver"/>
+    <SetProperty Id="uninstallWiresockAdapterDriver" Value="&quot;[WIRESOCKADAPTER]devcon.exe&quot; remove wiresock" Sequence="execute" Before="uninstallWiresockAdapterDriver"/>
+    <SetProperty Id="rollbackInstallWiresockAdapterDriver" Value="&quot;[WIRESOCKADAPTER]devcon.exe&quot; remove wiresock" Sequence="execute" Before="rollbackInstallWiresockAdapterDriver"/>
+    <SetProperty Id="rollbackUninstallWiresockAdapterDriver" Value="&quot;[WIRESOCKADAPTER]devcon.exe&quot; install &quot;[WIRESOCKADAPTER]wiresock.inf&quot; wiresock" Sequence="execute" Before="rollbackUninstallWiresockAdapterDriver"/>
+
+    <?if $(var.Platform) = x64 ?>
+    <CustomAction Id="installWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <CustomAction Id="uninstallWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <CustomAction Id="rollbackInstallWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <CustomAction Id="rollbackUninstallWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec64" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <?else ?>
+    <CustomAction Id="installWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <CustomAction Id="uninstallWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="deferred" Impersonate="no" Return="ignore"/>
+    <CustomAction Id="rollbackInstallWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <CustomAction Id="rollbackUninstallWiresockAdapterDriver" BinaryKey="WixCA" DllEntry="WixQuietExec" Execute="rollback" Impersonate="no" Return="ignore"/>
+    <?endif ?>
+
+    <InstallExecuteSequence>
+		<Custom Action="rollbackUninstallWiresockAdapterDriver" Before="uninstallWiresockAdapterDriver"> REINSTALL OR UPGRADINGPRODUCTCODE OR (REMOVE="ALL") </Custom>
+	    <Custom Action="uninstallWiresockAdapterDriver" After="DeleteServices"> REINSTALL OR UPGRADINGPRODUCTCODE OR (REMOVE="ALL") </Custom>
+	    <Custom Action="rollbackInstallWiresockAdapterDriver" Before="installWiresockAdapterDriver"> REINSTALL OR (NOT Installed) </Custom>
+	    <Custom Action="installWiresockAdapterDriver" After="installCertificates"> REINSTALL OR (NOT Installed) </Custom>
+    </InstallExecuteSequence>
+    
+    <ComponentGroup Id="CMPG_WiresockComponents">
+	  <Component Id="CMP_$(var.Platform)_Devcon_EXE" Guid="*" Directory ="WIRESOCKADAPTER" Transitive="yes">
+	    <File Id="FILE_$(var.Platform)_Devcon_EXE" Source="$(var.SourceRoot)setup\devcon\$(var.DriverPlatform)\devcon.exe">
+		    <CopyFile Id="COPY_$(var.Platform)_Devcon_EXE" DestinationDirectory="WIRESOCKADAPTER"/>
+	    </File>
+      </Component>
+
+      <Component Id="CMP_win10_$(var.Platform)_Wiresock_CAT" Guid="*" Directory ="WSLEGACY" Transitive="yes">
+        <File Id="FILE_win10_$(var.Platform)_Wiresock_CAT" Source="$(var.SourceRoot)wiresock-adapter\sysdev\disk1\drivers\$(var.DriverPlatform)\wiresock.cat">
+          <CopyFile Id="COPY_win10_$(var.Platform)_Wiresock_CAT" DestinationDirectory="WIRESOCKADAPTER"/>
+        </File>
+	      <Condition> VersionNT = 603 AND WIN10FOUND </Condition>
+      </Component>
+      <Component Id="CMP_win10_$(var.Platform)_Wiresock_SYS" Guid="*" Directory ="WSLEGACY" Transitive="yes">
+        <File Id="FILE_win10_$(var.Platform)_Wiresock_SYS" Source="$(var.SourceRoot)wiresock-adapter\sysdev\disk1\drivers\$(var.DriverPlatform)\wiresock.sys">
+          <CopyFile Id="COPY_win10_$(var.Platform)_Wiresock_SYS" DestinationDirectory="WIRESOCKADAPTER"/>
+        </File>
+	      <Condition> VersionNT = 603 AND WIN10FOUND </Condition>
+      </Component>
+      <Component Id="CMP_win10_$(var.Platform)_Wiresock_INF" Guid="*" Directory ="WSLEGACY" Transitive="yes">
+        <File Id="FILE_win10_$(var.Platform)_Wiresock_INF" Source="$(var.SourceRoot)wiresock-adapter\sysdev\disk1\drivers\$(var.DriverPlatform)\wiresock.inf">
+          <CopyFile Id="COPY_win10_$(var.Platform)_Wiresock_INF" DestinationDirectory="WIRESOCKADAPTER"/>
+        </File>
+	      <Condition> VersionNT = 603 AND WIN10FOUND </Condition>
+      </Component>
+	   
+	  <Component Id="CMP_$(var.Platform)_Wiresock_CAT" Guid="*" Directory ="WSWIN10" Transitive="yes">
+		<File Id="FILE_$(var.Platform)_Wiresock_CAT" Source="$(var.SourceRoot)wiresock-adapter\$(var.DriverPlatform)\Release\wiresock\wiresock.cat">
+		  <CopyFile Id="COPY_$(var.Platform)_Wiresock_CAT" DestinationDirectory="WIRESOCKADAPTER"/>
+		</File>
+		  <Condition> VersionNT = 601 OR VersionNT = 602 OR (VersionNT = 603 AND NOT WIN10FOUND) </Condition>
+	  </Component>
+	  <Component Id="CMP_$(var.Platform)_Wiresock_SYS" Guid="*" Directory ="WSWIN10" Transitive="yes">
+		 <File Id="FILE_$(var.Platform)_Wiresock_SYS" Source="$(var.SourceRoot)wiresock-adapter\$(var.DriverPlatform)\Release\wiresock\wiresock.sys">
+		  <CopyFile Id="COPY_$(var.Platform)_Wiresock_SYS" DestinationDirectory="WIRESOCKADAPTER"/>
+		 </File>
+		  <Condition> VersionNT = 601 OR VersionNT = 602 OR (VersionNT = 603 AND NOT WIN10FOUND) </Condition>
+	    </Component>
+	    <Component Id="CMP_$(var.Platform)_Wiresock_INF" Guid="*" Directory ="WSWIN10" Transitive="yes">
+		 <File Id="FILE_$(var.Platform)_Wiresock_INF" Source="$(var.SourceRoot)wiresock-adapter\$(var.DriverPlatform)\Release\wiresock\wiresock.inf">
+		  <CopyFile Id="COPY_$(var.Platform)_Wiresock_INF" DestinationDirectory="WIRESOCKADAPTER"/>
+		 </File>
+		   <Condition> VersionNT = 601 OR VersionNT = 602 OR (VersionNT = 603 AND NOT WIN10FOUND) </Condition>
+	    </Component>
+    </ComponentGroup>
+  </Fragment>
+</Wix>
