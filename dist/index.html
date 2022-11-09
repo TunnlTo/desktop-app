@@ -2,210 +2,211 @@
 <html>
 
 <head>
-	<title>Tunnl.to - Home</title>
-	<link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
+  <title>Tunnl.to - Home</title>
+  <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
 </head>
 <style>
-	html,
-	body {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+  html,
+  body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 </style>
 
 <body>
-	<div class="container text-center">
-		<h1>Tunnl.to</h1>
-		<div id="tunnelOptions" class="visually-hidden d-flex flex-row justify-content-center mt-5">
-			<div class="p-2">
-				<!-- As we're using a flex as the parent div, the select will auto expand based on the longest tunnel name -->
-				<select id="select" onchange="saveSelectedTunnel()" class="form-select"
-					aria-label="Default select example"></select>
-			</div>
-			<div class="p-2">
-				<button id="toggleButton" type="button" class="btn btn-success" onclick="toggleTunnel()">Enable</button>
-			</div>
-			<div class="p-2">
-				<button type="button" class="btn btn-secondary" onclick="editClick()">Edit</button>
-			</div>
-		</div>
-		<a class="btn btn-primary mt-5" href="wireguard.html" role="button">Add Tunnel</a>
+  <div class="container text-center">
+    <h1>Tunnl.to</h1>
+    <div id="tunnelOptions" class="visually-hidden d-flex flex-row justify-content-center mt-5">
+      <div class="p-2">
+        <!-- As we're using a flex as the parent div, the select will auto expand based on the longest tunnel name -->
+        <select id="select" class="form-select"
+          aria-label="Default select example"></select>
+      </div>
+      <div class="p-2">
+        <button id="toggleButton" type="button" class="btn btn-success"">Enable</button>
+      </div>
+      <div class="p-2">
+        <button id="editButton" type="button" class="btn btn-secondary">Edit</button>
+      </div>
+    </div>
+    <a class="btn btn-primary mt-5" href="wireguard.html" role="button">Add Tunnel</a>
 
-		<!-- Toast -->
-		<div class="toast-container p-3 bottom-0 start-50 translate-middle-x">
-			<div id="toast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
-				aria-atomic="true">
-				<div class="d-flex">
-					<div id="toastBody" class="toast-body">
-						<!-- Dynamically filled -->
-					</div>
-					<button id="toastButton" type="button" class="btn-close btn-close-white me-2 m-auto"
-						data-bs-dismiss="toast" aria-label="Close"></button>
-				</div>
-			</div>
-		</div>
-	</div>
+    <!-- Toast -->
+    <div class="toast-container p-3 bottom-0 start-50 translate-middle-x">
+      <div id="toast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
+        aria-atomic="true">
+        <div class="d-flex">
+          <div id="toastBody" class="toast-body">
+            <!-- Dynamically filled -->
+          </div>
+          <button id="toastButton" type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+            aria-label="Close"></button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-	<script src="js/bootstrap/bootstrap.bundle.js"></script>
-	<script>
-		const { invoke } = window.__TAURI__.tauri;
+  <script src="js/bootstrap/bootstrap.bundle.js"></script>
+  <script>
+    const { invoke } = window.__TAURI__.tauri
 
-		async function start() {
-			// Setup some UI helpers
-			const select = document.getElementById('select');
-			const tunnelOptions = document.getElementById('tunnelOptions');
-			let tunnelOptionHidden = true;
+    // Get elements
+    const selectElement = document.getElementById('select')
+    const toggleButtonElement = document.getElementById('toggleButton')
+    const editButtonElement = document.getElementById('editButton')
+    const tunnelOptionsElement = document.getElementById('tunnelOptions')
+    const toastElement = document.getElementById('toast')
+    const toastBodyElement = document.getElementById('toastBody')
 
-			// Get a list of tunnels from localstorage
-			const localStorageData = { ...localStorage };
+    // Setup listeners on elements
+    selectElement.onchange = () => { saveSelectedTunnel() }
+    toggleButtonElement.onclick = () => { toggleTunnel() }
+    editButtonElement.onclick = () => { editClick() }
 
-			// Iterate through the localstorage keys to see if any tunnels are listed
-			for (let x in localStorageData) {
-				if (x.startsWith('tunnel-wireguard-')) {
-					// Remove the descriptor at the start of the string
-					x = x.replace('tunnel-wireguard-', '');
+    // Need to have this to allow for async. Can't use async calls in top level
+    async function start () {
+      // Get a list of tunnels from localstorage
+      const localStorageData = { ...localStorage }
 
-					// Add the tunnel name as an option in the select dropdown
-					var opt = document.createElement('option');
-					opt.value = x;
-					opt.innerHTML = x;
-					select.appendChild(opt);
+      // Iterate through the localstorage keys to see if any tunnels are listed
+      for (let x in localStorageData) {
+        if (x.startsWith('tunnel-wireguard-')) {
+          // Remove the descriptor prefix at the start of the string
+          x = x.replace('tunnel-wireguard-', '')
 
-					// Show the tunnel options
-					if (tunnelOptionHidden) {
-						tunnelOptions.classList.remove('visually-hidden');
-						tunnelOptionHidden = false;
-					}
-				}
-			}
+          // Add the tunnel name as an option in the select dropdown
+          const opt = document.createElement('option')
+          opt.value = x
+          opt.innerHTML = x
+          selectElement.appendChild(opt)
 
-			// Set the selected tunnel based on local storage
-			const selectedTunnel = getSelectedTunnel();
-			if (selectedTunnel !== null) {
-				setSelectedTunnel(selectedTunnel);
-			}
+          // Show the tunnel options now that we have an option to display
+          if (tunnelOptionsElement.classList.contains('visually-hidden')) {
+            tunnelOptionsElement.classList.remove('visually-hidden')
+          }
+        }
+      }
 
-			// Check to see if the WireSock process is already running
-			if (await isWiresockRunning()) {
-				// WireSock is already running. Update the UI
-				showDisableButton();
-			}
-		}
-		start();
+      // Set the selected tunnel based on local storage
+      const selectedTunnel = getSelectedTunnel()
+      if (selectedTunnel !== null) {
+        setSelectedTunnel(selectedTunnel)
+      }
 
-		function editClick() {
-			// Navigate to the wireguard page
-			window.location.href = `wireguard.html?edit=true&tunnelName=${getSelectedTunnel()}`;
-		}
+      // Check to see if the WireSock process is already running
+      if (await isWiresockRunning()) {
+        // WireSock is already running. Update the UI
+        showDisableButton()
+      }
+    }
+    start()
 
-		function saveSelectedTunnel() {
-			// Save the value of the tunnel select to local storage
-			localStorage.setItem('selectedTunnel', document.getElementById('select').value);
-		}
+    // Navigate to the wireguard page
+    function editClick () {
+      window.location.href = `wireguard.html?edit=true&tunnelName=${getSelectedTunnel()}`
+    }
 
-		function getSelectedTunnel() {
-			// Look up local storage for the currenctly selected tunnel
-			return localStorage.getItem('selectedTunnel');
-		}
+    // Save the value of the tunnel select to local storage
+    function saveSelectedTunnel () {
+      localStorage.setItem('selectedTunnel', selectElement.value)
+    }
 
-		function setSelectedTunnel() {
-			// Set the select to the last selected tunnel
-			document.getElementById('select').value = getSelectedTunnel();
-		}
+    // Look up local storage for the currenctly selected tunnel
+    function getSelectedTunnel () {
+      return localStorage.getItem('selectedTunnel')
+    }
 
-		async function toggleTunnel() {
-			// Tell Rust to enable or disable the WireSock process
-			const toggleButton = document.getElementById('toggleButton');
+    // Set the select element to the last selected tunnel
+    function setSelectedTunnel () {
+      selectElement.value = getSelectedTunnel()
+    }
 
-			if (toggleButton.innerHTML === 'Enable') {
-				// Enable the tunnel
+    // Tell Rust to enable or disable the WireSock process
+    async function toggleTunnel () {
+      if (toggleButtonElement.innerHTML === 'Enable') {
+        // Enable the tunnel
 
-				// Get the currently selected tunnel
-				const tunnelName = getSelectedTunnel();
+        // Get the currently selected tunnel
+        const tunnelName = getSelectedTunnel()
 
-				// Get the tunnel data
-				const tunnelData = JSON.parse(localStorage.getItem(`tunnel-wireguard-${tunnelName}`));
+        // Get the tunnel data
+        const tunnelData = JSON.parse(localStorage.getItem(`tunnel-wireguard-${tunnelName}`))
 
-				// Send the message down to Tauri Rust function
-				try {
-					console.info(await invoke('enable_wiresock', {
-						privateKey: tunnelData.privateKey,
-						interfaceAddress: tunnelData.interfaceAddress,
-						dns: tunnelData.dns,
-						publicKey: tunnelData.publicKey,
-						endpoint: tunnelData.endpoint,
-						allowedApps: tunnelData.allowedApps,
-						allowedIPs: tunnelData.allowedIPs
-					}));
-				} catch (error) {
-					console.error(`Invoking enable_wiresock returned error: ${error}`);
-					// Show the error to the user
-					return toggleToast(`${error}`);
-				}
+        // Send the message down to Tauri Rust function
+        try {
+          console.info(await invoke('enable_wiresock', {
+            privateKey: tunnelData.privateKey,
+            interfaceAddress: tunnelData.interfaceAddress,
+            dns: tunnelData.dns,
+            publicKey: tunnelData.publicKey,
+            endpoint: tunnelData.endpoint,
+            allowedApps: tunnelData.allowedApps,
+            allowedIPs: tunnelData.allowedIPs
+          }))
+        } catch (error) {
+          console.error(`Invoking enable_wiresock returned error: ${error}`)
+          // Show the error to the user
+          return toggleToast(`${error}`)
+        }
 
-				// Connection success so update the UI
-				showDisableButton();
-			} else {
-				// Disable the tunnel
-				try {
-					await invoke('disable_wiresock');
-				} catch (error) {
-					console.error(`Invoking disable_wiresock returned error: ${error}`);
-					return toggleToast(`Error stopping WireSock process: ${error}`);
-				}
+        // Connection success so update the UI
+        showDisableButton()
+      } else {
+        // Disable the tunnel
+        try {
+          await invoke('disable_wiresock')
+        } catch (error) {
+          console.error(`Invoking disable_wiresock returned error: ${error}`)
+          return toggleToast(`Error stopping WireSock process: ${error}`)
+        }
 
-				// Update the UI
-				toggleButton.classList.remove('btn-danger');
-				toggleButton.classList.add('btn-success');
-				toggleButton.innerHTML = 'Enable';
-			}
-		}
+        // Update the UI
+        toggleButtonElement.classList.remove('btn-danger')
+        toggleButtonElement.classList.add('btn-success')
+        toggleButtonElement.innerHTML = 'Enable'
+      }
+    }
 
-		function showDisableButton() {
-			const toggleButton = document.getElementById('toggleButton');
+    // Show the disable button
+    function showDisableButton () {
+      toggleButtonElement.classList.remove('btn-success')
+      toggleButtonElement.classList.add('btn-danger')
+      toggleButtonElement.innerHTML = 'Disable'
+    }
 
-			toggleButton.classList.remove('btn-success');
-			toggleButton.classList.add('btn-danger');
-			toggleButton.innerHTML = 'Disable';
-		}
+    // Show a Toast message to the user
+    function toggleToast (message) {
+      // Set the message in the toast
+      toastBodyElement.innerHTML = message
 
-		function toggleToast(message) {
-			// Show a Toast message to the user
-			const toastElement = document.getElementById('toast');
-			const toastBody = document.getElementById('toastBody');
-			const toast = new bootstrap.Toast(toastElement);
+      // eslint-disable-next-line no-undef
+      const toast = new bootstrap.Toast(toastElement)
+      toast.show()
+    }
 
-			// Set the message in the toast
-			toastBody.innerHTML = message;
-
-			// Show the toast to the user
-			toast.show();
-		}
-
-		async function isWiresockRunning() {
-			try {
-				const result = await invoke('check_wiresock_process');
-				console.info(result);
-				if (result === 'WIRESOCK_IS_RUNNING') {
-					return true;
-				} else if (result === 'WIRESOCK_NOT_RUNNING') {
-					return false;
-				} else {
-					toggleToast(`Error checking WireSock process: ${result}`);
-					return false;
-				}
-			} catch (error) {
-				console.error(`Invoking check_wiresock_process returned error: ${error}`);
-				// Show the error to the user
-				return toggleToast(error);
-			}
-
-
-		}
-	</script>
+    // Tell Rust to check if the WireSock process is running
+    async function isWiresockRunning () {
+      try {
+        const result = await invoke('check_wiresock_process')
+        console.info(result)
+        if (result === 'WIRESOCK_IS_RUNNING') {
+          return true
+        } else if (result === 'WIRESOCK_NOT_RUNNING') {
+          return false
+        } else {
+          toggleToast(`Error checking WireSock process: ${result}`)
+          return false
+        }
+      } catch (error) {
+        console.error(`Invoking check_wiresock_process returned error: ${error}`)
+        // Show the error to the user
+        return toggleToast(error)
+      }
+    }
+  </script>
 </body>
 
 </html>

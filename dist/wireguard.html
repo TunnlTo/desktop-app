@@ -2,217 +2,238 @@
 <html>
 
 <head>
-	<title>Tunnl.to - Add WireGuard</title>
-	<link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
+    <title>Tunnl.to - Add WireGuard</title>
+    <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
 </head>
 <style>
-	html,
-	body {
-		width: 100%;
-		height: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-	}
+    html,
+    body {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
 </style>
 
 <body>
-	<div class="container">
-		<form id="form" class="requires-validation" novalidate action="index.html">
-			<div class="row">
-				<h3 class="mb-4">WireGuard Tunnel</h3>
+    <div class="container">
+        <form id="form" class="requires-validation" novalidate action="index.html">
+            <div class="row">
+                <h3 class="mb-4">WireGuard Tunnel</h3>
 
-				<!-- Left column start -->
-				<div class="col">
-					<div class="mb-3">
-						<label for="tunnelName" class="form-label">Tunnel Name</label>
-						<input id="tunnelName" type="text" class="form-control" id="tunnelName" placeholder="Work VPN"
-							required />
-					</div>
-					<div class="mb-3">
-						<label for="interfaceAddress" class="form-label">Interface Address</label>
-						<input id="interfaceAddress" type="text" class="form-control" id="interfaceAddress"
-							placeholder="10.0.0.1/32" required />
-					</div>
-					<div class="mb-3">
-						<label for="publicKey" class="form-label">Public Key</label>
-						<input id="publicKey" type="text" class="form-control" id="publicKey" required />
-					</div>
-					<div class="mb-4">
-						<label for="allowedApps" class="form-label">Allowed Apps</label>
-						<input id="allowedApps" type="text" class="form-control" id="allowedApps"
-							placeholder="chrome, msoffice, c:\example.exe" required />
-					</div>
-					<div>
-						<a class="btn btn-secondary" href="index.html" role="button">Back</a>
-					</div>
-				</div>
-				<!-- Left column end -->
+                <!-- Left column start -->
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="tunnelName" class="form-label">Tunnel Name</label>
+                        <input id="tunnelName" type="text" class="form-control" id="tunnelName" placeholder="Work VPN"
+                            required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="interfaceAddress" class="form-label">Interface Address</label>
+                        <input id="interfaceAddress" type="text" class="form-control" id="interfaceAddress"
+                            placeholder="10.0.0.1/32" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="publicKey" class="form-label">Public Key</label>
+                        <input id="publicKey" type="text" class="form-control" id="publicKey" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="allowedApps" class="form-label">Allowed Apps</label>
+                        <input id="allowedApps" type="text" class="form-control" id="allowedApps"
+                            placeholder="chrome, msoffice, c:\example.exe" required />
+                    </div>
+                    <div>
+                        <a class="btn btn-secondary" href="index.html" role="button">Back</a>
+                    </div>
+                </div>
+                <!-- Left column end -->
 
-				<!-- Right column start -->
-				<div class="col">
-					<div class="mb-3">
-						<label for="privateKey" class="form-label">Private Key</label>
-						<input id="privateKey" type="text" class="form-control" id="privateKey" required />
-					</div>
-					<div class="mb-3">
-						<label for="dns" class="form-label">DNS</label>
-						<input id="dns" type="text" class="form-control" id="dns" placeholder="1.1.1.1, 8.8.8.8" />
-					</div>
-					<div class="mb-3">
-						<label for="endpoint" class="form-label">Endpoint</label>
-						<input id="endpoint" type="text" class="form-control" id="endpoint"
-							placeholder="10.0.0.100:51820" required />
-					</div>
-					<div class="mb-4">
-						<label for="allowedIPs" class="form-label">Allowed IP's</label>
-						<input id="allowedIPs" type="text" class="form-control" id="allowedIPs"
-							placeholder="0.0.0.0/0" />
-					</div>
-					<div class="d-flex flex-row-reverse">
-						<div class="ps-2">
-							<button class="btn btn-primary" type="submit">Save</button>
-						</div>
-						<div id="deleteDiv" class="visually-hidden">
-							<button type="button" class="btn btn-danger" data-bs-toggle="modal"
-								data-bs-target="#modal">
-								Delete
-							</button>
-						</div>
-					</div>
-				</div>
-				<!-- Right column end  -->
+                <!-- Right column start -->
+                <div class="col">
+                    <div class="mb-3">
+                        <label for="privateKey" class="form-label">Private Key</label>
+                        <input id="privateKey" type="text" class="form-control" id="privateKey" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="dns" class="form-label">DNS</label>
+                        <input id="dns" type="text" class="form-control" id="dns" placeholder="1.1.1.1, 8.8.8.8" />
+                    </div>
+                    <div class="mb-3">
+                        <label for="endpoint" class="form-label">Endpoint</label>
+                        <input id="endpoint" type="text" class="form-control" id="endpoint"
+                            placeholder="10.0.0.100:51820" required />
+                    </div>
+                    <div class="mb-4">
+                        <label for="allowedIPs" class="form-label">Allowed IP's</label>
+                        <input id="allowedIPs" type="text" class="form-control" id="allowedIPs"
+                            placeholder="0.0.0.0/0" />
+                    </div>
+                    <div class="d-flex flex-row-reverse">
+                        <div class="ps-2">
+                            <button class="btn btn-primary" type="submit">Save</button>
+                        </div>
+                        <div id="deleteDiv" class="visually-hidden">
+                            <button type="button" class="btn btn-danger" data-bs-toggle="modal"
+                                data-bs-target="#modal">
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <!-- Right column end  -->
 
-			</div>
-		</form>
+            </div>
+        </form>
 
-		<!-- Modal -->
-		<div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-			<div class="modal-dialog modal-dialog-centered">
-				<div class="modal-content">
-					<div class="modal-header">
-						<h1 class="modal-title fs-5" id="modalLabel">Confirm deletion</h1>
-						<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-					</div>
-					<div class="modal-body">
-						Are you sure you want to delete this tunnel?
-					</div>
-					<div class="modal-footer">
-						<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
-						<button type="button" class="btn btn-danger" data-bs-dismiss="modal" onclick="deleteClick()">Yes</button>
-					</div>
-				</div>
-			</div>
-		</div>
+        <!-- Modal -->
+        <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h1 class="modal-title fs-5" id="modalLabel">Confirm deletion</h1>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        Are you sure you want to delete this tunnel?
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">No</button>
+                        <button id="deleteButton" type="button" class="btn btn-danger" data-bs-dismiss="modal">Yes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
-	</div>
+    </div>
 
-	<script src="js/bootstrap/bootstrap.bundle.js"></script>
-	<script>
-		// Check to see if we're editing an existing tunnel or adding a new one
-		if (getUrlParam('edit') === 'true') {
-			// Show the delete button
-			document.getElementById('deleteDiv').classList.remove('visually-hidden');
+    <script src="js/bootstrap/bootstrap.bundle.js"></script>
+    <script>
+        // Get elements
+        const deleteButtonElement = document.getElementById('deleteButton')
+        const deleteDivElement = document.getElementById('deleteDiv')
+        const tunnelNameElement = document.getElementById('tunnelName')
+        const privateKeyElement = document.getElementById('privateKey')
+        const interfaceAddressElement = document.getElementById('interfaceAddress')
+        const dnsElement = document.getElementById('dns')
+        const publicKeyElement = document.getElementById('publicKey')
+        const endpointElement = document.getElementById('endpoint')
+        const allowedAppsElement = document.getElementById('allowedApps')
+        const allowedIPsElement = document.getElementById('allowedIPs')
+        const form = document.getElementById('form')
 
-			// Get the values of the tunnel from local storage
-			const tunnelName = getUrlParam('tunnelName');
-			const tunnelData = localStorage.getItem(`tunnel-wireguard-${tunnelName}`);
+        // Setup listeners on elements
+        deleteButtonElement.onclick = () => { deleteClick() }
+        form.onsubmit = (event) => { submitClick(event) }
 
-			// Add the values to the form
-			document.getElementById('tunnelName').value = JSON.parse(tunnelData).tunnelName;
-			document.getElementById('privateKey').value = JSON.parse(tunnelData).privateKey;
-			document.getElementById('interfaceAddress').value = JSON.parse(tunnelData).interfaceAddress;
-			document.getElementById('dns').value = JSON.parse(tunnelData).dns;
-			document.getElementById('publicKey').value = JSON.parse(tunnelData).publicKey;
-			document.getElementById('endpoint').value = JSON.parse(tunnelData).endpoint;
-			document.getElementById('allowedApps').value = JSON.parse(tunnelData).allowedApps;
-			document.getElementById('allowedIPs').value = JSON.parse(tunnelData).allowedIPs;
-		};
+        // Check to see if the user is looking to edit an existing tunnel or add a new one
+        if (getUrlParam('edit') === 'true') {
+          // Show the delete button
+          deleteDivElement.classList.remove('visually-hidden')
 
-		// Setup 'submit' event listener on the form for validation and saving data
-		const forms = document.getElementById('form');
-		form.addEventListener('submit', function (event) {
-			if (!form.checkValidity()) {
-				// Form not valid
-				event.preventDefault()
-				event.stopPropagation()
-			} else {
-				// Form is valid
-				saveFormData();
+          // Get the values of the tunnel from local storage
+          const tunnelName = getUrlParam('tunnelName')
+          const tunnelData = localStorage.getItem(`tunnel-wireguard-${tunnelName}`)
 
-				// The page will redirect at this point as set by the form action
-			}
+          // Add the values to the form
+          tunnelNameElement.value = JSON.parse(tunnelData).tunnelName
+          privateKeyElement.value = JSON.parse(tunnelData).privateKey
+          interfaceAddressElement.value = JSON.parse(tunnelData).interfaceAddress
+          dnsElement.value = JSON.parse(tunnelData).dns
+          publicKeyElement.value = JSON.parse(tunnelData).publicKey
+          endpointElement.value = JSON.parse(tunnelData).endpoint
+          allowedAppsElement.value = JSON.parse(tunnelData).allowedApps
+          allowedIPsElement.value = JSON.parse(tunnelData).allowedIPs
+        };
 
-			form.classList.add('was-validated')
-		}, false)
+        // Handle form submission
+        function submitClick (event) {
+          // Validate form before saving any data
+        
+          if (!form.checkValidity()) {
+            // Form not valid
+            event.preventDefault()
+            event.stopPropagation()
+          } else {
+            // Form is valid
+            saveFormData()
 
-		// Retrieve selected paramater values from the url
-		function getUrlParam(parameterName) {
-			var result = null,
-				tmp = [];
-			location.search
-				.substr(1)
-				.split("&")
-				.forEach(function (item) {
-					tmp = item.split("=");
-					if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1]);
-				});
-			return result;
-		}
+            // The page will redirect at this point as set by the form action
+          }
 
-		// Save the form data to local storage
-		function saveFormData() {
-			// Get the form values
-			const tunnelName = document.getElementById('tunnelName').value;
-			const privateKey = document.getElementById('privateKey').value;
-			const interfaceAddress = document.getElementById('interfaceAddress').value;
-			let dns = document.getElementById('dns').value;
-			const publicKey = document.getElementById('publicKey').value;
-			const endpoint = document.getElementById('endpoint').value;
-			const allowedApps = document.getElementById('allowedApps').value;
-			let allowedIPs = document.getElementById('allowedIPs').value;
+          form.classList.add('was-validated')
+        }
 
-			// If the unrequired fields are blank, we fill them in
-			if (dns === '') {
-				dns = '1.1.1.1, 8.8.8.8';
-			}
-			if (allowedIPs === '') {
-				allowedIPs = '0.0.0.0/0';
-			}
+        // Retrieve selected paramater values from the url
+        function getUrlParam (parameterName) {
+          let result = null
+          let tmp = []
+          location.search
+            .substr(1)
+            .split('&')
+            .forEach(function (item) {
+              tmp = item.split('=')
+              if (tmp[0] === parameterName) result = decodeURIComponent(tmp[1])
+            })
+        
+          return result
+        }
 
-			// Save to local storage
-			const wireGuardTunnel = {
-				tunnelName: tunnelName,
-				privateKey: privateKey,
-				interfaceAddress: interfaceAddress,
-				dns: dns,
-				publicKey: publicKey,
-				endpoint: endpoint,
-				allowedApps: allowedApps,
-				allowedIPs: allowedIPs
-			}
-			localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel));
-			console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`);
+        // Save the form data to local storage
+        function saveFormData () {
+          // Get the form values
+          const tunnelName = tunnelNameElement.value
+          const privateKey = privateKeyElement.value
+          const interfaceAddress = interfaceAddressElement.value
+          let dns = dnsElement.value
+          const publicKey = publicKeyElement.value
+          const endpoint = endpointElement.value
+          const allowedApps = allowedAppsElement.value
+          let allowedIPs = allowedIPsElement.value
 
-			// Update the selected tunnel so this new tunnel is selected on the home page
-			localStorage.setItem('selectedTunnel', tunnelName);
-		}
+          // If the unrequired fields are blank, we fill them in with defaults
+          if (dns === '') {
+            dns = '1.1.1.1, 8.8.8.8'
+          }
+          if (allowedIPs === '') {
+            allowedIPs = '0.0.0.0/0'
+          }
 
-		function deleteClick() {
-			// Get the tunnel name
-			const tunnelName = getUrlParam('tunnelName');
-			console.log(`removing ${tunnelName} from local storage`);
+          // Save data to local storage
+          const wireGuardTunnel = {
+            tunnelName,
+            privateKey,
+            interfaceAddress,
+            dns,
+            publicKey,
+            endpoint,
+            allowedApps,
+            allowedIPs
+          }
 
-			// Delete it from local storage
-			localStorage.removeItem(`tunnel-wireguard-${tunnelName}`);
+          // Prefix with tunnel-wireguard- to seperate from other local storage data
+          localStorage.setItem(`tunnel-wireguard-${tunnelName}`, JSON.stringify(wireGuardTunnel))
+          console.log(`Saved tunnel-wireguard-${tunnelName} to local storage`)
 
-			// Remove it from the currently selected tunnel in local storage
-			localStorage.removeItem('selectedTunnel');
+          // Update the selected tunnel so this new tunnel is selected on the home page
+          localStorage.setItem('selectedTunnel', tunnelName)
+        }
 
-			// Redirect back to the home page
-			window.location.href = 'index.html';
-		}
-	</script>
+        function deleteClick () {
+          // Get the tunnel name
+          const tunnelName = getUrlParam('tunnelName')
+          console.log(`removing ${tunnelName} from local storage`)
+
+          // Delete it from local storage
+          localStorage.removeItem(`tunnel-wireguard-${tunnelName}`)
+
+          // Remove it from the currently selected tunnel in local storage
+          localStorage.removeItem('selectedTunnel')
+
+          // Redirect back to the home page
+          window.location.href = 'index.html'
+        }
+    </script>
 </body>
 
 </html>

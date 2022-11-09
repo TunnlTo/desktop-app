@@ -89,6 +89,8 @@ async fn enable_wiresock(
                 return Ok("WireSock started successfully".into());
             } else if line_string.contains("WireSock WireGuard VPN Client is running already") {
                 return Err("WireSock WireGuard VPN Client is running already".into());
+            } else if line_string.contains("Endpoint is either invalid of failed to resolve") {
+                return Err("Endpoint is either invalid of failed to resolve".into());
             }
             println!("{}, {:?}", counter, line_string);
         }
