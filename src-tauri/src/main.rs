@@ -5,6 +5,7 @@
 
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
+use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
@@ -76,6 +77,7 @@ async fn enable_wiresock(
         .arg(wiresock_config_path)
         .arg("-log-level")
         .arg("debug")
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - top a command window showing
         .stdout(Stdio::piped())
         .spawn()
         .expect("Unable to start WireSock process");
@@ -107,6 +109,7 @@ fn disable_wiresock() -> Result<String, String> {
         .arg("/IM")
         .arg("wiresock-client.exe")
         .arg("/T")
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - top a command window showing
         .spawn()
         .expect("command failed to start");
     Ok("WireSock stopped".into())
@@ -118,6 +121,7 @@ fn check_wiresock_process() -> Result<String, String> {
     let mut child = Command::new("tasklist")
         .arg("/FI")
         .arg(r#"IMAGENAME eq wiresock-client.exe"#)
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - top a command window showing
         .stdout(Stdio::piped())
         .spawn()
         .expect("Unable to start tasklist process");
