@@ -1,0 +1,92 @@
+;-------------------------------------------------------------------------
+; ndiswgc_lwf.INF -- WinpkFilter NDIS LWF driver (WireSock VPN Client build)
+;
+; Copyright (c) NT Kernel Resources.  All rights reserved.
+;-------------------------------------------------------------------------
+[version]
+Signature   	= "$Windows NT$"
+Class     	= NetService
+ClassGUID  	= {4D36E974-E325-11CE-BFC1-08002BE10318}
+Provider    = %Ntkr%
+CatalogFile = ndiswgc.cat
+PnpLockdown	= 1
+DriverVer = 02/02/2022,3.2.32.1
+
+[Manufacturer]
+%Ntkr%=Ntkr,NTx86,NTia64,NTamd64,NTARM64
+
+[Ntkr.NTx86]
+%ndiswgc_Desc%=Install, nt_ndiswgc
+
+[Ntkr.NTia64]
+%ndiswgc_Desc%=Install, nt_ndiswgc
+
+[Ntkr.NTamd64]
+%ndiswgc_Desc%=Install, nt_ndiswgc
+
+[Ntkr.NTARM64]
+%ndiswgc_Desc%=Install, nt_ndiswgc
+
+;-------------------------------------------------------------------------
+; Installation Section
+;-------------------------------------------------------------------------
+[Install]
+AddReg=Inst_Ndi
+Characteristics=0x40000
+NetCfgInstanceId="{F09FF972-031B-47A4-85C1-B1510B6803E2}"
+Copyfiles = ndiswgc.copyfiles.sys
+
+[SourceDisksNames]
+1=%ndiswgc_Desc%,"",,
+
+[SourceDisksFiles]
+ndiswgc.sys=1
+
+[DestinationDirs]
+DefaultDestDir=12
+ndiswgc.copyfiles.sys=12
+
+[ndiswgc.copyfiles.sys]
+ndiswgc.sys,,,2
+
+
+;-------------------------------------------------------------------------
+; Ndi installation support
+;-------------------------------------------------------------------------
+[Inst_Ndi]
+HKR, Ndi,Service,,"ndiswgc"
+HKR, Ndi,CoServices,0x00010000,"ndiswgc"
+HKR, Ndi,HelpText,,%ndiswgc_HelpText%
+HKR, Ndi,FilterClass,, compression
+HKR, Ndi,FilterType,0x00010001,0x00000002
+HKR, Ndi\Interfaces,UpperRange,,"noupper"
+HKR, Ndi\Interfaces,LowerRange,,"ndis5,ndis4"
+HKR, Ndi\Interfaces, FilterMediaTypes,,"ethernet, wan, ppip, bluetooth, ndis5, nolower"
+HKR, Ndi,FilterRunType, 0x00010001, 1 ;this filter must run before any protocol can bind to the below miniport 
+
+;-------------------------------------------------------------------------
+; Service installation support
+;-------------------------------------------------------------------------
+[Install.Services]
+AddService=ndiswgc,,ndiswgc_Service_Inst
+
+[ndiswgc_Service_Inst]
+DisplayName     = %ndiswgc_Desc%
+ServiceType     = 1 ;SERVICE_KERNEL_DRIVER
+StartType       = 1 ;SERVICE_SYSTEM_START
+ErrorControl    = 1 ;SERVICE_ERROR_NORMAL
+ServiceBinary   = %12%\ndiswgc.sys
+LoadOrderGroup  = NDIS
+Description     = %ndiswgc_Desc%
+AddReg          = NdisImPlatformBindingOptions.reg
+
+[Install.Remove.Services]
+DelService=ndiswgc,0x200
+
+[NdisImPlatformBindingOptions.reg]
+HKR, Parameters, NdisImPlatformBindingOptions,0x00010001,2
+
+[Strings]
+Ntkr = "NT Kernel Resources"
+ndiswgc_Desc = "WireSock VPN Client Filter"
+ndiswgc_HelpText = "WireSock LightWeight WireGuard VPN Client Filter Driver"
