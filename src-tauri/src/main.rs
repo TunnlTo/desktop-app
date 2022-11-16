@@ -10,6 +10,7 @@ use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
+use tauri::Manager;
 
 #[tauri::command]
 #[allow(non_snake_case)]
@@ -125,7 +126,7 @@ fn install_wiresock() -> Result<String, String> {
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
     wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.15.1.msi"#);
 
-    let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", \"{}\", \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
+    let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
 
     // Start the WireSock installer in quiet mode (no user prompts)
     let mut child = Command::new("powershell")
@@ -144,7 +145,7 @@ fn install_wiresock() -> Result<String, String> {
             match line.unwrap().as_str() {
                 "0" => return Ok("WIRESOCK_INSTALLED".into()),
                 "1602" => return Err("User cancelled the installation".into()),
-                _ => return Err("Unknown exit code while installing WireSock".into())
+                _ => return Err("Unknown exit code while installing WireSock".into()),
             }
         }
     }
@@ -181,6 +182,14 @@ fn check_wiresock_process() -> Result<String, String> {
 
 fn main() {
     tauri::Builder::default()
+        .setup(|app| {
+            #[cfg(debug_assertions)] // only include this code on debug builds
+            {
+                let window = app.get_window("main").unwrap();
+                window.open_devtools();
+            }
+            Ok(())
+        })
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
             disable_wiresock,
