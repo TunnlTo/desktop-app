@@ -68,8 +68,13 @@
 
     // Need to have this to allow for async. Can't use async calls in top level
     async function start () {
-      // Get a list of tunnels from localstorage
       const localStorageData = { ...localStorage }
+
+      // Check if the setup page has run
+      if (localStorage.getItem('setupComplete') === null) {
+        // Setup is not complete. Redirect user to setup page
+        return (window.location.href = 'setup.html')
+      }
 
       // Iterate through the localstorage keys to see if any tunnels are listed
       for (let x in localStorageData) {

@@ -13,6 +13,9 @@
   },
   "tauri": {
     "allowlist": {
+      "fs": {
+        "scope": ["$RESOURCE/*"]
+      },
       "all": true
     },
     "bundle": {
@@ -39,7 +42,9 @@
         "providerShortName": null,
         "signingIdentity": null
       },
-      "resources": [],
+      "resources": [
+        "wiresock/wiresock-vpn-client-x64-1.2.15.1.msi"
+      ],
       "shortDescription": "",
       "targets": "all",
       "windows": {

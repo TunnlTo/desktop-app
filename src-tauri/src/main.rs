@@ -3,6 +3,7 @@
     windows_subsystem = "windows"
 )]
 
+use std::env;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::os::windows::process::CommandExt;
@@ -77,7 +78,7 @@ async fn enable_wiresock(
         .arg(wiresock_config_path)
         .arg("-log-level")
         .arg("debug")
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW - top a command window showing
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .stdout(Stdio::piped())
         .spawn()
         .expect("Unable to start WireSock process");
@@ -94,7 +95,7 @@ async fn enable_wiresock(
             } else if line_string.contains("Endpoint is either invalid of failed to resolve") {
                 return Err("Endpoint is either invalid of failed to resolve".into());
             }
-            println!("{}, {:?}", counter, line_string);
+            println!("enable_wiresock: {}, {:?}", counter, line_string);
         }
     }
 
@@ -109,10 +110,46 @@ fn disable_wiresock() -> Result<String, String> {
         .arg("/IM")
         .arg("wiresock-client.exe")
         .arg("/T")
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW - top a command window showing
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .spawn()
         .expect("command failed to start");
     Ok("WireSock stopped".into())
+}
+
+#[tauri::command]
+fn install_wiresock() -> Result<String, String> {
+    // Get the current directory
+    let current_dir = env::current_dir().unwrap();
+
+    // Build the path to the WireSock installer
+    let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
+    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.15.1.msi"#);
+
+    let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", \"{}\", \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
+
+    // Start the WireSock installer in quiet mode (no user prompts)
+    let mut child = Command::new("powershell")
+        .arg("-command")
+        .arg(arg)
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
+        .stdout(Stdio::piped())
+        .spawn()
+        .expect("msiexec failed to start");
+
+    // Check the stdout data
+    if let Some(stdout) = &mut child.stdout {
+        let lines = BufReader::new(stdout).lines().enumerate().take(20);
+        for (counter, line) in lines {
+            println!("install_wiresock: {}, {:?}", counter, line);
+            match line.unwrap().as_str() {
+                "0" => return Ok("WIRESOCK_INSTALLED".into()),
+                "1602" => return Err("User cancelled the installation".into()),
+                _ => return Err("Unknown exit code while installing WireSock".into())
+            }
+        }
+    }
+
+    Err("Unknown error installing WireSock".into())
 }
 
 #[tauri::command]
@@ -121,7 +158,7 @@ fn check_wiresock_process() -> Result<String, String> {
     let mut child = Command::new("tasklist")
         .arg("/FI")
         .arg(r#"IMAGENAME eq wiresock-client.exe"#)
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW - top a command window showing
+        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .stdout(Stdio::piped())
         .spawn()
         .expect("Unable to start tasklist process");
@@ -135,7 +172,7 @@ fn check_wiresock_process() -> Result<String, String> {
                 println!("WireSock process is running");
                 return Ok("WIRESOCK_IS_RUNNING".into());
             }
-            println!("{}, {:?}", counter, line_string);
+            println!("check_wiresock_process: {}, {:?}", counter, line_string);
         }
     }
 
@@ -147,7 +184,8 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
             disable_wiresock,
-            check_wiresock_process
+            check_wiresock_process,
+            install_wiresock
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
