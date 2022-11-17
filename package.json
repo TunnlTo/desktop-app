@@ -1,5 +1,5 @@
 {
-  "name": "tunnl-to",
+  "name": "tunnlto",
   "scripts": {
     "tauri": "tauri",
     "dev": "live-server dist --port=5555 --no-browser"

@@ -14,7 +14,7 @@
     <img src="readme-images/logo.png" alt="Logo" width="80" height="80">
   </a>
 
-  <h3 align="center">Tunnl.to</h3>
+  <h3 align="center">TunnlTo</h3>
 
   <p align="center">
     Route the network traffic of selected Windows apps through a WireGuard tunnel.
