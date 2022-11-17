@@ -10,9 +10,10 @@
     TunnlTo is a lightweight, fast, Windows WireGuard VPN client built around split tunneling.
     <br />
   </p>
+  <img src="./readme-images/screenshot.png">
+  <br />
+  <br />
 </div>
-
-![product-screenshot]
 
 What does this application do?
 
@@ -39,5 +40,3 @@ Copyright (c) 2022 TunnlTo. TunnlTo is not currently licensed.
 * [WireSock](https://www.wiresock.net/) and its creator [Vadim Smirnov](https://www.ntkernel.com/)
 * [WireGuard](https://www.wireguard.com/)
 * [Tauri](https://tauri.app/)
-
-[product-screenshot]: readme-images/screenshot.png
