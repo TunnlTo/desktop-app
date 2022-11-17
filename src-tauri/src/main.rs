@@ -4,13 +4,12 @@
 )]
 
 use std::env;
-use std::fs::File;
+use std::fs;
 use std::io::{BufRead, BufReader, Write};
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
-use tauri::Manager;
 
 #[tauri::command]
 #[allow(non_snake_case)]
@@ -23,7 +22,7 @@ async fn enable_wiresock(
     allowedApps: &str,
     allowedIPs: &str,
 ) -> Result<String, String> {
-    // Write a wiresock config file to disk and then start the Wiresock client
+    // Write a wiresock config file to disk and then start the WireSock client
 
     // Get the users home directory
     let mut tunnel_config_path = PathBuf::new();
@@ -32,14 +31,19 @@ async fn enable_wiresock(
         None => return Err("Unable to retrieve the user home directory.".into()),
     }
 
-    // Create a path to the wiresock config file
+    // Create a path to the wiresock config directory
     tunnel_config_path.push("AppData");
     tunnel_config_path.push("Local");
-    tunnel_config_path.push("Tunnl.to");
+    tunnel_config_path.push("TunnlTo");
+
+    // Create a TunnlTo directory in appdata/local if it doesn't exist already
+    fs::create_dir_all(&tunnel_config_path).unwrap_or_else(|e| panic!("Error creating dir: {}", e));
+
+    // Create a path to the wiresock config file
     tunnel_config_path.push("tunnel.conf");
 
     // Write the config file to disk
-    let mut w = File::create(&tunnel_config_path).unwrap();
+    let mut w = fs::File::create(&tunnel_config_path).unwrap();
     writeln!(&mut w, "[Interface]").unwrap();
     writeln!(&mut w, "PrivateKey = {}", privateKey).unwrap();
     writeln!(&mut w, "Address = {}", interfaceAddress).unwrap();
@@ -126,9 +130,10 @@ fn install_wiresock() -> Result<String, String> {
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
     wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.15.1.msi"#);
 
+    // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully 
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
 
-    // Start the WireSock installer in quiet mode (no user prompts)
+    // Start the WireSock installer in quiet mode (no user prompts). 
     let mut child = Command::new("powershell")
         .arg("-command")
         .arg(arg)
@@ -145,7 +150,7 @@ fn install_wiresock() -> Result<String, String> {
             match line.unwrap().as_str() {
                 "0" => return Ok("WIRESOCK_INSTALLED".into()),
                 "1602" => return Err("User cancelled the installation".into()),
-                _ => return Err("Unknown exit code while installing WireSock".into()),
+                _ => return Err("Unknown exit code while installing WireSock".into())
             }
         }
     }
@@ -182,14 +187,6 @@ fn check_wiresock_process() -> Result<String, String> {
 
 fn main() {
     tauri::Builder::default()
-        .setup(|app| {
-            #[cfg(debug_assertions)] // only include this code on debug builds
-            {
-                let window = app.get_window("main").unwrap();
-                window.open_devtools();
-            }
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
             disable_wiresock,
