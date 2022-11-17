@@ -7,7 +7,7 @@
   <h3 align="center">TunnlTo</h3>
 
   <p align="center">
-    TunnlTo is a lightweight, fast Windows WireGuard VPN client built around split tunneling.
+    TunnlTo is a lightweight, fast, Windows WireGuard VPN client built around split tunneling.
     <br />
   </p>
 </div>
