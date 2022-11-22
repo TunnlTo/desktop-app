@@ -10,6 +10,7 @@ use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
+use sysinfo::{System, SystemExt};
 
 #[tauri::command]
 #[allow(non_snake_case)]
@@ -130,10 +131,10 @@ fn install_wiresock() -> Result<String, String> {
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
     wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.15.1.msi"#);
 
-    // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully 
+    // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
 
-    // Start the WireSock installer in quiet mode (no user prompts). 
+    // Start the WireSock installer in quiet mode (no user prompts).
     let mut child = Command::new("powershell")
         .arg("-command")
         .arg(arg)
@@ -150,7 +151,7 @@ fn install_wiresock() -> Result<String, String> {
             match line.unwrap().as_str() {
                 "0" => return Ok("WIRESOCK_INSTALLED".into()),
                 "1602" => return Err("User cancelled the installation".into()),
-                _ => return Err("Unknown exit code while installing WireSock".into())
+                _ => return Err("Unknown exit code while installing WireSock".into()),
             }
         }
     }
@@ -160,26 +161,11 @@ fn install_wiresock() -> Result<String, String> {
 
 #[tauri::command]
 fn check_wiresock_process() -> Result<String, String> {
-    // Check to see if the wiresock process is running
-    let mut child = Command::new("tasklist")
-        .arg("/FI")
-        .arg(r#"IMAGENAME eq wiresock-client.exe"#)
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("Unable to start tasklist process");
+    let s = System::new_all();
 
-    // Check the stdout data
-    if let Some(stdout) = &mut child.stdout {
-        let lines = BufReader::new(stdout).lines().enumerate().take(20);
-        for (counter, line) in lines {
-            let line_string = &line.unwrap();
-            if line_string.contains("wiresock-client.exe") {
-                println!("WireSock process is running");
-                return Ok("WIRESOCK_IS_RUNNING".into());
-            }
-            println!("check_wiresock_process: {}, {:?}", counter, line_string);
-        }
+    for _process in s.processes_by_exact_name("wiresock-client.exe") {
+        println!("WireSock client is running");
+        return Ok("WIRESOCK_IS_RUNNING".into())
     }
 
     Ok("WIRESOCK_NOT_RUNNING".into())
