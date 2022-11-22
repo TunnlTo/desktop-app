@@ -20,7 +20,7 @@
     <div class="container">
         <form id="form" class="requires-validation" novalidate action="index.html">
             <div class="row">
-                <h3 class="mb-4">WireGuard Tunnel</h3>
+                <h3 class="mb-3">WireGuard Tunnel</h3>
 
                 <!-- Left column start -->
                 <div class="col">
@@ -71,9 +71,10 @@
                     </div>
                     <div class="d-flex flex-row-reverse">
                         <div class="ps-2">
-                            <button class="btn btn-primary" type="submit">Save</button>
+                            <button class="btn btn-success" type="submit">Save</button>
                         </div>
-                        <div id="deleteDiv" class="visually-hidden">
+                        <button id="importButton" class="btn btn-primary">Import</button>
+                        <div id="deleteDiv" class="visually-hidden me-2">
                             <button type="button" class="btn btn-danger" data-bs-toggle="modal"
                                 data-bs-target="#modal">
                                 Delete
@@ -121,10 +122,12 @@
         const allowedAppsElement = document.getElementById('allowedApps')
         const allowedIPsElement = document.getElementById('allowedIPs')
         const form = document.getElementById('form')
+        const importButtonElement = document.getElementById('importButton')
 
         // Setup listeners on elements
         deleteButtonElement.onclick = () => { deleteClick() }
         form.onsubmit = (event) => { submitClick(event) }
+        importButtonElement.onclick = () => { importButtonClick() }
 
         // Check to see if the user is looking to edit an existing tunnel or add a new one
         if (getUrlParam('edit') === 'true') {
@@ -162,6 +165,49 @@
           }
 
           form.classList.add('was-validated')
+        }
+
+        // Allow the user to select a WireGuard config file and import the data to the form
+        function importButtonClick () {
+          const input = document.createElement('input')
+          input.type = 'file'
+          input.onchange = _ => {
+            const files = Array.from(input.files)
+            const file = files[0]
+
+            const reader = new FileReader()
+            reader.onload = function (progressEvent) {
+              // Get the text in the file
+              const text = this.result
+
+              // Fill out the form data with what is in the file
+              const lines = text.split('\n')
+              for (let line = 0; line < lines.length; line++) {
+                const lineText = lines[line]
+                if (lineText.startsWith('PrivateKey = ')) {
+                  const x = lineText.replace('PrivateKey = ', '')
+                  privateKeyElement.value = x
+                } else if (lineText.startsWith('Address = ')) {
+                  const x = lineText.replace('Address = ', '')
+                  interfaceAddressElement.value = x
+                } else if (lineText.startsWith('DNS = ')) {
+                  const x = lineText.replace('DNS = ', '')
+                  dnsElement.value = x
+                } else if (lineText.startsWith('PublicKey = ')) {
+                  const x = lineText.replace('PublicKey = ', '')
+                  publicKeyElement.value = x
+                } else if (lineText.startsWith('AllowedIPs = ')) {
+                  const x = lineText.replace('AllowedIPs = ', '')
+                  allowedIPsElement.value = x
+                } else if (lineText.startsWith('Endpoint = ')) {
+                  const x = lineText.replace('Endpoint = ', '')
+                  endpointElement.value = x
+                }
+              }
+            }
+            reader.readAsText(file)
+          }
+          input.click()
         }
 
         // Retrieve selected paramater values from the url
