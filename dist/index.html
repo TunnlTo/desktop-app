@@ -66,13 +66,14 @@
     toggleButtonElement.onclick = () => { toggleTunnel() }
     editButtonElement.onclick = () => { editClick() }
 
-    // Need to have this to allow for async. Can't use async calls in top level
+    // Need to have this start function to allow for async. Can't use async calls in top level
     async function start () {
       const localStorageData = { ...localStorage }
 
-      // Check if the setup page has run
-      if (localStorage.getItem('setupComplete') === null) {
-        // Setup is not complete. Redirect user to setup page
+      // Check if WireSock is installed
+      console.log('Checking if WireSock is installed')
+      if (!await isWiresockInstalled()) {
+        // Not installed so take the user to the setup page
         return (window.location.href = 'setup.html')
       }
 
@@ -207,6 +208,26 @@
         }
       } catch (error) {
         console.error(`Invoking check_wiresock_process returned error: ${error}`)
+        // Show the error to the user
+        return toggleToast(error)
+      }
+    }
+
+    // Tell Rust to check if WireSock is installed
+    async function isWiresockInstalled () {
+      try {
+        const result = await invoke('check_wiresock_installed')
+        console.info(result)
+        if (result === 'WIRESOCK_INSTALLED') {
+          return true
+        } else if (result === 'WIRESOCK_NOT_INSTALLED') {
+          return false
+        } else {
+          toggleToast(`Error checking if WireSock installed: ${result}`)
+          return false
+        }
+      } catch (error) {
+        console.error(`Invoking check_wiresock_installed returned error: ${error}`)
         // Show the error to the user
         return toggleToast(error)
       }

@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
 use sysinfo::{System, SystemExt};
+use winreg::enums::*;
+use winreg::RegKey;
 
 #[tauri::command]
 #[allow(non_snake_case)]
@@ -58,19 +60,8 @@ async fn enable_wiresock(
     writeln!(&mut w, "PersistentKeepalive = 25").unwrap();
     writeln!(&mut w, "AllowedApps = {}", allowedApps).unwrap();
 
-    // Get the Wiresock install location from the Windows registry
-    use winreg::enums::{HKEY_LOCAL_MACHINE, KEY_READ};
-    let hklm = winreg::RegKey::predef(HKEY_LOCAL_MACHINE);
-    let subkey = hklm
-        .open_subkey_with_flags(
-            r#"SOFTWARE\NTKernelResources\WinpkFilterForVPNClient"#,
-            KEY_READ,
-        )
-        .expect("Failed to open subkey");
-    let mut wiresock_location: String = subkey
-        .get_value("InstallLocation")
-        .expect("Failed to read registry key");
     // Build the full path to the wiresock executable
+    let mut wiresock_location: String = get_wiresock_install_path().unwrap(); // unwrapping as we expect Wiresock is installed at this point
     let exe: &str = "/bin/wiresock-client.exe";
     wiresock_location.push_str(exe);
 
@@ -89,7 +80,7 @@ async fn enable_wiresock(
         .spawn()
         .expect("Unable to start WireSock process");
 
-    // Look at all the stdout data that comes in
+    // Check the stdout data
     if let Some(stdout) = &mut child.stdout {
         let lines = BufReader::new(stdout).lines().enumerate().take(20);
         for (counter, line) in lines {
@@ -106,6 +97,25 @@ async fn enable_wiresock(
     }
 
     Err("Unknown error starting WireSock process".into())
+}
+
+fn get_wiresock_install_path() -> Result<String, String> {
+    // Get the Wiresock install location from the Windows registry
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+
+    let subkey = match hklm.open_subkey_with_flags(
+        r#"SOFTWARE\NTKernelResources\WinpkFilterForVPNClient"#,
+        KEY_READ,
+    ) {
+        Ok(regkey) => regkey,
+        Err(_err) => return Err("WIRESOCK_NOT_INSTALLED".to_string()),
+    };
+
+    let wiresock_location: String = subkey
+        .get_value("InstallLocation")
+        .expect("Failed to read registry key");
+
+    Ok(wiresock_location)
 }
 
 #[tauri::command]
@@ -165,10 +175,18 @@ fn check_wiresock_process() -> Result<String, String> {
 
     for _process in s.processes_by_exact_name("wiresock-client.exe") {
         println!("WireSock client is running");
-        return Ok("WIRESOCK_IS_RUNNING".into())
+        return Ok("WIRESOCK_IS_RUNNING".into());
     }
 
     Ok("WIRESOCK_NOT_RUNNING".into())
+}
+
+#[tauri::command]
+fn check_wiresock_installed() -> Result<String, String> {
+    match get_wiresock_install_path() {
+        Ok(_result) => return Ok("WIRESOCK_INSTALLED".into()),
+        Err(_e) => return Ok("WIRESOCK_NOT_INSTALLED".into()),
+    }
 }
 
 fn main() {
@@ -177,7 +195,8 @@ fn main() {
             enable_wiresock,
             disable_wiresock,
             check_wiresock_process,
-            install_wiresock
+            install_wiresock,
+            check_wiresock_installed
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
