@@ -36,13 +36,13 @@
 
     <!-- Toast -->
     <div class="toast-container p-3 bottom-0 start-50 translate-middle-x">
-      <div id="toast" class="toast align-items-center text-bg-primary border-0" role="alert" aria-live="assertive"
+      <div id="toast" class="toast align-items-center text-bg-primary border-0" data-bs-autohide="false" role="alert" aria-live="assertive"
         aria-atomic="true">
         <div class="d-flex">
           <div id="toastBody" class="toast-body">
             <!-- Dynamically filled -->
           </div>
-          <button id="toastButton" type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          <button id="toastButton" type="button" class="btn-close btn-close-white me-2 mt-1" data-bs-dismiss="toast"
             aria-label="Close"></button>
         </div>
       </div>
@@ -75,6 +75,13 @@
       if (!await isWiresockInstalled()) {
         // Not installed so take the user to the setup page
         return (window.location.href = 'setup.html')
+      }
+
+      // Make sure the WireSock service is not installed
+      console.log('Checking if WireSock service is installed')
+      if (await isWireSockServiceInstalled()) {
+        // Service is installed so need to warn the user that it needs to be uninstalled or disabled
+        toggleToast('It appears the WireSock service is installed on your system. This may conflict with TunnlTo. </br></br>We recommend disabling or uninstalling the WireSock service before using TunnlTo.')
       }
 
       // Iterate through the localstorage keys to see if any tunnels are listed
@@ -228,6 +235,26 @@
         }
       } catch (error) {
         console.error(`Invoking check_wiresock_installed returned error: ${error}`)
+        // Show the error to the user
+        return toggleToast(error)
+      }
+    }
+
+    // Tell Rust to check if the WireSock service is installed
+    async function isWireSockServiceInstalled () {
+      try {
+        const result = await invoke('check_wiresock_service')
+        console.info(result)
+        if (result === 'WIRESOCK_SERVICE_NOT_INSTALLED') {
+          return false
+        } else if (result === 'WIRESOCK_SERVICE_INSTALLED') {
+          return true
+        } else {
+          toggleToast(`Error checking if WireSock service is installed: ${result}`)
+          return false
+        }
+      } catch (error) {
+        console.error(`Invoking check_wiresock_service returned error: ${error}`)
         // Show the error to the user
         return toggleToast(error)
       }
