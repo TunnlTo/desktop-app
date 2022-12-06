@@ -22,8 +22,11 @@ async fn enable_wiresock(
     dns: &str,
     publicKey: &str,
     endpoint: &str,
-    allowedApps: &str,
-    allowedIPs: &str,
+    allowedApps: Option<&str>,
+    disallowedApps: Option<&str>,
+    allowedIPs: Option<&str>,
+    disallowedIPs: Option<&str>,
+    mtu: Option<&str>,
 ) -> Result<String, String> {
     // Write a wiresock config file to disk and then start the WireSock client
 
@@ -51,14 +54,27 @@ async fn enable_wiresock(
     writeln!(&mut w, "PrivateKey = {}", privateKey).unwrap();
     writeln!(&mut w, "Address = {}", interfaceAddress).unwrap();
     writeln!(&mut w, "DNS = {}", dns).unwrap();
+    if mtu.is_some() {
+        writeln!(&mut w, "MTU = {}", mtu.unwrap()).unwrap()
+    };
 
     writeln!(&mut w, "").unwrap();
     writeln!(&mut w, "[Peer]").unwrap();
     writeln!(&mut w, "PublicKey = {}", publicKey).unwrap();
-    writeln!(&mut w, "AllowedIPs = {}", allowedIPs).unwrap();
     writeln!(&mut w, "Endpoint = {}", endpoint).unwrap();
     writeln!(&mut w, "PersistentKeepalive = 25").unwrap();
-    writeln!(&mut w, "AllowedApps = {}", allowedApps).unwrap();
+    if allowedApps.is_some() {
+        writeln!(&mut w, "AllowedApps = {}", allowedApps.unwrap()).unwrap();
+    }
+    if disallowedApps.is_some() {
+        writeln!(&mut w, "DisallowedApps = {}", disallowedApps.unwrap()).unwrap();
+    }
+    if allowedIPs.is_some() {
+        writeln!(&mut w, "AllowedIPs = {}", allowedIPs.unwrap()).unwrap();
+    }
+    if disallowedIPs.is_some() {
+        writeln!(&mut w, "DisallowedIPs = {}", disallowedIPs.unwrap()).unwrap();
+    }
 
     // Build the full path to the wiresock executable
     let mut wiresock_location: String = get_wiresock_install_path().unwrap(); // unwrapping as we expect Wiresock is installed at this point
@@ -187,7 +203,7 @@ fn check_wiresock_service() -> Result<String, String> {
             println!("check_wiresock_service: {}, {:?}", counter, line);
             let line_string = &line.unwrap();
             if line_string.contains("wiresock-client-service") {
-                return Ok("WIRESOCK_SERVICE_INSTALLED".into())
+                return Ok("WIRESOCK_SERVICE_INSTALLED".into());
             }
         }
     }
