@@ -126,7 +126,7 @@
         console.log('Checking if WireSock service is installed')
         if (await isWireSockServiceInstalled()) {
           // Service is installed so need to warn the user that it needs to be uninstalled or disabled
-          toggleToast('It appears the WireSock service is installed on your system. This may conflict with TunnlTo. </br></br>We recommend disabling or uninstalling the WireSock service before using TunnlTo.')
+          toggleToast('WireSock is currently installed in service mode. This may conflict with TunnlTo. </br></br>Please uninstall WireSock from your system and then restart TunnlTo.')
         }
 
         // Iterate through the localstorage keys to see if any tunnels are listed
