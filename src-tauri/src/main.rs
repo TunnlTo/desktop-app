@@ -188,20 +188,22 @@ fn install_wiresock() -> Result<String, String> {
 #[tauri::command]
 fn check_wiresock_service() -> Result<String, String> {
     // Check if the wiresock service is installed
-    let status = Command::new("sc")
-        .arg("query")
+    let status = Command::new("powershell")
+        .arg("-command")
+        .arg("get-service")
+        .arg("-name")
         .arg("wiresock-client-service")
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .status()
-        .expect("sc failed to start");
+        .expect("powershell failed to start");
 
     println!("process finished with: {status}");
 
-    // If the service is installed it will return status code 0, whereas if it is not installed it will return 1060
+    // Check the exit code
     match status.code() {
         Some(0) => return Ok("WIRESOCK_SERVICE_INSTALLED".into()),
-        Some(1060) => return Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into()),
-        _ => return Ok("Unknown result".into()),
+        Some(1) => return Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into()),
+        _ => return Ok(status.to_string().into()),
     }
 }
 
