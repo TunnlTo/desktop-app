@@ -188,28 +188,21 @@ fn install_wiresock() -> Result<String, String> {
 #[tauri::command]
 fn check_wiresock_service() -> Result<String, String> {
     // Check if the wiresock service is installed
-    let mut child = Command::new("sc")
+    let status = Command::new("sc")
         .arg("query")
         .arg("wiresock-client-service")
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .stdout(Stdio::piped())
-        .spawn()
+        .status()
         .expect("sc failed to start");
 
-    // Check the stdout data
-    if let Some(stdout) = &mut child.stdout {
-        let lines = BufReader::new(stdout).lines().enumerate().take(20);
-        for (counter, line) in lines {
-            println!("check_wiresock_service: {}, {:?}", counter, line);
-            let line_string = &line.unwrap();
-            if line_string.contains("wiresock-client-service") {
-                return Ok("WIRESOCK_SERVICE_INSTALLED".into());
-            }
-        }
-    }
+    println!("process finished with: {status}");
 
-    // sc command did not show wiresock service in the result so it is not installed
-    Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into())
+    // If the service is installed it will return status code 0, whereas if it is not installed it will return 1060
+    match status.code() {
+        Some(0) => return Ok("WIRESOCK_SERVICE_INSTALLED".into()),
+        Some(1060) => return Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into()),
+        _ => return Ok("Unknown result".into()),
+    }
 }
 
 #[tauri::command]
