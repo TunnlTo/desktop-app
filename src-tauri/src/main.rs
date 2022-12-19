@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
 use sysinfo::{System, SystemExt};
+use tauri::Manager;
+use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 use winreg::enums::*;
 use winreg::RegKey;
 
@@ -136,7 +138,7 @@ fn get_wiresock_install_path() -> Result<String, String> {
 
 #[tauri::command]
 fn disable_wiresock() -> Result<String, String> {
-    // TODO: Add error catching
+    println!("Attempting to stop WireSock");
     Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
@@ -228,6 +230,14 @@ fn check_wiresock_installed() -> Result<String, String> {
 }
 
 fn main() {
+    // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(quit)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(minimize);
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
@@ -237,6 +247,46 @@ fn main() {
             check_wiresock_installed,
             check_wiresock_service
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .system_tray(SystemTray::new().with_menu(tray_menu))
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::DoubleClick {
+                position: _,
+                size: _,
+                ..
+            } => {
+                if let Some(window) = app.get_window("main") {
+                    window.show().unwrap();
+                };
+            }
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "minimize" => {
+                    if let Some(window) = app.get_window("main") {
+                        window.hide().unwrap();
+                    };
+                }
+                "quit" => {
+                    disable_wiresock().expect("Failed to disable WireSock");
+                    std::process::exit(0);
+                }
+                _ => {}
+            },
+            _ => {}
+        })
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| match event {
+            tauri::RunEvent::WindowEvent {
+                label,
+                event: win_event,
+                ..
+            } => match win_event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    let window = app.get_window(label.as_str()).unwrap();
+                    window.hide().unwrap();
+                    api.prevent_close();
+                }
+                _ => {}
+            },
+            _ => {}
+        })
 }

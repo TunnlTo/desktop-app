@@ -12,6 +12,10 @@
     "version": "0.1.4"
   },
   "tauri": {
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
     "allowlist": {
       "fs": {
         "scope": ["$RESOURCE/*"]
