@@ -159,7 +159,7 @@
         console.log('Checking if WireSock is already running')
         if (await isWiresockRunning()) {
           // WireSock is already running. Update the UI
-          showDisableButton()
+          tunnelEnabledUI()
         }
       }
       start()
@@ -229,7 +229,7 @@
           }
 
           // Connection success so update the UI
-          showDisableButton()
+          tunnelEnabledUI()
         } else {
           // Disable the tunnel
 
@@ -241,19 +241,34 @@
           }
 
           // Update the UI
-          toggleButtonElement.classList.remove('btn-danger')
-          toggleButtonElement.classList.add('btn-success')
-          toggleButtonElement.innerHTML = 'Enable'
+          tunnelDisabledUI()
         }
       }
 
       /**
-       * Show the disable button
+       * Set the UI to show the tunnel is enabled
        */
-      function showDisableButton () {
+      function tunnelEnabledUI () {
         toggleButtonElement.classList.remove('btn-success')
         toggleButtonElement.classList.add('btn-danger')
         toggleButtonElement.innerHTML = 'Disable'
+      
+        selectElement.disabled = true
+
+        editButtonElement.disabled = true
+      }
+
+      /**
+       * Set the UI to show the tunnel is disabled
+       */
+      function tunnelDisabledUI () {
+        toggleButtonElement.classList.remove('btn-danger')
+        toggleButtonElement.classList.add('btn-success')
+        toggleButtonElement.innerHTML = 'Enable'
+      
+        selectElement.disabled = false
+
+        editButtonElement.disabled = false
       }
 
       /**
