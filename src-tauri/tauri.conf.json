@@ -9,9 +9,13 @@
   },
   "package": {
     "productName": "TunnlTo",
-    "version": "0.1.1"
+    "version": "0.1.4"
   },
   "tauri": {
+    "systemTray": {
+      "iconPath": "icons/icon.png",
+      "iconAsTemplate": true
+    },
     "allowlist": {
       "fs": {
         "scope": ["$RESOURCE/*"]
@@ -62,10 +66,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 600,
+        "height": 700,
         "resizable": false,
         "title": "TunnlTo",
-        "width": 800
+        "width": 850
       }
     ]
   }

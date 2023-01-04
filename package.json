@@ -9,7 +9,7 @@
     "live-server": "^1.2.2"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.2.0",
+    "@tauri-apps/cli": "^1.2.2",
     "eslint": "^8.27.0",
     "eslint-config-standard": "^17.0.0",
     "eslint-plugin-html": "^7.1.0",

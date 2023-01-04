@@ -11,6 +11,8 @@ use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
 use sysinfo::{System, SystemExt};
+use tauri::Manager;
+use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 use winreg::enums::*;
 use winreg::RegKey;
 
@@ -22,8 +24,11 @@ async fn enable_wiresock(
     dns: &str,
     publicKey: &str,
     endpoint: &str,
-    allowedApps: &str,
-    allowedIPs: &str,
+    allowedApps: Option<&str>,
+    disallowedApps: Option<&str>,
+    allowedIPs: Option<&str>,
+    disallowedIPs: Option<&str>,
+    mtu: Option<&str>,
 ) -> Result<String, String> {
     // Write a wiresock config file to disk and then start the WireSock client
 
@@ -51,14 +56,27 @@ async fn enable_wiresock(
     writeln!(&mut w, "PrivateKey = {}", privateKey).unwrap();
     writeln!(&mut w, "Address = {}", interfaceAddress).unwrap();
     writeln!(&mut w, "DNS = {}", dns).unwrap();
+    if mtu.is_some() {
+        writeln!(&mut w, "MTU = {}", mtu.unwrap()).unwrap()
+    };
 
     writeln!(&mut w, "").unwrap();
     writeln!(&mut w, "[Peer]").unwrap();
     writeln!(&mut w, "PublicKey = {}", publicKey).unwrap();
-    writeln!(&mut w, "AllowedIPs = {}", allowedIPs).unwrap();
     writeln!(&mut w, "Endpoint = {}", endpoint).unwrap();
     writeln!(&mut w, "PersistentKeepalive = 25").unwrap();
-    writeln!(&mut w, "AllowedApps = {}", allowedApps).unwrap();
+    if allowedApps.is_some() {
+        writeln!(&mut w, "AllowedApps = {}", allowedApps.unwrap()).unwrap();
+    }
+    if disallowedApps.is_some() {
+        writeln!(&mut w, "DisallowedApps = {}", disallowedApps.unwrap()).unwrap();
+    }
+    if allowedIPs.is_some() {
+        writeln!(&mut w, "AllowedIPs = {}", allowedIPs.unwrap()).unwrap();
+    }
+    if disallowedIPs.is_some() {
+        writeln!(&mut w, "DisallowedIPs = {}", disallowedIPs.unwrap()).unwrap();
+    }
 
     // Build the full path to the wiresock executable
     let mut wiresock_location: String = get_wiresock_install_path().unwrap(); // unwrapping as we expect Wiresock is installed at this point
@@ -120,7 +138,7 @@ fn get_wiresock_install_path() -> Result<String, String> {
 
 #[tauri::command]
 fn disable_wiresock() -> Result<String, String> {
-    // TODO: Add error catching
+    println!("Attempting to stop WireSock");
     Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
@@ -172,28 +190,23 @@ fn install_wiresock() -> Result<String, String> {
 #[tauri::command]
 fn check_wiresock_service() -> Result<String, String> {
     // Check if the wiresock service is installed
-    let mut child = Command::new("sc")
-        .arg("query")
+    let status = Command::new("powershell")
+        .arg("-command")
+        .arg("get-service")
+        .arg("-name")
         .arg("wiresock-client-service")
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .stdout(Stdio::piped())
-        .spawn()
-        .expect("sc failed to start");
+        .status()
+        .expect("powershell failed to start");
 
-    // Check the stdout data
-    if let Some(stdout) = &mut child.stdout {
-        let lines = BufReader::new(stdout).lines().enumerate().take(20);
-        for (counter, line) in lines {
-            println!("check_wiresock_service: {}, {:?}", counter, line);
-            let line_string = &line.unwrap();
-            if line_string.contains("wiresock-client-service") {
-                return Ok("WIRESOCK_SERVICE_INSTALLED".into())
-            }
-        }
+    println!("process finished with: {status}");
+
+    // Check the exit code
+    match status.code() {
+        Some(0) => return Ok("WIRESOCK_SERVICE_INSTALLED".into()),
+        Some(1) => return Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into()),
+        _ => return Ok(status.to_string().into()),
     }
-
-    // sc command did not show wiresock service in the result so it is not installed
-    Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into())
 }
 
 #[tauri::command]
@@ -217,6 +230,14 @@ fn check_wiresock_installed() -> Result<String, String> {
 }
 
 fn main() {
+    // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
+    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
+    let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
+    let tray_menu = SystemTrayMenu::new()
+        .add_item(quit)
+        .add_native_item(SystemTrayMenuItem::Separator)
+        .add_item(minimize);
+
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
@@ -226,6 +247,46 @@ fn main() {
             check_wiresock_installed,
             check_wiresock_service
         ])
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .system_tray(SystemTray::new().with_menu(tray_menu))
+        .on_system_tray_event(|app, event| match event {
+            SystemTrayEvent::DoubleClick {
+                position: _,
+                size: _,
+                ..
+            } => {
+                if let Some(window) = app.get_window("main") {
+                    window.show().unwrap();
+                };
+            }
+            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+                "minimize" => {
+                    if let Some(window) = app.get_window("main") {
+                        window.hide().unwrap();
+                    };
+                }
+                "quit" => {
+                    disable_wiresock().expect("Failed to disable WireSock");
+                    std::process::exit(0);
+                }
+                _ => {}
+            },
+            _ => {}
+        })
+        .build(tauri::generate_context!())
+        .expect("error while running tauri application")
+        .run(|app, event| match event {
+            tauri::RunEvent::WindowEvent {
+                label,
+                event: win_event,
+                ..
+            } => match win_event {
+                tauri::WindowEvent::CloseRequested { api, .. } => {
+                    let window = app.get_window(label.as_str()).unwrap();
+                    window.hide().unwrap();
+                    api.prevent_close();
+                }
+                _ => {}
+            },
+            _ => {}
+        })
 }
