@@ -76,11 +76,15 @@
         const localStorageData = { ...localStorage }
 
         // Tunnels created in versions 0.1.0 and 0.1.1 did not include required tunnel data
-        // Added tunnel data in in 0.1.2:
+        // Added tunnel data in 0.1.2:
         // - renamed "tunnelName" to "name"
         // - added mtu
         // - added disallowedApps
         // - added disallowedIPs
+        //
+        // Tunnels created in versions 0.1.0, 0.1.1, 0.1.2, 0.1.3, 0.1.4 did not include required tunnel data
+        // Added tunnel data in in 0.1.5:
+        // - added presharedKey
         //
         // Check for tunnels that need to upgraded
         for (const storageItem in localStorageData) {
@@ -106,6 +110,11 @@
             }
             if (tunnel.mtu === undefined) {
               tunnel.mtu = ''
+              update = true
+            }
+
+            if (tunnel.presharedKey === undefined) {
+              tunnel.presharedKey = ''
               update = true
             }
 
@@ -216,6 +225,7 @@
               publicKey: tunnel.publicKey,
               endpoint: tunnel.endpoint,
               // Optional parameters
+              ...tunnel.presharedKey && { presharedKey: tunnel.presharedKey },
               ...tunnel.allowedApps && { allowedApps: tunnel.allowedApps },
               ...tunnel.disallowedApps && { disallowedApps: tunnel.disallowedApps },
               ...tunnel.allowedIPs && { allowedIPs: tunnel.allowedIPs },

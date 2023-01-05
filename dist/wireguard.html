@@ -70,6 +70,10 @@
               <input id="dns" type="text" class="form-control" id="dns" value="1.1.1.1, 8.8.8.8" required />
             </div>
             <div class="mb-3">
+              <label for="presharedKey" class="form-label">Preshared Key</label>
+              <input id="presharedKey" type="text" class="form-control" id="presharedKey" />
+            </div>
+            <div class="mb-3">
               <label for="endpoint" class="form-label">Endpoint</label>
               <input id="endpoint" type="text" class="form-control" id="endpoint" placeholder="10.0.0.100:51820" required />
             </div>
@@ -151,6 +155,7 @@
       const interfaceAddressElement = document.getElementById('interfaceAddress')
       const dnsElement = document.getElementById('dns')
       const publicKeyElement = document.getElementById('publicKey')
+      const presharedKeyElement = document.getElementById('presharedKey')
       const endpointElement = document.getElementById('endpoint')
       const allowedAppsElement = document.getElementById('allowedApps')
       const disallowedAppsElement = document.getElementById('disallowedApps')
@@ -181,6 +186,7 @@
         interfaceAddressElement.value = tunnel.interfaceAddress
         dnsElement.value = tunnel.dns
         publicKeyElement.value = tunnel.publicKey
+        presharedKeyElement.value = tunnel.presharedKey
         endpointElement.value = tunnel.endpoint
         allowedAppsElement.value = tunnel.allowedApps
         disallowedAppsElement.value = tunnel.disallowedApps
@@ -242,6 +248,9 @@
               } else if (lineText.startsWith('PublicKey = ')) {
                 const x = lineText.replace('PublicKey = ', '')
                 publicKeyElement.value = x
+              } else if (lineText.startsWith('PresharedKey = ')) {
+                const x = lineText.replace('PresharedKey = ', '')
+                presharedKeyElement.value = x
               } else if (lineText.startsWith('AllowedIPs = ')) {
                 const x = lineText.replace('AllowedIPs = ', '')
                 allowedIPsElement.value = x
@@ -287,6 +296,7 @@
           interfaceAddressElement.value,
           dnsElement.value,
           publicKeyElement.value,
+          presharedKeyElement.value,
           endpointElement.value,
           allowedAppsElement.value,
           disallowedAppsElement.value,
