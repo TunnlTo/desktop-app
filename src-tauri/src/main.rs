@@ -24,6 +24,7 @@ async fn enable_wiresock(
     dns: &str,
     publicKey: &str,
     endpoint: &str,
+    presharedKey: Option<&str>,
     allowedApps: Option<&str>,
     disallowedApps: Option<&str>,
     allowedIPs: Option<&str>,
@@ -63,6 +64,9 @@ async fn enable_wiresock(
     writeln!(&mut w, "").unwrap();
     writeln!(&mut w, "[Peer]").unwrap();
     writeln!(&mut w, "PublicKey = {}", publicKey).unwrap();
+    if presharedKey.is_some() {
+        writeln!(&mut w, "PresharedKey = {}", presharedKey.unwrap()).unwrap();
+    }
     writeln!(&mut w, "Endpoint = {}", endpoint).unwrap();
     writeln!(&mut w, "PersistentKeepalive = 25").unwrap();
     if allowedApps.is_some() {

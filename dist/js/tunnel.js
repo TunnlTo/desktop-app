@@ -5,6 +5,7 @@ function Tunnel (
   interfaceAddress,
   dns,
   publicKey,
+  presharedKey,
   endpoint,
   allowedApps,
   disallowedApps,
@@ -16,6 +17,7 @@ function Tunnel (
   this.interfaceAddress = interfaceAddress
   this.dns = dns
   this.publicKey = publicKey
+  this.presharedKey = presharedKey
   this.endpoint = endpoint
   this.allowedApps = allowedApps
   this.disallowedApps = disallowedApps
