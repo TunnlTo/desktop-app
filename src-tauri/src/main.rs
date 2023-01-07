@@ -13,6 +13,7 @@ use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
+use once_cell::sync::OnceCell;
 use sysinfo::{System, SystemExt};
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
@@ -28,7 +29,6 @@ use windows::{
 };
 use winreg::enums::*;
 use winreg::RegKey;
-use once_cell::sync::OnceCell;
 
 #[derive(Debug)]
 struct ChildProcessTracker {
@@ -88,10 +88,8 @@ impl ChildProcessTracker {
         }
     }
 
-    pub fn global() -> &'static ChildProcessTracker {
-        CHILD_PROCESS_TRACKER
-            .get()
-            .expect("ChildProcessTracker was not created!")
+    pub fn global() -> Option<&'static ChildProcessTracker> {
+        CHILD_PROCESS_TRACKER.get()
     }
 }
 
@@ -192,9 +190,9 @@ async fn enable_wiresock(
         .expect("Unable to start WireSock process");
 
     // Add process to global Job object
-    ChildProcessTracker::global()
-        .add_process(child.as_raw_handle())
-        .ok();
+    if let Some(tracker) = ChildProcessTracker::global() {
+        tracker.add_process(child.as_raw_handle()).ok();
+    }
 
     // Check the stdout data
     if let Some(stdout) = &mut child.stdout {
