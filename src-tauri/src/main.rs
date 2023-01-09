@@ -42,14 +42,18 @@ impl ChildProcessTracker {
             CreateJobObjectA(None, PCSTR::from_raw(job_name.as_bytes().as_ptr()))
         } {
             Ok(handle) => handle,
-            Err(_) => return Err(unsafe { GetLastError() }.into()),
+            Err(_) => return Err(unsafe { GetLastError() }),
         };
 
-        let mut job_object_info = JOBOBJECT_BASIC_LIMIT_INFORMATION::default();
-        job_object_info.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+        let job_object_info = JOBOBJECT_BASIC_LIMIT_INFORMATION {
+            LimitFlags: JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+            ..Default::default()
+        };
 
-        let mut job_object_ext_info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION::default();
-        job_object_ext_info.BasicLimitInformation = job_object_info;
+        let job_object_ext_info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+            BasicLimitInformation: job_object_info,
+            ..Default::default()
+        };
 
         let result = unsafe {
             SetInformationJobObject(
@@ -65,13 +69,13 @@ impl ChildProcessTracker {
             Ok(Self { job_handle })
         } else {
             unsafe { CloseHandle(job_handle) };
-            Err(unsafe { GetLastError() }.into())
+            Err(unsafe { GetLastError() })
         }
     }
 
     pub fn add_process(&self, process_handle: RawHandle) -> Result<(), WIN32_ERROR> {
         if process_handle.is_null() {
-            return Err(unsafe { GetLastError() }.into());
+            return Err(unsafe { GetLastError() });
         }
 
         let result = unsafe {
@@ -84,7 +88,7 @@ impl ChildProcessTracker {
         if result.as_bool() {
             Ok(())
         } else {
-            Err(unsafe { GetLastError() }.into())
+            Err(unsafe { GetLastError() })
         }
     }
 
