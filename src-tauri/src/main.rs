@@ -4,17 +4,108 @@
 )]
 
 use std::env;
+use std::ffi::c_void;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
+use std::mem::size_of;
+use std::os::windows::prelude::{AsRawHandle, RawHandle};
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
+use once_cell::sync::OnceCell;
 use sysinfo::{System, SystemExt};
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use windows::{
+    core::PCSTR,
+    Win32::Foundation::{CloseHandle, GetLastError, HANDLE, INVALID_HANDLE_VALUE, WIN32_ERROR},
+    Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectA, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, JOBOBJECT_BASIC_LIMIT_INFORMATION,
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    },
+    Win32::System::Threading::GetCurrentProcessId,
+};
 use winreg::enums::*;
 use winreg::RegKey;
+
+#[derive(Debug)]
+struct ChildProcessTracker {
+    job_handle: HANDLE,
+}
+
+impl ChildProcessTracker {
+    fn new() -> Result<Self, WIN32_ERROR> {
+        let job_name = format!("ChildProcessTracker{}\0", unsafe { GetCurrentProcessId() });
+        let job_handle = match unsafe {
+            CreateJobObjectA(None, PCSTR::from_raw(job_name.as_bytes().as_ptr()))
+        } {
+            Ok(handle) => handle,
+            Err(_) => return Err(unsafe { GetLastError() }),
+        };
+
+        let job_object_info = JOBOBJECT_BASIC_LIMIT_INFORMATION {
+            LimitFlags: JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+            ..Default::default()
+        };
+
+        let job_object_ext_info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+            BasicLimitInformation: job_object_info,
+            ..Default::default()
+        };
+
+        let result = unsafe {
+            SetInformationJobObject(
+                job_handle,
+                JobObjectExtendedLimitInformation,
+                &job_object_ext_info as *const JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+                    as *const c_void,
+                size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            )
+        };
+
+        if result.as_bool() {
+            Ok(Self { job_handle })
+        } else {
+            unsafe { CloseHandle(job_handle) };
+            Err(unsafe { GetLastError() })
+        }
+    }
+
+    pub fn add_process(&self, process_handle: RawHandle) -> Result<(), WIN32_ERROR> {
+        if process_handle.is_null() {
+            return Err(unsafe { GetLastError() });
+        }
+
+        let result = unsafe {
+            AssignProcessToJobObject(
+                self.job_handle,
+                HANDLE(process_handle as *const c_void as isize),
+            )
+        };
+
+        if result.as_bool() {
+            Ok(())
+        } else {
+            Err(unsafe { GetLastError() })
+        }
+    }
+
+    pub fn global() -> Option<&'static ChildProcessTracker> {
+        CHILD_PROCESS_TRACKER.get()
+    }
+}
+
+impl Drop for ChildProcessTracker {
+    fn drop(&mut self) {
+        if self.job_handle != INVALID_HANDLE_VALUE {
+            unsafe { CloseHandle(self.job_handle) };
+        }
+    }
+}
+
+static CHILD_PROCESS_TRACKER: OnceCell<ChildProcessTracker> = OnceCell::new();
 
 #[tauri::command]
 #[allow(non_snake_case)]
@@ -101,6 +192,11 @@ async fn enable_wiresock(
         .stdout(Stdio::piped())
         .spawn()
         .expect("Unable to start WireSock process");
+
+    // Add process to global Job object
+    if let Some(tracker) = ChildProcessTracker::global() {
+        tracker.add_process(child.as_raw_handle()).ok();
+    }
 
     // Check the stdout data
     if let Some(stdout) = &mut child.stdout {
@@ -234,6 +330,10 @@ fn check_wiresock_installed() -> Result<String, String> {
 }
 
 fn main() {
+    // Initialize global job object
+    if let Ok(child_process_tracker) = ChildProcessTracker::new() {
+        CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
+    }
     // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
