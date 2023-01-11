@@ -7,7 +7,7 @@
   <h2 align="center">TunnlTo</h2>
 
   <p align="center">
-    TunnlTo is a lightweight, fast, Windows WireGuard VPN client built for split tunneling.
+    <b>TunnlTo is a lightweight, fast, Windows WireGuard VPN client built for split tunneling.</b>
     <br />
   </p>
   <img src="./readme-images/screenshot-home-page.png">
@@ -18,31 +18,35 @@
 
 </div>
 
-### What does this application do?
-Routes the network traffic of selected Windows applications through a WireGuard tunnel while leaving the network traffic of any other applications to route through your normal internet connection.
+## What does this application do?
+TunnlTo is a tool for controlling which Windows applications, processes, and IP addresses can use a WireGuard VPN tunnel.
 
-For example:
+### Example use cases
 * Route only FireFox through a privacy VPN
 * Route Slack and Microsoft Office through a work VPN
-* Route a game through a gaming VPN 
+* Route a game through a gaming VPN
+* Stop a game from routing through a privacy VPN
+* Stop a browser from routing through a work VPN
+* Route a specific IP address range through a privacy VPN
+* Route all traffic through a privacy VPN except a specific IP address range
 
-### How does it work?
+## How does it work?
 TunnlTo is built in collaboration with the creator of [WireSock](https://www.wiresock.net/). WireSock is currently closed source but work is being done to make it open.
 
 > WireSock VPN Client is a lightweight command line WireGuard VPN client for Windows that has advanced features not available in the official WireGuard for Windows such as selective application tunneling and disallowed IP addresses.
 >
->WireSock VPN Client combines the power of Windows Packet Filter and BoringTun (user space WireGuard implementation in Rust) to provide exceptional performance, security and scalability.
+>WireSock VPN Client combines the power of Windows Packet Filter and BoringTun (user space WireGuard implementation in Rust) to provide exceptional performance, security and scalability. 
 
-### Release status
-While the underlying WireSock tool is stable and production ready, TunnlTo is in early development and we are looking for testers. If you have any problems please open an issue in this GitHub repo. 
-
-### Prerequisites
+## Prerequisites
 * A basic understanding of WireGuard
 * Access to a WireGuard server
 * Windows 10/11
 
-### Get started
-Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to download the installer for the latest version. 
+## Get started
+Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to download the installer for the latest version.
+
+## Issues and Suggestions
+Please use [issues](https://github.com/TunnlTo/desktop-app/issues) for any problems you may encounter and [discussions](https://github.com/TunnlTo/desktop-app/discussions) for any suggestions, ideas or feature requests you may have.
 
 ## Built With
 * WireSock
