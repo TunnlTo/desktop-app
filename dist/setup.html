@@ -20,23 +20,33 @@
 <body>
   <div class="container text-center">
     <h1>Setup</h1>
-    <p class="mt-5">To get started we need to install WireSock. WireSock is a network driver that handles WireGuard connections and split tunneling.</p>
-    
+    <p class="mt-5">To get started we need to install WireSock. WireSock is a network driver that handles WireGuard
+      connections and split tunneling.</p>
+
     <button id="installWiresockButton" type="button" class="btn btn-primary mt-4">Install WireSock</button>
   </div>
 
   <script src="js/bootstrap/bootstrap.bundle.js"></script>
   <script>
+
     const { invoke } = window.__TAURI__.tauri
 
     // Get elements
     const installWiresockButtonElement = document.getElementById('installWiresockButton')
+	const currentTheme = localStorage.getItem('theme') || 'light';
+	
+	// Checks the value of current theme 
+	if (currentTheme === 'dark') {
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.add('light-mode');
+    }
 
     // Setup listeners on elements
     installWiresockButtonElement.onclick = () => { installWiresock() }
 
     // Launch the WireSock installation
-    async function installWiresock () {
+    async function installWiresock() {
       try {
         const result = await invoke('install_wiresock')
         console.info(result)
@@ -52,7 +62,7 @@
         console.error(`Invoking install_wiresock returned error: ${error}`)
       }
     }
-    </script>
+  </script>
 </body>
 
 </html>
