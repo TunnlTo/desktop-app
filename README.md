@@ -10,10 +10,15 @@
     <b>TunnlTo is a lightweight, fast, Windows WireGuard VPN client built for split tunneling.</b>
     <br />
   </p>
-  <img src="./readme-images/screenshot-home-page.png">
+  <img src="./readme-images/screenshot-home-page-with-border.png">
   <br />
   <br />
-  <img src="./readme-images/screenshot-edit-page.png">
+  <img src="./readme-images/screenshot-edit-page-with-border.png">
+  <br />
+  <br />
+  <img src="./readme-images/TunnlTo.webp">
+  <font size="1">The gif demonstrates TunnlTo routing Edge Browser through a WireGuard VPN tunnel without affecting Chrome Browser. Edge's IP changes, Chrome's does not.
+  </font>
   <br />
 
 </div>
