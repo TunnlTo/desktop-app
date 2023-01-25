@@ -106,14 +106,14 @@ body {
   position: fixed;
   display: inline-block;
   width: 55px;
-  height: 24px;
+  height: 25px;
 }
 
 .switch {
   position: relative;
   display: inline-block;
-  width: 55px;
-  height: 25px;
+  width: 40px;
+  height: 15px;
 }
 
 .switch input {
@@ -137,10 +137,10 @@ body {
 .slider:before {
   position: absolute;
   content: "";
-  height: 15px;
-  width: 15px;
-  left: 6.99px;
-  bottom: 5px;
+  height: 10px;
+  width: 10px;
+  left: 1.50px;
+  bottom: 2.50px;
   background-color: white;
   -webkit-transition: .4s;
   transition: .4s;
@@ -183,7 +183,7 @@ body.dark-mode input[type="text"] {
     font-size: 0.8em;
 	white-space: nowrap;
 	position: relative;
-	left: -6px;
+	left: -4px;
 }
 
 hr {
