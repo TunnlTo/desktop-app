@@ -164,6 +164,14 @@
       const mtuElement = document.getElementById('mtu')
       const form = document.getElementById('form')
       const importButtonElement = document.getElementById('importButton')
+	  const currentTheme = localStorage.getItem('theme') || 'light';
+	
+	   // Checks the value of current theme 
+	  if (currentTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+       } else {
+        document.body.classList.add('light-mode');
+       }
 
       // Setup listeners on elements
       deleteButtonElement.onclick = () => { deleteClick() }

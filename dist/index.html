@@ -34,6 +34,15 @@
         </div>
       </div>
       <a class="btn btn-primary mt-5" href="wireguard.html" role="button">Add Tunnel</a>
+	  
+	<!-- Toggle switch for switching between "light" and "dark" theme -->
+    <div class="theme-switch-container center-text">
+      <h4 style="display: inline-block;">Dark Mode</h4>
+      <label class="switch" style="display: inline-block;">
+        <input type="checkbox" id="theme-switch">
+        <span class="slider round"></span>
+      </label>
+    </div>
 
       <!-- Toast -->
       <div class="toast-container p-3 bottom-0 start-50 translate-middle-x">
@@ -63,11 +72,34 @@
       const tunnelOptionsElement = document.getElementById('tunnelOptions')
       const toastElement = document.getElementById('toast')
       const toastBodyElement = document.getElementById('toastBody')
+	  const themeSwitch = document.getElementById('theme-switch');
+      const currentTheme = localStorage.getItem('theme') || 'light';
 
       // Setup listeners on elements
       selectElement.onchange = () => { saveSelectedTunnel() }
       toggleButtonElement.onclick = () => { toggleTunnel() }
       editButtonElement.onclick = () => { editClick() }
+	  
+	// checking the current theme and accordingly setting the checkbox status and applying CSS class to the body element
+    if (currentTheme === 'dark') {
+      themeSwitch.checked = true;
+      document.body.classList.add('dark-mode');
+    } else {
+      document.body.classList.add('light-mode');
+    }
+    
+	// An event listener to the checkbox element with the id "theme-switch", which listens to the change event
+    themeSwitch.addEventListener('change', (event) => {
+      if (event.target.checked) {
+        document.body.classList.remove('light-mode');
+        document.body.classList.add('dark-mode');
+        localStorage.setItem('theme', 'dark');
+      } else {
+        document.body.classList.remove('dark-mode');
+        document.body.classList.add('light-mode');
+        localStorage.setItem('theme', 'light');
+      }
+    });
 
       /**
        * Need to have this start function to allow for async. Can't use async calls in top level
