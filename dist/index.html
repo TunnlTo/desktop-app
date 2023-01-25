@@ -72,8 +72,8 @@
       const tunnelOptionsElement = document.getElementById('tunnelOptions')
       const toastElement = document.getElementById('toast')
       const toastBodyElement = document.getElementById('toastBody')
-	  const themeSwitch = document.getElementById('theme-switch');
-      const currentTheme = localStorage.getItem('theme') || 'light';
+	  const themeSwitch = document.getElementById('theme-switch')
+      const currentTheme = localStorage.getItem('theme') || ('light')
 
       // Setup listeners on elements
       selectElement.onchange = () => { saveSelectedTunnel() }
@@ -83,9 +83,9 @@
 	// checking the current theme and accordingly setting the checkbox status and applying CSS class to the body element
     if (currentTheme === 'dark') {
       themeSwitch.checked = true;
-      document.body.classList.add('dark-mode');
+      document.body.classList.add('dark-mode')
     } else {
-      document.body.classList.add('light-mode');
+      document.body.classList.add('light-mode')
     }
     
 	// An event listener to the checkbox element with the id "theme-switch", which listens to the change event
