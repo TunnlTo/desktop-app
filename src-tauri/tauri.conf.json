@@ -9,7 +9,7 @@
   },
   "package": {
     "productName": "TunnlTo",
-    "version": "0.1.5"
+    "version": "0.1.6"
   },
   "tauri": {
     "systemTray": {
@@ -47,7 +47,7 @@
         "signingIdentity": null
       },
       "resources": [
-        "wiresock/wiresock-vpn-client-x64-1.2.15.1.msi"
+        "wiresock/wiresock-vpn-client-x64-1.2.17.1.msi"
       ],
       "shortDescription": "",
       "targets": "all",

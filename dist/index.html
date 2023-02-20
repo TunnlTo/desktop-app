@@ -132,6 +132,16 @@
           return (window.location.href = 'setup.html')
         }
 
+        // Version 0.1.6 introduced a new WireSock version (1.2.17.1)
+        // Check if WireSock has been updated
+        console.log('Checking if WireSock has been updated')
+        const update = JSON.parse(localStorage.getItem('0.1.6-wiresock-update-complete'))
+        if (update === null) {
+          // Not updated
+          console.log('WireSock requires updating. Redirecting to update.html')
+          return (window.location.href = 'update.html')
+        }
+
         // Make sure the WireSock service is not installed
         console.log('Checking if WireSock service is installed')
         if (await isWireSockServiceInstalled()) {
