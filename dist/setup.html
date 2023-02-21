@@ -41,9 +41,6 @@
         const result = await invoke('install_wiresock')
         console.info(result)
         if (result === 'WIRESOCK_INSTALLED') {
-          // Write it to data storage
-          localStorage.setItem('setupComplete', true)
-
           // Redirect to home
           console.log('redirecting to home')
           window.location.href = 'index.html'
