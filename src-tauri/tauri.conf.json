@@ -18,7 +18,9 @@
     },
     "allowlist": {
       "fs": {
-        "scope": ["$RESOURCE/*"]
+        "scope": [
+          "$RESOURCE/*"
+        ]
       },
       "all": true
     },
@@ -61,7 +63,12 @@
       "csp": null
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+        "https://gist.githubusercontent.com/brendanosborne/a8440ea78d0d60bbc48c45aa873c6624/raw/tunnlto-updater.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFDRUMzNTFDRUJDM0YxNkQKUldSdDhjUHJIRFhzSE1DbEtkUG4wWlk0aHQxM1B3a0d0OElLWGUvaTNTa09TOGl6dU9yNWhKSEMK"
     },
     "windows": [
       {
