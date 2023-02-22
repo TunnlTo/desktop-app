@@ -132,6 +132,15 @@
           return (window.location.href = 'setup.html')
         }
 
+        // TunnlTo v0.1.6 introduced WireSock v1.2.17.1
+        // Check if WireSock has been updated to v1.2.17.1
+        console.log('Checking if WireSock is at least version 1.2.17.1')
+        if (await isWireSockOutdated()) {
+          // Installed WireSock version is < 1.2.17.1
+          console.log('WireSock requires updating. Redirecting to update.html')
+          return (window.location.href = 'update.html')
+        }
+
         // Make sure the WireSock service is not installed
         console.log('Checking if WireSock service is installed')
         if (await isWireSockServiceInstalled()) {
@@ -332,6 +341,30 @@
           }
         } catch (error) {
           console.error(`Invoking check_wiresock_installed returned error: ${error}`)
+          // Show the error to the user
+          return toggleToast(error)
+        }
+      }
+
+      /**
+       * Tell Rust to check if WireSock is outdated
+       */
+      async function isWireSockOutdated () {
+        try {
+          const result = await invoke('is_wiresock_outdated')
+          console.info(result)
+          if (result === 'WIRESOCK_OUTDATED') {
+            return true
+          } else if (result === 'WIRESOCK_NOT_OUTDATED') {
+            return false
+          } else if (result === 'WIRESOCK_NOT_INSTALLED') {
+            return true
+          } else {
+            toggleToast(`Error checking if WireSock outdated: ${result}`)
+            return false
+          }
+        } catch (error) {
+          console.error(`Invoking is_wiresock_outdated returned error: ${error}`)
           // Show the error to the user
           return toggleToast(error)
         }

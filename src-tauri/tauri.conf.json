@@ -9,7 +9,7 @@
   },
   "package": {
     "productName": "TunnlTo",
-    "version": "0.1.5"
+    "version": "0.1.6"
   },
   "tauri": {
     "systemTray": {
@@ -18,7 +18,9 @@
     },
     "allowlist": {
       "fs": {
-        "scope": ["$RESOURCE/*"]
+        "scope": [
+          "$RESOURCE/*"
+        ]
       },
       "all": true
     },
@@ -47,7 +49,7 @@
         "signingIdentity": null
       },
       "resources": [
-        "wiresock/wiresock-vpn-client-x64-1.2.15.1.msi"
+        "wiresock/wiresock-vpn-client-x64-1.2.17.1.msi"
       ],
       "shortDescription": "",
       "targets": "all",
@@ -58,10 +60,15 @@
       }
     },
     "security": {
-      "csp": null
+      "csp": "default-src 'self'"
     },
     "updater": {
-      "active": false
+      "active": true,
+      "endpoints": [
+        "https://gist.githubusercontent.com/brendanosborne/a8440ea78d0d60bbc48c45aa873c6624/raw/tunnlto-updater.json"
+      ],
+      "dialog": true,
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDFDRUMzNTFDRUJDM0YxNkQKUldSdDhjUHJIRFhzSE1DbEtkUG4wWlk0aHQxM1B3a0d0OElLWGUvaTNTa09TOGl6dU9yNWhKSEMK"
     },
     "windows": [
       {

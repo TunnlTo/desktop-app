@@ -2,7 +2,7 @@
 <html>
 
 <head>
-  <title>TunnlTo - Setup</title>
+  <title>TunnlTo - Update WireSock</title>
   <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
   <meta charset="UTF-8">
 </head>
@@ -19,10 +19,10 @@
 
 <body>
   <div class="container text-center">
-    <h1>Setup</h1>
-    <p class="mt-5">To get started we need to install WireSock. WireSock is a network driver that handles WireGuard connections and split tunneling.</p>
-    
-    <button id="installWiresockButton" type="button" class="btn btn-primary mt-4">Install WireSock</button>
+    <h1>Update WireSock</h1>
+    <p class="mt-5">WireSock requires updating. This update fixes two minor bugs. </br>
+      For further information, see the <a href="https://www.wiresock.net/wiresock-vpn-client/wiresock-vpn-client-release-history/" target="_blank"> WireSock release page</a>.</p>
+    <button id="installWiresockButton" type="button" class="btn btn-primary mt-4">Update WireSock</button>
   </div>
 
   <script src="js/bootstrap/bootstrap.bundle.js"></script>
@@ -41,6 +41,9 @@
         const result = await invoke('install_wiresock')
         console.info(result)
         if (result === 'WIRESOCK_INSTALLED') {
+          // Write it to data storage
+          localStorage.setItem('0.1.6-wiresock-update-complete', true)
+
           // Redirect to home
           console.log('redirecting to home')
           window.location.href = 'index.html'

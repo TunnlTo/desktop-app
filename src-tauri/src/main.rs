@@ -4,17 +4,108 @@
 )]
 
 use std::env;
+use std::ffi::c_void;
 use std::fs;
 use std::io::{BufRead, BufReader, Write};
+use std::mem::size_of;
+use std::os::windows::prelude::{AsRawHandle, RawHandle};
 use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
+use once_cell::sync::OnceCell;
 use sysinfo::{System, SystemExt};
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use windows::{
+    core::PCSTR,
+    Win32::Foundation::{CloseHandle, GetLastError, HANDLE, INVALID_HANDLE_VALUE, WIN32_ERROR},
+    Win32::System::JobObjects::{
+        AssignProcessToJobObject, CreateJobObjectA, JobObjectExtendedLimitInformation,
+        SetInformationJobObject, JOBOBJECT_BASIC_LIMIT_INFORMATION,
+        JOBOBJECT_EXTENDED_LIMIT_INFORMATION, JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+    },
+    Win32::System::Threading::GetCurrentProcessId,
+};
 use winreg::enums::*;
 use winreg::RegKey;
+
+#[derive(Debug)]
+struct ChildProcessTracker {
+    job_handle: HANDLE,
+}
+
+impl ChildProcessTracker {
+    fn new() -> Result<Self, WIN32_ERROR> {
+        let job_name = format!("ChildProcessTracker{}\0", unsafe { GetCurrentProcessId() });
+        let job_handle = match unsafe {
+            CreateJobObjectA(None, PCSTR::from_raw(job_name.as_bytes().as_ptr()))
+        } {
+            Ok(handle) => handle,
+            Err(_) => return Err(unsafe { GetLastError() }),
+        };
+
+        let job_object_info = JOBOBJECT_BASIC_LIMIT_INFORMATION {
+            LimitFlags: JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE,
+            ..Default::default()
+        };
+
+        let job_object_ext_info = JOBOBJECT_EXTENDED_LIMIT_INFORMATION {
+            BasicLimitInformation: job_object_info,
+            ..Default::default()
+        };
+
+        let result = unsafe {
+            SetInformationJobObject(
+                job_handle,
+                JobObjectExtendedLimitInformation,
+                &job_object_ext_info as *const JOBOBJECT_EXTENDED_LIMIT_INFORMATION
+                    as *const c_void,
+                size_of::<JOBOBJECT_EXTENDED_LIMIT_INFORMATION>() as u32,
+            )
+        };
+
+        if result.as_bool() {
+            Ok(Self { job_handle })
+        } else {
+            unsafe { CloseHandle(job_handle) };
+            Err(unsafe { GetLastError() })
+        }
+    }
+
+    pub fn add_process(&self, process_handle: RawHandle) -> Result<(), WIN32_ERROR> {
+        if process_handle.is_null() {
+            return Err(unsafe { GetLastError() });
+        }
+
+        let result = unsafe {
+            AssignProcessToJobObject(
+                self.job_handle,
+                HANDLE(process_handle as *const c_void as isize),
+            )
+        };
+
+        if result.as_bool() {
+            Ok(())
+        } else {
+            Err(unsafe { GetLastError() })
+        }
+    }
+
+    pub fn global() -> Option<&'static ChildProcessTracker> {
+        CHILD_PROCESS_TRACKER.get()
+    }
+}
+
+impl Drop for ChildProcessTracker {
+    fn drop(&mut self) {
+        if self.job_handle != INVALID_HANDLE_VALUE {
+            unsafe { CloseHandle(self.job_handle) };
+        }
+    }
+}
+
+static CHILD_PROCESS_TRACKER: OnceCell<ChildProcessTracker> = OnceCell::new();
 
 #[tauri::command]
 #[allow(non_snake_case)]
@@ -102,6 +193,11 @@ async fn enable_wiresock(
         .spawn()
         .expect("Unable to start WireSock process");
 
+    // Add process to global Job object
+    if let Some(tracker) = ChildProcessTracker::global() {
+        tracker.add_process(child.as_raw_handle()).ok();
+    }
+
     // Check the stdout data
     if let Some(stdout) = &mut child.stdout {
         let lines = BufReader::new(stdout).lines().enumerate().take(20);
@@ -161,7 +257,7 @@ fn install_wiresock() -> Result<String, String> {
 
     // Build the path to the WireSock installer
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
-    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.15.1.msi"#);
+    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.17.1.msi"#);
 
     // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
@@ -233,7 +329,61 @@ fn check_wiresock_installed() -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+fn is_wiresock_outdated() -> Result<String, String> {
+    // Get all registry keys Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\
+    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
+    let subkey = match hklm.open_subkey_with_flags(
+        r#"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"#,
+        KEY_READ,
+    ) {
+        Ok(regkey) => regkey,
+        Err(_err) => return Err("WIRESOCK_NOT_INSTALLED".to_string()),
+    };
+
+    // Iterate over all the entries in subkey and look for DisplayName = WireSock VPN Client
+    for entry in subkey.enum_keys() {
+        let entry = entry.unwrap();
+        let entry_key = subkey.open_subkey_with_flags(&entry, KEY_READ).unwrap();
+
+        // If the "DisplayName" entry exists, get the value, if not skip this entry
+        let display_name: String = match entry_key.get_value("DisplayName") {
+            Ok(display_name) => display_name,
+            Err(_err) => continue,
+        };
+
+        if display_name == "WireSock VPN Client (64 bit)" {
+            let display_version: String = entry_key.get_value("DisplayVersion").unwrap();
+
+            // The version number is in the format of "0.0.0.0". We need to check if the version is lower than 1.2.17.1
+            let version_parts: Vec<&str> = display_version.split(".").collect();
+            let major_version = version_parts[0].parse::<u32>().unwrap();
+            let minor_version = version_parts[1].parse::<u32>().unwrap();
+            let build_version = version_parts[2].parse::<u32>().unwrap();
+            let revision_version = version_parts[3].parse::<u32>().unwrap();
+
+            if major_version < 1 {
+                return Ok("WIRESOCK_OUTDATED".into());
+            } else if major_version == 1 && minor_version < 2 {
+                return Ok("WIRESOCK_OUTDATED".into());
+            } else if major_version == 1 && minor_version == 2 && build_version < 17 {
+                return Ok("WIRESOCK_OUTDATED".into());
+            } else if major_version == 1 && minor_version == 2 && build_version == 17 && revision_version < 1 {
+                return Ok("WIRESOCK_OUTDATED".into());
+            } else {
+                return Ok("WIRESOCK_NOT_OUTDATED".into());
+            }
+        }
+    }
+
+    Ok("WIRESOCK_NOT_INSTALLED".into())
+}
+
 fn main() {
+    // Initialize global job object
+    if let Ok(child_process_tracker) = ChildProcessTracker::new() {
+        CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
+    }
     // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
@@ -249,7 +399,8 @@ fn main() {
             check_wiresock_process,
             install_wiresock,
             check_wiresock_installed,
-            check_wiresock_service
+            check_wiresock_service,
+            is_wiresock_outdated
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
