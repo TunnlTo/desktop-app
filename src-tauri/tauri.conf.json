@@ -60,7 +60,7 @@
       }
     },
     "security": {
-      "csp": "default-src 'self'"
+      "csp": "default-src 'self'; img-src * data:"
     },
     "updater": {
       "active": true,
