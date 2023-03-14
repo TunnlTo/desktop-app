@@ -137,12 +137,6 @@ The list of IP addresses and IP ranges that can use the WireGuard tunnel.
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will forward all the listed IP addresses and IP ranges used by the Allowed Apps through the tunnel.
 
-### MTU
-The MTU for the WireGuard tunnel.
-
-- Optional
-- Default: `1420`
-
 ### Disallowed IP's
 The list of IP addresses and IP ranges that cannot use the WireGuard tunnel.
 
@@ -150,6 +144,12 @@ The list of IP addresses and IP ranges that cannot use the WireGuard tunnel.
 - Example: `1.1.1.1, 192.168.1.0/24`
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will block all the listed IP addresses and IP ranges used by the Allowed Apps from using the tunnel.
+
+### MTU
+The MTU for the WireGuard tunnel.
+
+- Optional
+- Default: `1420`
 
 ---
 
