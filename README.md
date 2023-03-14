@@ -214,7 +214,7 @@ In this example, an IP address and IP range are routed through the default netwo
 - Allowed IP's: `0.0.0.0/0`
 - Disallowed IP's: `200.200.200.200, 10.10.10.0/24`
 
-## Route Counter Strike traffic through a tunnel except for a specific IP address range
+## Route a specific app through a tunnel except for a specific IP address range
 ### Scenario
 You utilise an overseas VPN server for faster ping times to an overseas region in Counter Strike. You also still play on local servers and do not want to have to enable/disable the VPN depending on what servers you're playing on.
 
