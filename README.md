@@ -43,11 +43,11 @@ TunnlTo is built in collaboration with the creator of [WireSock](https://www.wir
 >WireSock VPN Client combines the power of Windows Packet Filter and BoringTun (user space WireGuard implementation in Rust) to provide exceptional performance, security and scalability.
 
 ## Performance
-|| Upload | Download |
+|| Download | Upload |
 | :---         |     ---:      |          ---: |
-| **TunnlTo** | 879 Mbits/sec | 892 Mbits/sec |
-| **WireGuard Official** | 892 Mbits/sec | 719 Mbits/sec |
-| **TunSafe** | 435 Mbits/sec | 284 Mbits/sec |
+| **WireGuard Official** | 719 Mbps | **892** Mbps |
+| **TunnlTo** | **892** Mbps | 879 Mbps |
+| **TunSafe** | 284 Mbps | 435 Mbps |
 
 ## Prerequisites
 * A basic understanding of WireGuard
@@ -55,6 +55,7 @@ TunnlTo is built in collaboration with the creator of [WireSock](https://www.wir
 * Windows 10/11
 
 ## Follow For Updates
+Please follow the project on Twitter to be notified of new releases and updates.
 * [Twitter](https://twitter.com/TunnlTo)
 
 ## Get started
@@ -63,19 +64,28 @@ Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to do
 ---
 
 # Documentation
+Both IPv4 and IPv6 are supported.
 
 ## Configuration Parameters
 
 ### Tunnel Name
 The description of your WireGuard tunnel.
-
 - Required
 - Example: `Work VPN`
 
 ### Private Key
 The private key for the WireGuard tunnel.
+- Required
+
+### Public Key
+The Public Key for the WireGuard tunnel.
 
 - Required
+
+### Preshared Key
+The Preshared Key for the WireGuard tunnel.
+
+- Optional
 
 ### Interface Address
 The interface address for the WireGuard tunnel.
@@ -83,34 +93,30 @@ The interface address for the WireGuard tunnel.
 - Required
 - Example: `10.0.64.1/32`
 
+### Endpoint
+The endpoint for the WireGuard server.
+
+- Required
+- Example: `100.100.100.100:54236`
+
 ### DNS
-The DNS server to use for the WireGuard tunnel. If left blank, the default DNS server will be used.
+The DNS server to use for the WireGuard tunnel.
 
 - Optional
+- If left blank, the default DNS server will be used.
 - Use a comma to separate multiple DNS servers
 - Example: `1.1.1.1, 8.8.8.8`
 
-### Public Key
-- Required
-- The Public Key for the WireGuard tunnel.
-
-### Preshared Key
-- Optional
-- The Preshared Key for the WireGuard tunnel.
-
 ### Allowed Apps
+The list of applications that can use the WireGuard tunnel.
+
 - Optional
-- The list of applications that can use the WireGuard tunnel. If left blank, all applications will be allowed.
+- If left blank, all applications will be allowed.
 - Use a comma to separate multiple applications.
 - If this parameter is used, the Allowed IP's parameter must also be set.
 - Use the full path to the executable or list the process name without the .exe extension, for example:
   - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe` 
   - `chrome, msoffice, firefox`
-
-### Endpoint
-- Required
-- The endpoint for the WireGuard server.
-- Example: `100.100.100.100:54236`
 
 ### Disallowed Apps
 The list of applications that cannot use the WireGuard tunnel.
@@ -123,22 +129,25 @@ The list of applications that cannot use the WireGuard tunnel.
   - `chrome, msoffice, firefox`
 
 ### Allowed IP's
+The list of IP addresses and IP ranges that can use the WireGuard tunnel.
+
 - Optional
 - Default: `0.0.0.0/0`
-- Examaple: `1.1.1.1, 192.168.1.0/24`
-- The list of IP addresses and IP ranges that can use the WireGuard tunnel.
+- Example: `1.1.1.1, 192.168.1.0/24`
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will forward all the listed IP addresses and IP ranges used by the Allowed Apps through the tunnel.
 
 ### MTU
+The MTU for the WireGuard tunnel.
+
 - Optional
 - Default: `1420`
-- The MTU for the WireGuard tunnel.
 
 ### Disallowed IP's
+The list of IP addresses and IP ranges that cannot use the WireGuard tunnel.
+
 - Optional
 - Example: `1.1.1.1, 192.168.1.0/24`
-- The list of IP addresses and IP ranges that cannot use the WireGuard tunnel.
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will block all the listed IP addresses and IP ranges used by the Allowed Apps from using the tunnel.
 
@@ -166,7 +175,7 @@ You utilise a company VPN to access your employers servers. You want the Chrome 
 - Not overload the company VPN bandwidth when watching videos, downloading files etc.
 
 ### Expected Outcome
-In this example, all traffic is routed through the WireGuard tunnel except Chrome. Chrome will make DNS requests through the tunnel to the specified DNS servers.
+In this example, all traffic is routed through the WireGuard tunnel except Chrome.
 
 ### Configuration
 - DNS: `1.1.1.1, 8.8.8.8`
@@ -178,7 +187,7 @@ In this example, all traffic is routed through the WireGuard tunnel except Chrom
 You want to access a company intranet when using the Edge browser, otherwise it should use your normal network adapter.
 
 ### Expected Outcome
-In this example, an IP address range is routed through the WireGuard tunnel when the the IP range is accessed by the Edge browser. Otherwise, all Edge traffic is routed through the default network adapter. Note that in this example the DNS parameter is not set, so the default DNS server will be used by Edge. If the DNS parameter was set to the company DNS server, all Edge DNS requests would route through the tunnel to the company DNS server.
+In this example, an IP address range is routed through the WireGuard tunnel when the the IP range is accessed by the Edge browser. Otherwise, all Edge browser traffic is routed through the default network adapter. Note that in this example the DNS parameter is not set, so the default DNS server will be used by Edge. If the DNS parameter was set to the company DNS server, all Edge DNS requests would route through the tunnel to the company DNS server.
 
 ### Configuration
 - Allowed Apps: `C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe`
@@ -186,10 +195,10 @@ In this example, an IP address range is routed through the WireGuard tunnel when
 
 ## Route a specific IP address and/or IP address range through a tunnel
 ### Scenario
-You want to all access to a set of company servers to route through the company VPN server, however all other traffic should use your default network adapter.
+You want to access company servers through a company VPN server, however all other traffic should use your default network adapter.
 
 ### Expected Outcome
-In this example, an IP address and IP range are routed through the WireGuard tunnel no matter which application tries to access them. All other traffic is routed through the default network adapter.
+In this example, an IP address and IP range are routed through the WireGuard tunnel for all applications. All other traffic is routed through the default network adapter.
 
 ### Configuration
 - Allowed IP's: `200.200.200.200, 10.10.10.0/24`
@@ -202,19 +211,19 @@ You want to use a privacy VPN service for all network traffic except some specif
 In this example, an IP address and IP range are routed through the default network adapter and NOT the tunnel. All other traffic is routed through the WireGuard tunnel.
 
 ### Configuration
+- Allowed IP's: `0.0.0.0/0`
 - Disallowed IP's: `200.200.200.200, 10.10.10.0/24`
 
 ## Route Counter Strike traffic through a tunnel except for a specific IP address range
 ### Scenario
-You utilise an overseas VPN server for faster ping times to an overseas region in a game, in this case Counter Strike. However, you also still play on local servers and do not want to have to enable/disable the VPN depending on what servers you're playing on.
+You utilise an overseas VPN server for faster ping times to an overseas region in Counter Strike. You also still play on local servers and do not want to have to enable/disable the VPN depending on what servers you're playing on.
 
 ### Expected Outcome
-
 Counter Strike traffic is routed through the WireGuard tunnel except for when a specific IP address range is accessed by the game. In this case the IP range would be the local servers.
 
 ### Configuration
-
 - Allowed Apps: `csgo`
+- Allowed IP's: `0.0.0.0/0`
 - Disallowed IP's: `12.34.45.0/24`
 
 ---
@@ -226,7 +235,7 @@ Please use [issues](https://github.com/TunnlTo/desktop-app/issues) for any probl
 * WireSock
 * WireGuard
 * Tauri
-* HTML, CSS (Bootstrap), JavaScript
+* Rust, HTML, CSS (Bootstrap), JavaScript
 
 # License
 Copyright (c) 2022 TunnlTo. TunnlTo is not currently licensed.
