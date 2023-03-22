@@ -31,6 +31,12 @@ use winreg::enums::*;
 use winreg::RegKey;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+  args: Vec<String>,
+  cwd: String,
+}
+
 #[derive(Debug)]
 struct ChildProcessTracker {
     job_handle: HANDLE,
@@ -430,6 +436,11 @@ fn main() {
             _ => {}
         })
         .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            println!("{}, {argv:?}, {cwd}", app.package_info().name);
+
+            app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
+        }))
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app, event| match event {
