@@ -29,6 +29,7 @@ use windows::{
 };
 use winreg::enums::*;
 use winreg::RegKey;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 #[derive(Debug)]
 struct ChildProcessTracker {
@@ -421,12 +422,14 @@ fn main() {
                 }
                 "quit" => {
                     disable_wiresock().expect("Failed to disable WireSock");
+                    let _ = app.save_window_state(StateFlags::all()); // will save the state of all open windows to disk
                     std::process::exit(0);
                 }
                 _ => {}
             },
             _ => {}
         })
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app, event| match event {
