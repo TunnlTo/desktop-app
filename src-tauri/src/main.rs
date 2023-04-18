@@ -29,6 +29,13 @@ use windows::{
 };
 use winreg::enums::*;
 use winreg::RegKey;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+
+#[derive(Clone, serde::Serialize)]
+struct Payload {
+  args: Vec<String>,
+  cwd: String,
+}
 
 #[derive(Debug)]
 struct ChildProcessTracker {
@@ -329,56 +336,6 @@ fn check_wiresock_installed() -> Result<String, String> {
     }
 }
 
-#[tauri::command]
-fn is_wiresock_outdated() -> Result<String, String> {
-    // Get all registry keys Computer\HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\
-    let hklm = RegKey::predef(HKEY_LOCAL_MACHINE);
-    let subkey = match hklm.open_subkey_with_flags(
-        r#"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"#,
-        KEY_READ,
-    ) {
-        Ok(regkey) => regkey,
-        Err(_err) => return Err("WIRESOCK_NOT_INSTALLED".to_string()),
-    };
-
-    // Iterate over all the entries in subkey and look for DisplayName = WireSock VPN Client
-    for entry in subkey.enum_keys() {
-        let entry = entry.unwrap();
-        let entry_key = subkey.open_subkey_with_flags(&entry, KEY_READ).unwrap();
-
-        // If the "DisplayName" entry exists, get the value, if not skip this entry
-        let display_name: String = match entry_key.get_value("DisplayName") {
-            Ok(display_name) => display_name,
-            Err(_err) => continue,
-        };
-
-        if display_name == "WireSock VPN Client (64 bit)" {
-            let display_version: String = entry_key.get_value("DisplayVersion").unwrap();
-
-            // The version number is in the format of "0.0.0.0". We need to check if the version is lower than 1.2.17.1
-            let version_parts: Vec<&str> = display_version.split(".").collect();
-            let major_version = version_parts[0].parse::<u32>().unwrap();
-            let minor_version = version_parts[1].parse::<u32>().unwrap();
-            let build_version = version_parts[2].parse::<u32>().unwrap();
-            let revision_version = version_parts[3].parse::<u32>().unwrap();
-
-            if major_version < 1 {
-                return Ok("WIRESOCK_OUTDATED".into());
-            } else if major_version == 1 && minor_version < 2 {
-                return Ok("WIRESOCK_OUTDATED".into());
-            } else if major_version == 1 && minor_version == 2 && build_version < 17 {
-                return Ok("WIRESOCK_OUTDATED".into());
-            } else if major_version == 1 && minor_version == 2 && build_version == 17 && revision_version < 1 {
-                return Ok("WIRESOCK_OUTDATED".into());
-            } else {
-                return Ok("WIRESOCK_NOT_OUTDATED".into());
-            }
-        }
-    }
-
-    Ok("WIRESOCK_NOT_INSTALLED".into())
-}
-
 fn main() {
     // Initialize global job object
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
@@ -399,8 +356,7 @@ fn main() {
             check_wiresock_process,
             install_wiresock,
             check_wiresock_installed,
-            check_wiresock_service,
-            is_wiresock_outdated
+            check_wiresock_service
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -421,12 +377,19 @@ fn main() {
                 }
                 "quit" => {
                     disable_wiresock().expect("Failed to disable WireSock");
+                    let _ = app.save_window_state(StateFlags::all()); // will save the state of all open windows to disk
                     std::process::exit(0);
                 }
                 _ => {}
             },
             _ => {}
         })
+        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
+            println!("{}, {argv:?}, {cwd}", app.package_info().name);
+
+            app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
+        }))
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app, event| match event {

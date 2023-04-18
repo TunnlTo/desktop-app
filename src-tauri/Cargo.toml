@@ -1,6 +1,6 @@
 [package]
 name = "app"
-version = "0.1.6"
+version = "0.1.7"
 description = "A Tauri App"
 authors = ["you"]
 license = ""
@@ -22,6 +22,8 @@ home = "0.5.4"
 winreg = "0.10"
 sysinfo = "0.27.2"
 once_cell = "1.17.0"
+tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev" }
+tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "dev" }
 
 [dependencies.windows]
 version = "0.43.0"
