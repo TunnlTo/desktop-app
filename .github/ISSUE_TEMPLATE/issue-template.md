@@ -3,7 +3,7 @@ name: Issue Template
 about: Create a new Issue
 title: ''
 labels: ''
-assignees: ''
+assignees: brendanosborne
 
 ---
 
@@ -25,9 +25,6 @@ If applicable, add screenshots to help explain your problem.
 
 **Tunnel Config**
 Provide a screenshot of your tunnel config with tunnel name, private key, public key, preshared key and endpoint removed.
-
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
 
 **Starting WireSock directly**
 If possible, follow the instructions below and comment on the outcome:
