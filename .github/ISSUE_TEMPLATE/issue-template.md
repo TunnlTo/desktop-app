@@ -31,8 +31,8 @@ If possible, follow the instructions below and comment on the outcome:
 
 1. Open TunnlTo and Enable the tunnel (this will save the config file to disk)
 2. Disable the tunnel and close TunnlTo
-3. Open a command prompt and issue the following commands (make sure you alter the username in the second command):
+3. Open a command prompt and issue the following commands (make sure you alter the username in the second command set the drive letter if you did not install to C drive):
 ```
-cd C:\Program Files\WireSock VPN Client\bin
+cd "C:\Program Files\WireSock VPN Client\bin"
 wiresock-client.exe run -config C:\Users\<YOUR USERNAME>\AppData\Local\TunnlTo\tunnel.conf -log-level all
 ```
