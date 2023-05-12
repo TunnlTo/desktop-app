@@ -20,6 +20,9 @@ Steps to reproduce the behavior:
 **Expected behavior**
 A clear and concise description of what you expected to happen.
 
+**Tested on official WireGuard client**
+Is the tunnel working on the official Windows WireGuard client?
+
 **Screenshots**
 If applicable, add screenshots to help explain your problem.
 
