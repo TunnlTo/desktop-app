@@ -210,6 +210,8 @@ async fn enable_wiresock(
         let lines = BufReader::new(stdout).lines().enumerate().take(20);
         for (counter, line) in lines {
             let line_string = &line.unwrap();
+            println!("enable_wiresock: {}, {:?}", counter, line_string);
+            
             if line_string.contains("Handshake response received from") {
                 return Ok("WireSock started successfully".into());
             } else if line_string.contains("WireSock WireGuard VPN Client is running already") {
@@ -217,7 +219,6 @@ async fn enable_wiresock(
             } else if line_string.contains("Endpoint is either invalid of failed to resolve") {
                 return Err("Endpoint is either invalid of failed to resolve".into());
             }
-            println!("enable_wiresock: {}, {:?}", counter, line_string);
         }
     }
 
