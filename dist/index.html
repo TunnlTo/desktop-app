@@ -177,7 +177,8 @@
        * Navigate to the wireguard page
        */
       function editClick () {
-        window.location.href = `wireguard.html?edit=true&name=${getSelectedTunnel()}`
+        // Name parameter is encoded in case it uses characters not allowed in URL parameters
+        window.location.href = `wireguard.html?edit=true&name=${encodeURIComponent(getSelectedTunnel(), 'UTF-8')}`
       }
 
       /**
