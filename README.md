@@ -61,6 +61,20 @@ Please follow the project on Twitter to be notified of new releases and updates.
 ## Get started
 Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to download the installer for the latest version.
 
+## Feature Requests
+Please review the following requested features before making an issue or discussion:
+- Dark Mode
+- Kill Switch
+- Auto Startup
+- Nested Tunnels (or Multi-Hop)
+- Simultaneous Tunnels
+- UWP App Support
+- Trigger System - WiFi on/off, location, 4g/5g status, Bluetooth status, endpoint status
+- System tray controls. Icon colour to reflect status. Tooltip for status/IP. Right click for menu.
+- Statistics / Status data in UI
+- Persistent KeepAlive parameter in config
+- Bulk VPN config import 
+
 ---
 
 # Documentation
