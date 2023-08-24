@@ -1,8 +1,8 @@
 [package]
 name = "app"
-version = "0.1.7"
-description = "A Tauri App"
-authors = ["you"]
+version = "0.1.8"
+description = "TunnlTo"
+authors = ["Brendan Osborne"]
 license = ""
 repository = ""
 default-run = "app"
