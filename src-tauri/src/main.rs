@@ -30,6 +30,7 @@ use windows::{
 use winreg::enums::*;
 use winreg::RegKey;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
+use tauri_plugin_autostart::MacosLauncher;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -391,6 +392,7 @@ fn main() {
 
             app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
         }))
+        .plugin(tauri_plugin_autostart::init(MacosLauncher::LaunchAgent, Some(vec!["--flag1", "--flag2"]) /* arbitrary number of args to pass to your app */))
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app, event| match event {

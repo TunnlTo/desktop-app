@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>TunnlTo - Settings</title>
+    <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
+    <meta charset="UTF-8">
+    <script src="./js/darkMode.js"></script>
+  </head>
+
+  <style>
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+  </style>
+
+  <body>
+    <div class="container text-center">
+      <h1>Settings</h1>
+    </div>
+
+    <script src="js/bootstrap/bootstrap.bundle.js"></script>
+    <script>
+        import { enable, isEnabled } from './js/autoStart.js'
+
+        await enable()
+        console.log(`registered for autostart? ${await isEnabled()}`)
+        // disable()
+    </script>
+  </body>
+
+</html>

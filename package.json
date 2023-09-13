@@ -6,7 +6,8 @@
   },
   "dependencies": {
     "@tauri-apps/api": "^1.4.0",
-    "live-server": "^1.2.2"
+    "live-server": "^1.2.2",
+    "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1"
   },
   "devDependencies": {
     "@tauri-apps/cli": "^1.4.0",

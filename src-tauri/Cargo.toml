@@ -24,6 +24,7 @@ sysinfo = "0.29.8"
 once_cell = "1.18.0"
 tauri-plugin-window-state = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 tauri-plugin-single-instance = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
+tauri-plugin-autostart = { git = "https://github.com/tauri-apps/plugins-workspace", branch = "v1" }
 
 [dependencies.windows]
 version = "0.43.0"
