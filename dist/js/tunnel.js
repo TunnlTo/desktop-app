@@ -1,5 +1,5 @@
 // Define the object
-function Tunnel (
+function Tunnel(
   name,
   privateKey,
   interfaceAddress,
