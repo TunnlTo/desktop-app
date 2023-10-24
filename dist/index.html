@@ -82,7 +82,7 @@
     /**
      * Need to have this start function to allow for async. Can't use async calls in top level
      */
-    async function start() {
+    async function start () {
       const localStorageData = { ...localStorage }
 
       // Tunnels created in versions 0.1.0 and 0.1.1 did not include required tunnel data
@@ -186,7 +186,7 @@
     /**
      * Navigate to the wireguard page
      */
-    function editClick() {
+    function editClick () {
       // Name parameter is encoded in case it uses characters not allowed in URL parameters
       window.location.href = `wireguard.html?edit=true&name=${encodeURIComponent(getSelectedTunnel(), 'UTF-8')}`
     }
@@ -194,28 +194,28 @@
     /**
      * Save the value of the tunnel select to local storage
      */
-    function saveSelectedTunnel() {
+    function saveSelectedTunnel () {
       localStorage.setItem('selectedTunnel', selectElement.value)
     }
 
     /**
      * Look up local storage for the currenctly selected tunnel
      */
-    function getSelectedTunnel() {
+    function getSelectedTunnel () {
       return localStorage.getItem('selectedTunnel')
     }
 
     /**
      * Set the select element to the last selected tunnel
      */
-    function setSelectedTunnel() {
+    function setSelectedTunnel () {
       selectElement.value = getSelectedTunnel()
     }
 
     /**
      * Tell Rust to enable or disable the WireSock process
      */
-    async function toggleTunnel() {
+    async function toggleTunnel () {
       if (toggleButtonElement.innerHTML === 'Enable') {
         // Enable the tunnel
 
@@ -269,7 +269,7 @@
     /**
      * Set the UI to show the tunnel is enabled
      */
-    function tunnelEnabledUI() {
+    function tunnelEnabledUI () {
       toggleButtonElement.classList.remove('btn-success')
       toggleButtonElement.classList.add('btn-danger')
       toggleButtonElement.innerHTML = 'Disable'
@@ -282,7 +282,7 @@
     /**
      * Set the UI to show the tunnel is disabled
      */
-    function tunnelDisabledUI() {
+    function tunnelDisabledUI () {
       toggleButtonElement.classList.remove('btn-danger')
       toggleButtonElement.classList.add('btn-success')
       toggleButtonElement.innerHTML = 'Enable'
@@ -295,7 +295,7 @@
     /**
      * Show a Toast message to the user
      */
-    function toggleToast(message) {
+    function toggleToast (message) {
       // Set the message in the toast
       toastBodyElement.innerHTML = message
 
@@ -307,7 +307,7 @@
     /**
      * Tell Rust to check if the WireSock process is running
      */
-    async function isWiresockRunning() {
+    async function isWiresockRunning () {
       try {
         const result = await invoke('check_wiresock_process')
         console.info(result)
@@ -329,7 +329,7 @@
     /**
      * Tell Rust to check if WireSock is installed
      */
-    async function isWiresockInstalled() {
+    async function isWiresockInstalled () {
       try {
         const result = await invoke('check_wiresock_installed')
         console.info(result)
@@ -351,7 +351,7 @@
     /**
      * Tell Rust to check if the WireSock service is installed
      */
-    async function isWireSockServiceInstalled() {
+    async function isWireSockServiceInstalled () {
       try {
         const result = await invoke('check_wiresock_service')
         console.info(result)

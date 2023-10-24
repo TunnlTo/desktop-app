@@ -209,7 +209,7 @@
     /**
      * Handle form submission
      */
-    function submitClick(event) {
+    function submitClick (event) {
       // Validate form before saving any data
       if (!form.checkValidity()) {
         // Form not valid
@@ -228,7 +228,7 @@
     /**
      * Allow the user to select a WireGuard config file and import the data to the form
      */
-    function importButtonClick() {
+    function importButtonClick () {
       const input = document.createElement('input')
       input.type = 'file'
       input.onchange = _ => {
@@ -279,7 +279,7 @@
     /**
      * Retrieve selected paramater values from the url
      */
-    function getUrlParam(parameterName) {
+    function getUrlParam (parameterName) {
       let result = null
       let tmp = []
       location.search
@@ -296,7 +296,7 @@
     /**
      * Save the form data to local storage
      */
-    function saveFormData() {
+    function saveFormData () {
       // Save data to local storage.
       const tunnel = new Tunnel(
         nameElement.value,
@@ -325,7 +325,7 @@
     /**
      * Deletes the tunnel from local storage
      */
-    function deleteClick() {
+    function deleteClick () {
       // Get the tunnel name
       const name = getUrlParam('name')
       console.log(`removing ${name} from local storage`)

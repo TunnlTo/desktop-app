@@ -1,3 +1,4 @@
 {
-    "window.title": "TunnlTo${separator}${activeEditorShort}"
+    "window.title": "TunnlTo${separator}${activeEditorShort}",
+    "eslint.format.enable": true
 }

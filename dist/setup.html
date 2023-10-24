@@ -39,7 +39,7 @@
     installWiresockButtonElement.onclick = () => { installWiresock() }
 
     // Launch the WireSock installation
-    async function installWiresock() {
+    async function installWiresock () {
       try {
         const result = await invoke('install_wiresock')
         console.info(result)
