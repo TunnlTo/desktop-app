@@ -1,0 +1,68 @@
+:root {
+    --background-color-light: #ffffff;
+    --background-color-dark: #232730;
+    --text-color-light: #000000;
+    --text-color-dark: #eef0ed;
+}
+
+.light-mode {
+    background-color: var(--background-color-light);
+    color: var(--text-color-light);
+}
+
+.dark-mode {
+    background-color: var(--background-color-dark);
+    color: var(--text-color-dark);
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.container {
+    padding: 10px;
+    margin-top: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+}
+
+.hidden {
+    opacity: 0;
+}
+
+.button-red {
+    color: red;
+}
+
+.button-green {
+    color: green;
+}
+
+#toast {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px 20px;
+    gap: 20px;
+    background-color: #28a745;
+    color: #fff;
+    border-radius: 5px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    transition: opacity 0.3s ease-in-out;
+    opacity: 0;
+}
+
+#toast.show {
+    opacity: 1;
+}

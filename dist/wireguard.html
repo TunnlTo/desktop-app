@@ -176,6 +176,7 @@
     form.onsubmit = (event) => { submitClick(event) }
     importButtonElement.onclick = () => { importButtonClick() }
 
+    console.log(getUrlParam('edit'))
     // Check to see if the user is looking to edit an existing tunnel or add a new one
     if (getUrlParam('edit') === 'true') {
       // User wants to edit an existing tunnel

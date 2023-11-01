@@ -2,14 +2,16 @@
   "name": "tunnlto",
   "scripts": {
     "tauri": "tauri",
+    "dev": "live-server dist --port=5555 --no-browser",
     "lint": "eslint --fix --ext .js,.html ./dist"
   },
   "dependencies": {
-    "@tauri-apps/api": "^1.4.0",
+    "@tauri-apps/api": "^1.5.1",
     "tauri-plugin-autostart-api": "github:tauri-apps/tauri-plugin-autostart#v1"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^1.4.0",
+    "@tauri-apps/cli": "^1.5.6",
+    "live-server": "^1.2.2",
     "eslint": "^8.52.0",
     "eslint-config-standard": "^17.1.0",
     "eslint-plugin-html": "^7.1.0",

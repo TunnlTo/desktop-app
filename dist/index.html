@@ -1,222 +1,114 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <title>TunnlTo - Home</title>
-  <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
   <meta charset="UTF-8">
-  <script src="./js/darkMode.js"></script>
-</head>
-
-<style>
-  html,
-  body {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-</style>
-
-<body>
-  <div class="container text-center">
-    <h1>TunnlTo</h1>
-    <div id="tunnelOptions" class="visually-hidden d-flex flex-row justify-content-center mt-5">
-      <div class="p-2">
-        <!-- As we're using a flex as the parent div, the select will auto expand based on the longest tunnel name -->
-        <select id="select" class="form-select" aria-label="Default select example"></select>
-      </div>
-      <div class="p-2">
-        <button id="toggleButton" type="button" class="btn btn-success"">Enable</button>
-        </div>
-        <div class=" p-2">
-          <button id="editButton" type="button" class="btn btn-secondary">Edit</button>
-      </div>
-    </div>
-    <a class="btn btn-primary mt-5" href="wireguard.html" role="button">Add Tunnel</a>
-    <svg class="mt-20" xmlns="http://www.w3.org/2000/svg" height="2em" viewBox="0 0 512 512">
-      <style>
-        svg {
-          fill: #ffffff
-        }
-      </style>
-      <path
-        d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z" />
-    </svg>
-
-    <!-- Toast -->
-    <div class="toast-container p-3 bottom-0 start-50 translate-middle-x">
-      <div id="toast" class="toast align-items-center text-bg-primary border-0" data-bs-autohide="false" role="alert"
-        aria-live="assertive" aria-atomic="true">
-        <div class="d-flex">
-          <div id="toastBody" class="toast-body">
-            <!-- Dynamically filled -->
-          </div>
-          <button id="toastButton" type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
-            aria-label="Close"></button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <script src="js/bootstrap/bootstrap.bundle.js"></script>
   <script type="module">
     import Tunnel from './js/tunnel.js'
+    import { showToast, closeToast } from './js/globals.js'
 
     const { invoke } = window.__TAURI__.tauri
+    const localStorageData = { ...localStorage }
 
-    // Get elements
-    const selectElement = document.getElementById('select')
-    const toggleButtonElement = document.getElementById('toggleButton')
-    const editButtonElement = document.getElementById('editButton')
-    const tunnelOptionsElement = document.getElementById('tunnelOptions')
-    const toastElement = document.getElementById('toast')
-    const toastBodyElement = document.getElementById('toastBody')
+    let tunnelSelectElement
+    let enableButtonElement
+    let editButtonElement
+    let tunnelOptionsElement
+    let toastElement
+    let toastCloseButtonElement
+    let toastMessageElement
 
-    // Setup listeners on elements
-    selectElement.onchange = () => { saveSelectedTunnel() }
-    toggleButtonElement.onclick = () => { toggleTunnel() }
-    editButtonElement.onclick = () => { editClick() }
+    // Wait for DOM content to load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Get elements
+      tunnelSelectElement = document.getElementById('tunnelSelect')
+      enableButtonElement = document.getElementById('enableButton')
+      editButtonElement = document.getElementById('editButton')
+      tunnelOptionsElement = document.getElementById('tunnelOptions')
+      toastElement = document.getElementById('toast')
+      toastCloseButtonElement = document.getElementById('toastCloseButton')
+      toastMessageElement = document.getElementById('toastMessage')
 
-    /**
-     * Need to have this start function to allow for async. Can't use async calls in top level
-     */
-    async function start () {
-      const localStorageData = { ...localStorage }
+      // Setup listeners on elements
+      tunnelSelectElement.onchange = () => { saveSelectedTunnel() }
+      enableButtonElement.onclick = () => { toggleTunnel() }
+      editButtonElement.onclick = () => { editClick() }
+      toastCloseButtonElement.onclick = () => { closeToast(toastElement) }
+    })
 
-      // Tunnels created in versions 0.1.0 and 0.1.1 did not include required tunnel data
-      // Added tunnel data in 0.1.2:
-      // - renamed "tunnelName" to "name"
-      // - added mtu
-      // - added disallowedApps
-      // - added disallowedIPs
-      //
-      // Tunnels created in versions 0.1.0, 0.1.1, 0.1.2, 0.1.3, 0.1.4 did not include required tunnel data
-      // Added tunnel data in in 0.1.5:
-      // - added presharedKey
-      //
-      // Check for tunnels that need to upgraded
-      for (const storageItem in localStorageData) {
-        // Check this storage item is a tunnel
-        if (storageItem.startsWith('tunnel-wireguard-')) {
-          // Get the tunnel data
-          // Note we're not assigning to a "Tunnel" object from ./js/tunnel.js as it does not have "tunnelName" property
-          const tunnel = JSON.parse(localStorage.getItem(storageItem))
+    // Check if WireSock is installed
+    console.log('Checking if WireSock is installed')
+    if (!await isWiresockInstalled()) {
+      // Not installed so take the user to the setup page
+      window.location.href = 'setup.html'
+    }
 
-          let update = false
-          if (tunnel.tunnelName !== undefined) {
-            tunnel.name = tunnel.tunnelName
-            delete tunnel.tunnelName
-            update = true
-          }
-          if (tunnel.disallowedApps === undefined) {
-            tunnel.disallowedApps = ''
-            update = true
-          }
-          if (tunnel.disallowedIPs === undefined) {
-            tunnel.disallowedIPs = ''
-            update = true
-          }
-          if (tunnel.mtu === undefined) {
-            tunnel.mtu = ''
-            update = true
-          }
+    // Make sure the WireSock service is not installed
+    console.log('Checking if WireSock service is installed')
+    if (await isWireSockServiceInstalled()) {
+      // Service is installed so need to warn the user that it needs to be uninstalled or disabled
+      showToast(toastElement, toastMessageElement, 'WireSock is currently installed in service mode. This may conflict with TunnlTo. </br></br>Please uninstall WireSock from your system and then restart TunnlTo.')
+    }
 
-          if (tunnel.presharedKey === undefined) {
-            tunnel.presharedKey = ''
-            update = true
-          }
+    // Iterate through the localstorage keys to see if any tunnels are listed
+    for (let x in localStorageData) {
+      if (x.startsWith('tunnel-wireguard-')) {
+        // Remove the descriptor prefix at the start of the string
+        x = x.replace('tunnel-wireguard-', '')
 
-          if (update) {
-            console.log(`Updating ${storageItem} data`)
-            localStorage.setItem(storageItem, JSON.stringify(tunnel))
-          }
+        // Add the tunnel name as an option in the select dropdown
+        const opt = document.createElement('option')
+        opt.value = x
+        opt.innerHTML = x
+        tunnelSelectElement.appendChild(opt)
+
+        // Show the tunnel options now that we have an option to display
+        if (tunnelOptionsElement.classList.contains('hidden')) {
+          tunnelOptionsElement.classList.remove('hidden')
         }
-      }
-
-      // Check if WireSock is installed
-      console.log('Checking if WireSock is installed')
-      if (!await isWiresockInstalled()) {
-        // Not installed so take the user to the setup page
-        return (window.location.href = 'setup.html')
-      }
-
-      // Make sure the WireSock service is not installed
-      console.log('Checking if WireSock service is installed')
-      if (await isWireSockServiceInstalled()) {
-        // Service is installed so need to warn the user that it needs to be uninstalled or disabled
-        toggleToast('WireSock is currently installed in service mode. This may conflict with TunnlTo. </br></br>Please uninstall WireSock from your system and then restart TunnlTo.')
-      }
-
-      // Iterate through the localstorage keys to see if any tunnels are listed
-      for (let x in localStorageData) {
-        if (x.startsWith('tunnel-wireguard-')) {
-          // Remove the descriptor prefix at the start of the string
-          x = x.replace('tunnel-wireguard-', '')
-
-          // Add the tunnel name as an option in the select dropdown
-          const opt = document.createElement('option')
-          opt.value = x
-          opt.innerHTML = x
-          selectElement.appendChild(opt)
-
-          // Show the tunnel options now that we have an option to display
-          if (tunnelOptionsElement.classList.contains('visually-hidden')) {
-            tunnelOptionsElement.classList.remove('visually-hidden')
-          }
-        }
-      }
-
-      // Set the selected tunnel based on local storage
-      const selectedTunnel = getSelectedTunnel()
-      if (selectedTunnel !== null) {
-        setSelectedTunnel(selectedTunnel)
-      }
-
-      // Check to see if the WireSock process is already running
-      console.log('Checking if WireSock is already running')
-      if (await isWiresockRunning()) {
-        // WireSock is already running. Update the UI
-        tunnelEnabledUI()
       }
     }
-    start()
 
-    /**
-     * Navigate to the wireguard page
-     */
+    // Set the selected tunnel based on local storage
+    const selectedTunnel = getSelectedTunnel()
+    if (selectedTunnel !== null) {
+      setSelectedTunnel(selectedTunnel)
+    }
+
+    // Check to see if the WireSock process is already running
+    console.log('Checking if WireSock is already running')
+    if (await isWiresockRunning()) {
+      // WireSock is already running. Update the UI
+      tunnelEnabledUI()
+    } else {
+      tunnelDisabledUI()
+    }
+
+    // Navigate to the wireguard page
     function editClick () {
       // Name parameter is encoded in case it uses characters not allowed in URL parameters
       window.location.href = `wireguard.html?edit=true&name=${encodeURIComponent(getSelectedTunnel(), 'UTF-8')}`
     }
 
-    /**
-     * Save the value of the tunnel select to local storage
-     */
+    // Save the value of the tunnel select to local storage
     function saveSelectedTunnel () {
-      localStorage.setItem('selectedTunnel', selectElement.value)
+      localStorage.setItem('selectedTunnel', tunnelSelectElement.value)
     }
 
-    /**
-     * Look up local storage for the currenctly selected tunnel
-     */
+    // Look up local storage for the currenctly selected tunnel
     function getSelectedTunnel () {
       return localStorage.getItem('selectedTunnel')
     }
 
-    /**
-     * Set the select element to the last selected tunnel
-     */
+    // Set the select element to the last selected tunnel
     function setSelectedTunnel () {
-      selectElement.value = getSelectedTunnel()
+      tunnelSelectElement.value = getSelectedTunnel()
     }
 
-    /**
-     * Tell Rust to enable or disable the WireSock process
-     */
+    // Tell Rust to enable or disable the WireSock process
     async function toggleTunnel () {
-      if (toggleButtonElement.innerHTML === 'Enable') {
+      if (enableButtonElement.innerHTML === 'Enable') {
         // Enable the tunnel
 
         // Get the currently selected tunnel
@@ -246,7 +138,7 @@
         } catch (error) {
           console.error(`Invoking enable_wiresock returned error: ${error}`)
           // Show the error to the user
-          return toggleToast(`${error}`)
+          return showToast(toastElement, toastMessageElement, `${error}`)
         }
 
         // Connection success so update the UI
@@ -258,7 +150,7 @@
           await invoke('disable_wiresock')
         } catch (error) {
           console.error(`Invoking disable_wiresock returned error: ${error}`)
-          return toggleToast(`Error stopping WireSock process: ${error}`)
+          return showToast(toastElement, toastMessageElement, `Error stopping WireSock process: ${error}`)
         }
 
         // Update the UI
@@ -266,47 +158,29 @@
       }
     }
 
-    /**
-     * Set the UI to show the tunnel is enabled
-     */
+    // Set the UI to show the tunnel is enabled
     function tunnelEnabledUI () {
-      toggleButtonElement.classList.remove('btn-success')
-      toggleButtonElement.classList.add('btn-danger')
-      toggleButtonElement.innerHTML = 'Disable'
+      enableButtonElement.classList.remove('button-green')
+      enableButtonElement.classList.add('button-red')
+      enableButtonElement.innerHTML = 'Disable'
 
-      selectElement.disabled = true
+      tunnelSelectElement.disabled = true
 
       editButtonElement.disabled = true
     }
 
-    /**
-     * Set the UI to show the tunnel is disabled
-     */
+    // Set the UI to show the tunnel is disabled
     function tunnelDisabledUI () {
-      toggleButtonElement.classList.remove('btn-danger')
-      toggleButtonElement.classList.add('btn-success')
-      toggleButtonElement.innerHTML = 'Enable'
+      enableButtonElement.classList.remove('button-red')
+      enableButtonElement.classList.add('button-green')
+      enableButtonElement.innerHTML = 'Enable'
 
-      selectElement.disabled = false
+      tunnelSelectElement.disabled = false
 
       editButtonElement.disabled = false
     }
 
-    /**
-     * Show a Toast message to the user
-     */
-    function toggleToast (message) {
-      // Set the message in the toast
-      toastBodyElement.innerHTML = message
-
-      // eslint-disable-next-line no-undef
-      const toast = new bootstrap.Toast(toastElement)
-      toast.show()
-    }
-
-    /**
-     * Tell Rust to check if the WireSock process is running
-     */
+    // Tell Rust to check if the WireSock process is running
     async function isWiresockRunning () {
       try {
         const result = await invoke('check_wiresock_process')
@@ -316,19 +190,17 @@
         } else if (result === 'WIRESOCK_NOT_RUNNING') {
           return false
         } else {
-          toggleToast(`Error checking WireSock process: ${result}`)
+          showToast(toastElement, toastMessageElement, `Error checking WireSock process: ${result}`)
           return false
         }
       } catch (error) {
         console.error(`Invoking check_wiresock_process returned error: ${error}`)
         // Show the error to the user
-        return toggleToast(error)
+        return showToast(toastElement, toastMessageElement, error)
       }
     }
 
-    /**
-     * Tell Rust to check if WireSock is installed
-     */
+    // Tell Rust to check if WireSock is installed
     async function isWiresockInstalled () {
       try {
         const result = await invoke('check_wiresock_installed')
@@ -338,19 +210,17 @@
         } else if (result === 'WIRESOCK_NOT_INSTALLED') {
           return false
         } else {
-          toggleToast(`Error checking if WireSock installed: ${result}`)
+          showToast(toastElement, toastMessageElement, `Error checking if WireSock installed: ${result}`)
           return false
         }
       } catch (error) {
         console.error(`Invoking check_wiresock_installed returned error: ${error}`)
         // Show the error to the user
-        return toggleToast(error)
+        return showToast(toastElement, toastMessageElement, error)
       }
     }
 
-    /**
-     * Tell Rust to check if the WireSock service is installed
-     */
+    // Tell Rust to check if the WireSock service is installed
     async function isWireSockServiceInstalled () {
       try {
         const result = await invoke('check_wiresock_service')
@@ -360,16 +230,62 @@
         } else if (result === 'WIRESOCK_SERVICE_INSTALLED') {
           return true
         } else {
-          toggleToast(`Error checking if WireSock service is installed: ${result}`)
+          showToast(toastElement, toastMessageElement, `Error checking if WireSock service is installed: ${result}`)
           return false
         }
       } catch (error) {
         console.error(`Invoking check_wiresock_service returned error: ${error}`)
         // Show the error to the user
-        return toggleToast(error)
+        return showToast(toastElement, toastMessageElement, error)
       }
     }
   </script>
+  <link rel="stylesheet" type="text/css" href="./css/globals.css">
+</head>
+
+<!-- body is hidden until light or dark mode is set -->
+
+<body class="hidden">
+
+  <!-- Using async makes the script run immediately as module is deferred by default -->
+  <script type="module" async>
+    import { setDarkMode } from './js/globals.js'
+
+    // See if there is a dark mode setting saved in local storage
+    if (!localStorage.getItem('darkMode')) {
+      const darkModeMediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+      const lightModeMediaQuery = window.matchMedia('(prefers-color-scheme: light)')
+
+      if (darkModeMediaQuery.matches) {
+        localStorage.setItem('darkMode', true)
+      } else if (lightModeMediaQuery.matches) {
+        localStorage.setItem('darkMode', false)
+      } else {
+        localStorage.setItem('darkMode', false)
+      }
+    }
+
+    // Set light or dark mode
+    setDarkMode()
+  </script>
+
+  <main>
+    <h1 class="container">TunnlTo</h1>
+    <div id="tunnelOptions" class="container hidden">
+      <select id="tunnelSelect"></select>
+      <button id="enableButton">Enable</button>
+      <button id="editButton">Edit</button>
+    </div>
+    <div class="container">
+      <button id="addTunnelButton">Add Tunnel</button>
+      <a href="settings.html"><button id="settingsButton">Settings</button></a>
+    </div>
+    <div class="toast" id="toast">
+      <p id="toastMessage"><!-- innerHTML is dynamically added in Javascript --></p>
+      <button id="toastCloseButton">&#10005;</button>
+    </div>
+  </main>
+
 </body>
 
 </html>

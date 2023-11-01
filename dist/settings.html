@@ -1,37 +1,170 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
   <title>TunnlTo - Settings</title>
-  <link href="css/bootstrap/bootstrap.css" rel="stylesheet" />
   <meta charset="UTF-8">
-  <script src="./js/darkMode.js"></script>
+  <script type="module">
+    import { enable, disable, isEnabled } from './js/autoStart.js'
+    import { showToast, closeToast, setDarkMode } from './js/globals.js'
+
+    let darkModeSwitchElement
+    let autoStartSwitchElement
+    let backButtonElement
+    let toastMessageElement
+    let toastElement
+    let toastCloseButtonElement
+
+    // Wait for DOM content to load
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Get elements
+      darkModeSwitchElement = document.getElementById('darkModeSwitch')
+      autoStartSwitchElement = document.getElementById('autoStartSwitch')
+      backButtonElement = document.getElementById('backButton')
+      toastElement = document.getElementById('toast')
+      toastCloseButtonElement = document.getElementById('toastCloseButton')
+      toastMessageElement = document.getElementById('toastMessage')
+
+      // Setup listeners on elements
+      toastCloseButtonElement.onclick = () => { closeToast(toastElement) }
+      darkModeSwitchElement.onclick = () => {
+        localStorage.setItem('darkMode', darkModeSwitchElement.checked)
+        setDarkMode()
+      }
+      autoStartSwitchElement.onclick = () => {
+        autoStart()
+      }
+      backButtonElement.onclick = () => {
+        window.location.href = 'index.html'
+      }
+
+      // Set the UI based on current settings
+      if (await isEnabled()) {
+        autoStartSwitchElement.checked = true
+      } else {
+        autoStartSwitchElement.checked = false
+      }
+
+      darkModeSwitchElement.checked = localStorage.getItem('darkMode') === 'true'
+
+      // Now that the UI is set, show the UI
+      document.querySelectorAll('.switch-container.hidden').forEach(function (element) {
+        element.classList.remove('hidden')
+      })
+    })
+
+    async function autoStart () {
+      try {
+        if (autoStartSwitchElement.checked) {
+          console.log('Enabling auto start')
+          await enable()
+          console.log('Auto start enabled')
+        } else {
+          console.log('Disabling auto start')
+          await disable()
+          console.log('Auto start disabled')
+        }
+      } catch (error) {
+        if (error === 'The system cannot find the file specified. (os error 2)') {
+          console.log('Auto start already disabled')
+        } else {
+          console.error(error)
+          return showToast(toastElement, toastMessageElement, `Error enabling or disabling auto start: ${error}`)
+        }
+      }
+    }
+  </script>
+  <link rel="stylesheet" type="text/css" href="css/globals.css">
 </head>
 
 <style>
-  html,
-  body {
-    width: 100%;
-    height: 100%;
+  .switch-container {
     display: flex;
     align-items: center;
-    justify-content: center;
+    margin: 20px;
+  }
+
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 45px;
+    height: 23px;
+  }
+
+  .switch input {
+    display: none;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    border-radius: 23px;
+  }
+
+  .slider:before {
+    content: "";
+    height: 19px;
+    width: 19px;
+    left: 2px;
+    bottom: calc(50% - 9.5px);
+    background-color: white;
+    border-radius: 50%;
+    position: absolute;
+  }
+
+  .switch input:checked~.slider {
+    background-color: #2196F3;
+  }
+
+  input:checked+.slider:before {
+    transform: translateX(22px);
+  }
+
+  .label {
+    margin-left: 10px;
   }
 </style>
 
-<body>
-  <div class="container text-center">
-    <h1>Settings</h1>
-  </div>
+<body class="hidden">
 
-  <script src="js/bootstrap/bootstrap.bundle.js"></script>
-  <script>
-    import { enable, isEnabled } from './js/autoStart.js'
-
-    await enable()
-    console.log(`registered for autostart? ${await isEnabled()}`)
-    // disable()
+  <!-- Using async makes the script run immediately as module is deferred by default -->
+  <script type="module" async>
+    import { setDarkMode } from './js/globals.js'
+    setDarkMode()
   </script>
-</body>
 
+  <main>
+    <h1 class="container">Settings</h1>
+    <label class="switch-container hidden">
+      <div class="switch">
+        <input id="darkModeSwitch" type="checkbox">
+        <span class="slider round"></span>
+      </div>
+      <span class="label">Dark Mode</span>
+    </label>
+    <label class="switch-container hidden">
+      <div class="switch">
+        <input id="autoStartSwitch" type="checkbox">
+        <span class="slider round"></span>
+      </div>
+      <span class="label">Auto Start</span>
+    </label>
+    <div class="container">
+      <button id="backButton" class="button-green">Back</button>
+    </div>
+    <div class="toast" id="toast">
+      <p id="toastMessage"><!-- innerHTML is dynamically added in Javascript --></p>
+      <button id="toastCloseButton">&#10005;</button>
+    </div>
+  </main>
+
+</body>
 </html>
