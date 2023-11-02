@@ -1,8 +1,29 @@
+/* 
+CSS Selector Cheat Sheet:
+
+. - Class selector: Selects elements with a specific class. For example, .myClass selects all elements with the class "myClass".
+# - ID selector: Selects an element with a specific ID. For example, #myID selects the element with the ID "myID".
+* - Universal selector: Selects all elements. For example, * selects all elements.
+: - Pseudo-class selector: Selects elements based on a certain state. For example, :hover selects an element when it's being hovered over.
+*/
+
 :root {
     --background-color-light: #ffffff;
     --background-color-dark: #232730;
+    --background-accent-color-dark: #23252e;
     --text-color-light: #000000;
     --text-color-dark: #eef0ed;
+    --border-color-light: #d1d5db;
+    --border-color-dark: #3b4252;
+    --button-color-light: #0466c8ff;
+    --button-color-dark: #0466c8ff;
+
+    font-size: 16px;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-text-size-adjust: 100%;
 }
 
 .light-mode {
@@ -15,34 +36,69 @@
     color: var(--text-color-dark);
 }
 
-html,
-body {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+@font-face {
+    font-family: 'Montserrat';
+    src: url('../fonts/Montserrat-VariableFont_wght.ttf') format('truetype');
+    font-weight: normal;
+    font-style: normal;
 }
 
-.container {
+@font-face {
+    font-family: 'HindMadurai';
+    src: url('../fonts/HindMadurai-Regular.ttf') format('truetype');
+    font-weight: bold;
+    font-style: normal;
+}
+
+html,
+body {
+    font-family: 'HindMadurai', serif;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Montserrat', sans-serif;
+}
+
+.invisible {
+    opacity: 0;
+}
+
+.hidden {
+    display: none;
+}
+
+.container-flex-column {
     padding: 10px;
     margin-top: 20px;
     margin-bottom: 20px;
     display: flex;
     justify-content: center;
     gap: 10px;
+    align-items: center;
+    justify-content: center;
 }
 
-.hidden {
-    opacity: 0;
+.flex-row {
+    margin-bottom: 20px;
+    display: flex;
 }
 
-.button-red {
-    color: red;
-}
-
-.button-green {
-    color: green;
+.flex-column {
+    flex: 1;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 #toast {
@@ -55,7 +111,7 @@ body {
     transform: translateX(-50%);
     padding: 10px 20px;
     gap: 20px;
-    background-color: #28a745;
+    background-color: var(--button-color-light);
     color: #fff;
     border-radius: 5px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
@@ -65,4 +121,21 @@ body {
 
 #toast.show {
     opacity: 1;
+}
+
+button {
+    background-color: var(--button-color-light);
+    color: var(--text-color-dark);
+    border: 1px solid var(--button-color-light);
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    border-radius: 0.25rem;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-family: 'HindMadurai', serif;
+}
+
+button:hover {
+    background-color: var(--button-color-light);
+    color: var(--background-color-light);
+    border-color: transparent;
 }

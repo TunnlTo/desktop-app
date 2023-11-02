@@ -48,8 +48,8 @@
       darkModeSwitchElement.checked = localStorage.getItem('darkMode') === 'true'
 
       // Now that the UI is set, show the UI
-      document.querySelectorAll('.switch-container.hidden').forEach(function (element) {
-        element.classList.remove('hidden')
+      document.querySelectorAll('.switch-container.invisible').forEach(function (element) {
+        element.classList.remove('invisible')
       })
     })
 
@@ -133,38 +133,47 @@
   }
 </style>
 
-<body class="hidden">
+<!-- body is hidden until light or dark mode is set -->
 
+<body class="hidden">
   <!-- Using async makes the script run immediately as module is deferred by default -->
   <script type="module" async>
     import { setDarkMode } from './js/globals.js'
+
+    // Set light or dark mode
     setDarkMode()
+
+    // Show the body
+    document.body.classList.remove('hidden')
   </script>
 
-  <main>
-    <h1 class="container">Settings</h1>
-    <label class="switch-container hidden">
+  <div class="container-flex-column">
+
+    <h1 class="row">Settings</h1>
+
+    <label class="switch-container row invisible">
       <div class="switch">
         <input id="darkModeSwitch" type="checkbox">
         <span class="slider round"></span>
       </div>
       <span class="label">Dark Mode</span>
     </label>
-    <label class="switch-container hidden">
+    <label class="switch-container row invisible">
       <div class="switch">
         <input id="autoStartSwitch" type="checkbox">
         <span class="slider round"></span>
       </div>
       <span class="label">Auto Start</span>
     </label>
-    <div class="container">
-      <button id="backButton" class="button-green">Back</button>
-    </div>
+
+    <button id="backButton" class="button-green">Back</button>
+
     <div class="toast" id="toast">
       <p id="toastMessage"><!-- innerHTML is dynamically added in Javascript --></p>
       <button id="toastCloseButton">&#10005;</button>
     </div>
-  </main>
+
+  </div>
 
 </body>
 </html>

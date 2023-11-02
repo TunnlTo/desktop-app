@@ -16,11 +16,9 @@ function setDarkMode () {
   if (darkMode) {
     document.body.classList.add('dark-mode')
     document.body.classList.remove('light-mode')
-    document.body.classList.remove('hidden')
   } else {
     document.body.classList.add('light-mode')
     document.body.classList.remove('dark-mode')
-    document.body.classList.remove('hidden')
   }
 }
 

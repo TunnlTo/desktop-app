@@ -18,6 +18,7 @@
     let toastElement
     let toastCloseButtonElement
     let toastMessageElement
+    let addTunnelButtonElement
 
     // Wait for DOM content to load
     window.addEventListener('DOMContentLoaded', () => {
@@ -29,12 +30,14 @@
       toastElement = document.getElementById('toast')
       toastCloseButtonElement = document.getElementById('toastCloseButton')
       toastMessageElement = document.getElementById('toastMessage')
+      addTunnelButtonElement = document.getElementById('addTunnelButton')
 
       // Setup listeners on elements
       tunnelSelectElement.onchange = () => { saveSelectedTunnel() }
       enableButtonElement.onclick = () => { toggleTunnel() }
       editButtonElement.onclick = () => { editClick() }
       toastCloseButtonElement.onclick = () => { closeToast(toastElement) }
+      addTunnelButtonElement.onclick = () => { addTunnelClick() }
     })
 
     // Check if WireSock is installed
@@ -62,12 +65,12 @@
         opt.value = x
         opt.innerHTML = x
         tunnelSelectElement.appendChild(opt)
-
-        // Show the tunnel options now that we have an option to display
-        if (tunnelOptionsElement.classList.contains('hidden')) {
-          tunnelOptionsElement.classList.remove('hidden')
-        }
       }
+    }
+
+    // Show the tunnel options if there are existing tunnels
+    if (tunnelSelectElement.childNodes.length > 0) {
+      tunnelOptionsElement.classList.remove('invisible')
     }
 
     // Set the selected tunnel based on local storage
@@ -85,9 +88,24 @@
       tunnelDisabledUI()
     }
 
+    /* ------------------------
+    End of code that runs on page load
+    ------------------------- */
+
+    /* ------------------------
+    Beginning of functions
+    ------------------------- */
+
     // Navigate to the wireguard page
+    function addTunnelClick () {
+      window.location.href = 'wireguard.html'
+    }
+
+    // Navigate to the wireguard page to edit a tunnel
     function editClick () {
       // Name parameter is encoded in case it uses characters not allowed in URL parameters
+      // Note there is a bug in Tauri that does not allow URL parameters in the dev server
+      // See https://github.com/tauri-apps/tauri/issues/8148 for the issue
       window.location.href = `wireguard.html?edit=true&name=${encodeURIComponent(getSelectedTunnel(), 'UTF-8')}`
     }
 
@@ -160,8 +178,6 @@
 
     // Set the UI to show the tunnel is enabled
     function tunnelEnabledUI () {
-      enableButtonElement.classList.remove('button-green')
-      enableButtonElement.classList.add('button-red')
       enableButtonElement.innerHTML = 'Disable'
 
       tunnelSelectElement.disabled = true
@@ -171,8 +187,6 @@
 
     // Set the UI to show the tunnel is disabled
     function tunnelDisabledUI () {
-      enableButtonElement.classList.remove('button-red')
-      enableButtonElement.classList.add('button-green')
       enableButtonElement.innerHTML = 'Enable'
 
       tunnelSelectElement.disabled = false
@@ -243,11 +257,48 @@
   <link rel="stylesheet" type="text/css" href="./css/globals.css">
 </head>
 
+<style>
+  select {
+    position: relative;
+    appearance: auto;
+    background-color: #fff;
+    border: 1px solid var(--border-color-light);
+    border-radius: 0.375rem;
+    color: #1a202c;
+    font-size: 1rem;
+    padding: 0.5rem 2.5rem 0.5rem 0.5rem;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+    font-family: 'HindMadurai', serif;
+  }
+
+  select:hover {
+    border-color: var(--button-color-light);
+  }
+
+  select:focus {
+    border-color: var(--button-color-light);
+    box-shadow: 0 0 0 3px rgba(4, 102, 200, 0.45);
+    outline: none;
+  }
+
+  select::-ms-expand {
+    display: none;
+  }
+
+  select::placeholder {
+    color: #a0aec0;
+  }
+</style>
+
 <!-- body is hidden until light or dark mode is set -->
 
 <body class="hidden">
 
-  <!-- Using async makes the script run immediately as module is deferred by default -->
+  <!-- 
+    Using async makes the script run immediately as type=module is deferred by default
+    This way we can set the dark or light mode before the content is loaded, preventing
+    a flash of white before dark mode is set. We only need this on index.html
+  -->
   <script type="module" async>
     import { setDarkMode } from './js/globals.js'
 
@@ -267,11 +318,15 @@
 
     // Set light or dark mode
     setDarkMode()
+
+    // Show the body
+    document.body.classList.remove('hidden')
   </script>
 
-  <main>
+  <!----------- Start of HTML content ----------->
+  <div class="container">
     <h1 class="container">TunnlTo</h1>
-    <div id="tunnelOptions" class="container hidden">
+    <div id="tunnelOptions" class="container invisible">
       <select id="tunnelSelect"></select>
       <button id="enableButton">Enable</button>
       <button id="editButton">Edit</button>
@@ -284,8 +339,7 @@
       <p id="toastMessage"><!-- innerHTML is dynamically added in Javascript --></p>
       <button id="toastCloseButton">&#10005;</button>
     </div>
-  </main>
+  </div>
 
 </body>
-
 </html>

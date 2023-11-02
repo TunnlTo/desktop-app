@@ -23,10 +23,10 @@
 
 </div>
 
-## What does this application do?
+# What does this application do?
 TunnlTo is a tool for controlling which Windows applications, processes, and IP addresses can use a WireGuard VPN tunnel.
 
-### Example use cases
+## Example use cases
 * Route only FireFox through a privacy VPN
 * Route Slack and Microsoft Office through a work VPN
 * Route a game through a gaming VPN
@@ -35,34 +35,34 @@ TunnlTo is a tool for controlling which Windows applications, processes, and IP 
 * Route a specific IP address range through a privacy VPN
 * Route all traffic through a privacy VPN except a specific IP address range
 
-## How does it work?
-TunnlTo is built in collaboration with the creator of [WireSock](https://www.wiresock.net/). WireSock is currently closed source but an open source version is being considered.
+# How does it work?
+TunnlTo is built in collaboration with the creator of [WireSock](https://www.wiresock.net/). TunnlTo 'wraps' the WireSock CLI application to provide a simple user interface for enhanced accessibility. WireSock is currently closed source and an open source version is being considered.
 
 > WireSock VPN Client is a lightweight command line WireGuard VPN client for Windows that has advanced features not available in the official WireGuard for Windows such as selective application tunneling and disallowed IP addresses.
 >
 >WireSock VPN Client combines the power of Windows Packet Filter and BoringTun (user space WireGuard implementation in Rust) to provide exceptional performance, security and scalability.
 
-## Performance
+# Performance
 || Download | Upload |
 | :---         |     ---:      |          ---: |
 | **WireGuard Official** | 719 Mbps | **892** Mbps |
 | **TunnlTo** | **892** Mbps | 879 Mbps |
 | **TunSafe** | 284 Mbps | 435 Mbps |
 
-## Prerequisites
+# Prerequisites
 * A basic understanding of WireGuard
 * Access to a WireGuard server
 * Windows 10/11
 
-## Follow For Updates
+# Follow For Updates
 Please follow the project on Twitter to be notified of new releases and updates.
 * [Twitter](https://twitter.com/TunnlTo)
 
-## Get started
+# Get started
 Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to download the installer for the latest version.
 
-## Feature Requests
-Please review the following requested features before making an issue or discussion:
+# Feature Requests
+These are requests made by the community. Please review them before making a new issue or discussion.
 - Dark Mode
 - Kill Switch
 - Auto Startup
@@ -73,7 +73,10 @@ Please review the following requested features before making an issue or discuss
 - System tray controls. Icon colour to reflect status. Tooltip for status/IP. Right click for menu.
 - Statistics / Status data in UI
 - Persistent KeepAlive parameter in config
-- Bulk VPN config import 
+- Bulk VPN config import
+
+# Issues and Suggestions
+Please use [issues](https://github.com/TunnlTo/desktop-app/issues) for any problems you may encounter and [discussions](https://github.com/TunnlTo/desktop-app/discussions) for any suggestions, ideas or feature requests you may have.
 
 ---
 
@@ -83,87 +86,119 @@ Both IPv4 and IPv6 are supported.
 ## Configuration Parameters
 
 ### Tunnel Name
+#### Summary
 The description of your WireGuard tunnel.
-- Required
-- Example: `Work VPN`
 
-### Private Key
-The private key for the WireGuard tunnel.
-- Required
-
-### Public Key
-The Public Key for the WireGuard tunnel.
-
-- Required
-
-### Preshared Key
-The Preshared Key for the WireGuard tunnel.
-
-- Optional
-
-### Interface Address
-The interface address for the WireGuard tunnel.
-
-- Required
-- Example: `10.0.64.1/32`
+#### Example
+- `Work VPN`
 
 ### Endpoint
-The endpoint for the WireGuard server.
+#### Summary
+The endpoint for the WireGuard server including the port number.
 
-- Required
-- Example: `100.100.100.100:54236`
+#### Example
+- `100.100.100.100:54236`
 
-### DNS
+### Private Key
+#### Summary
+The private key for the WireGuard tunnel.
+
+### Public Key
+#### Summary
+The Public Key for the WireGuard tunnel.
+
+### Interface Address
+#### Summary
+The interface address for the WireGuard tunnel.
+
+#### Example 
+- `10.0.64.1/32`
+
+### Preshared Key (Optional)
+#### Summary
+The Preshared Key for the WireGuard tunnel.
+
+### DNS (Optional)
+#### Summary
 The DNS server to use for the WireGuard tunnel.
 
-- Optional
-- If left blank, the default DNS server will be used.
-- Use a comma to separate multiple DNS servers
-- Example: `1.1.1.1, 8.8.8.8`
+#### Rules
+- If left blank, the computers default DNS server will be used.
+- Use a comma to separate multiple DNS servers.
 
-### Allowed Apps
+#### Example
+- `1.1.1.1, 8.8.8.8`
+
+### Allowed Apps (Optional)
+#### Summary
 The list of applications that can use the WireGuard tunnel.
 
-- Optional
+#### Rules
 - If left blank, all applications will be allowed.
 - Use a comma to separate multiple applications.
 - If this parameter is used, the Allowed IP's parameter must also be set.
-- Use the full path to the executable or list the process name without the .exe extension, for example:
+
+#### Options
+  - Use the full path to the executable
+  - List the process name without the .exe extension
+  - List the process name with the .exe extension
+  - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be included.
+
+#### Examples
   - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe` 
   - `chrome, msoffice, firefox`
+  - `C:\Program Files (x86)\`
 
-### Disallowed Apps
+### Disallowed Apps (Optional)
+#### Summary
 The list of applications that cannot use the WireGuard tunnel.
 
-- Optional
+#### Rules
 - AllowedApps takes precedence, and if both are specified, then AllowedApps is matched first.
 - Use a comma to separate multiple applications.
-- Use the full path to the executable or list the process name without the .exe extension, for example:
+
+#### Options
+  - Use the full path to the executable
+  - List the process name without the .exe extension
+  - List the process name with the .exe extension
+  - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be excluded.
+
+#### Examples
   - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe` 
   - `chrome, msoffice, firefox`
+  - `C:\Program Files (x86)\`
 
-### Allowed IP's
+### Allowed IP's (Optional)
+#### Summary
 The list of IP addresses and IP ranges that can use the WireGuard tunnel.
 
-- Optional
-- Default: `0.0.0.0/0`
-- Example: `1.1.1.1, 192.168.1.0/24`
+#### Rules
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will forward all the listed IP addresses and IP ranges used by the Allowed Apps through the tunnel.
 
-### Disallowed IP's
+#### Default
+- `0.0.0.0/0`
+
+#### Example
+- `1.1.1.1, 192.168.1.0/24`
+
+### Disallowed IP's (Optional)
+#### Summary
 The list of IP addresses and IP ranges that cannot use the WireGuard tunnel.
 
-- Optional
-- Example: `1.1.1.1, 192.168.1.0/24`
+#### Rules
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will block all the listed IP addresses and IP ranges used by the Allowed Apps from using the tunnel.
 
-### MTU
+#### Example
+- `1.1.1.1, 192.168.1.0/24`
+
+### MTU (Optional)
+#### Summary
 The MTU for the WireGuard tunnel.
 
-- Optional
-- Default: `1420`
+#### Default 
+- `1420`
 
 ---
 
@@ -194,6 +229,20 @@ In this example, all traffic is routed through the WireGuard tunnel except Chrom
 ### Configuration
 - DNS: `1.1.1.1, 8.8.8.8`
 - Disallowed Apps: `chrome`
+- Allowed IP's: `0.0.0.0/0`
+
+## Route all apps in a specific folder through a a tunnel
+### Scenario
+You utilise a company VPN to access your employers servers. You want all of your work applications that are installed in a specific folder to route through your company VPN so that they:
+- Work correctly with your companies servers
+- Follows your company policies
+
+### Expected Outcome
+In this example, all apps in the `C:\Work Apps\` folder are routed through the WireGuard tunnel. The company DNS server is used for DNS requests.
+
+### Configuration
+- DNS: `10.64.0.1`
+- Allowed Apps: `C:\Work Apps\`
 - Allowed IP's: `0.0.0.0/0`
 
 ## Route a specific IP address range when used by a specific app through a tunnel
@@ -242,14 +291,11 @@ Counter Strike traffic is routed through the WireGuard tunnel except for when a 
 
 ---
 
-# Issues and Suggestions
-Please use [issues](https://github.com/TunnlTo/desktop-app/issues) for any problems you may encounter and [discussions](https://github.com/TunnlTo/desktop-app/discussions) for any suggestions, ideas or feature requests you may have.
-
 # Built With
 * WireSock
 * WireGuard
 * Tauri
-* Rust, HTML, CSS (Bootstrap), JavaScript
+* Rust, HTML, CSS, JavaScript
 
 # License
 Copyright (c) 2022 TunnlTo. TunnlTo is not currently licensed.
