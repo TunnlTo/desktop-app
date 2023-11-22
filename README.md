@@ -34,6 +34,8 @@ TunnlTo is a tool for controlling which Windows applications, processes, and IP 
 * Stop a browser from routing through a work VPN
 * Route a specific IP address range through a privacy VPN
 * Route all traffic through a privacy VPN except a specific IP address range
+* Route all applications within a folder through a VPN
+* Route all traffic through a VPN except applications within a folder
 
 # How does it work?
 TunnlTo is built in collaboration with the creator of [WireSock](https://www.wiresock.net/). TunnlTo 'wraps' the WireSock CLI application to provide a simple user interface for enhanced accessibility. WireSock is currently closed source and an open source version is being considered.
@@ -295,10 +297,9 @@ Counter Strike traffic is routed through the WireGuard tunnel except for when a 
 * WireSock
 * WireGuard
 * Tauri
-* Rust, HTML, CSS, JavaScript
 
 # License
-Copyright (c) 2022 TunnlTo. TunnlTo is not currently licensed.
+Copyright (c) 2023 TunnlTo. TunnlTo is not currently licensed.
 
 # Acknowledgments
 

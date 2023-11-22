@@ -1,3 +1,7 @@
-src-tauri/Cargo.lock
-package-lock.json
-node_modules/
+# Logs
+logs
+*.log
+npm-debug.log*
+
+node_modules
+dist

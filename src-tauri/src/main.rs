@@ -1,7 +1,5 @@
-#![cfg_attr(
-    all(not(debug_assertions), target_os = "windows"),
-    windows_subsystem = "windows"
-)]
+// Prevents additional console window on Windows in release, DO NOT REMOVE!!
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::env;
 use std::ffi::c_void;
@@ -13,10 +11,15 @@ use std::os::windows::process::CommandExt;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 extern crate winreg;
+use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
+use serde::Serialize;
+use std::sync::Mutex;
 use sysinfo::{System, SystemExt};
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use tauri_plugin_autostart::MacosLauncher;
+use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use windows::{
     core::PCSTR,
     Win32::Foundation::{CloseHandle, GetLastError, HANDLE, INVALID_HANDLE_VALUE, WIN32_ERROR},
@@ -29,12 +32,11 @@ use windows::{
 };
 use winreg::enums::*;
 use winreg::RegKey;
-use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
-  args: Vec<String>,
-  cwd: String,
+    args: Vec<String>,
+    cwd: String,
 }
 
 #[derive(Debug)]
@@ -114,22 +116,62 @@ impl Drop for ChildProcessTracker {
 
 static CHILD_PROCESS_TRACKER: OnceCell<ChildProcessTracker> = OnceCell::new();
 
+struct WiresockEnablingGuard;
+
+impl Drop for WiresockEnablingGuard {
+    fn drop(&mut self) {
+        let mut state = WIRESOCK_STATE.lock().unwrap();
+        state.wiresock_status = "STOPPED".to_string();
+        state.tunnel_status = "DISCONNECTED".to_string();
+    }
+}
+
+#[derive(Clone, Serialize, Debug)]
+struct WiresockState {
+    tunnel_id: String,
+    wiresock_status: String,
+    tunnel_status: String,
+    logs: Vec<String>,
+}
+
+impl WiresockState {
+    fn new() -> Self {
+        WiresockState {
+            tunnel_id: String::new(),
+            wiresock_status: "STOPPED".to_string(),
+            tunnel_status: "DISCONNECTED".to_string(),
+            logs: Vec::new(),
+        }
+    }
+}
+
+lazy_static! {
+    static ref WIRESOCK_STATE: Mutex<WiresockState> = Mutex::new(WiresockState::new());
+}
+
+mod tunnel;
+use tunnel::Tunnel;
 #[tauri::command]
-#[allow(non_snake_case)]
-async fn enable_wiresock(
-    privateKey: &str,
-    interfaceAddress: &str,
-    dns: &str,
-    publicKey: &str,
-    endpoint: &str,
-    presharedKey: Option<&str>,
-    allowedApps: Option<&str>,
-    disallowedApps: Option<&str>,
-    allowedIPs: Option<&str>,
-    disallowedIPs: Option<&str>,
-    mtu: Option<&str>,
-) -> Result<String, String> {
-    // Write a wiresock config file to disk and then start the WireSock client
+async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result<(), String> {
+    // Check if enable_wiresock is already running
+    {
+        let state = WIRESOCK_STATE.lock().unwrap();
+        if state.wiresock_status != "STOPPED" {
+            println!("wiresock_state at start of enable_wiresock is {:?}", &*state);
+            return Err("enable_wiresock is already running".into());
+        }
+    }
+
+    // Update the WIRESOCK_STATE and emit the change
+    update_state(&app_handle, |state| {
+        state.tunnel_id = tunnel.id.clone();
+        state.wiresock_status = "STARTING".to_string();
+        state.tunnel_status = "DISCONNECTED".to_string();
+        state.logs = Vec::new();
+    });
+
+    // Create a guard that will reset the wiresock_status when dropped
+    let _guard = WiresockEnablingGuard;
 
     // Get the users home directory
     let mut tunnel_config_path = PathBuf::new();
@@ -151,33 +193,70 @@ async fn enable_wiresock(
 
     // Write the config file to disk
     let mut w = fs::File::create(&tunnel_config_path).unwrap();
-    writeln!(&mut w, "[Interface]").unwrap();
-    writeln!(&mut w, "PrivateKey = {}", privateKey).unwrap();
-    writeln!(&mut w, "Address = {}", interfaceAddress).unwrap();
-    writeln!(&mut w, "DNS = {}", dns).unwrap();
-    if mtu.is_some() {
-        writeln!(&mut w, "MTU = {}", mtu.unwrap()).unwrap()
-    };
 
+    // Interface section
+    writeln!(&mut w, "[Interface]").unwrap();
+    writeln!(&mut w, "PrivateKey = {}", tunnel.interface.privateKey).unwrap();
+    writeln!(&mut w, "Address = {}", tunnel.interface.ipAddress).unwrap();
+    if !tunnel.interface.port.is_empty() {
+        writeln!(&mut w, "ListenPort = {}", tunnel.interface.port).unwrap();
+    }
+    if !tunnel.interface.dns.is_empty() {
+        writeln!(&mut w, "DNS = {}", tunnel.interface.dns).unwrap();
+    }
+    if !tunnel.interface.mtu.is_empty() {
+        writeln!(&mut w, "MTU = {}", tunnel.interface.mtu).unwrap();
+    }
+
+    // Put a space between the sections for readability
     writeln!(&mut w, "").unwrap();
+
+    // Peer section
     writeln!(&mut w, "[Peer]").unwrap();
-    writeln!(&mut w, "PublicKey = {}", publicKey).unwrap();
-    if presharedKey.is_some() {
-        writeln!(&mut w, "PresharedKey = {}", presharedKey.unwrap()).unwrap();
+    writeln!(&mut w, "PublicKey = {}", tunnel.peer.publicKey).unwrap();
+    if !tunnel.peer.presharedKey.is_empty() {
+        writeln!(&mut w, "PresharedKey = {}", tunnel.peer.presharedKey).unwrap();
     }
-    writeln!(&mut w, "Endpoint = {}", endpoint).unwrap();
-    writeln!(&mut w, "PersistentKeepalive = 25").unwrap();
-    if allowedApps.is_some() {
-        writeln!(&mut w, "AllowedApps = {}", allowedApps.unwrap()).unwrap();
+    writeln!(
+        &mut w,
+        "Endpoint = {}:{}",
+        tunnel.peer.endpoint, tunnel.peer.port
+    )
+    .unwrap();
+    if !tunnel.peer.persistentKeepalive.is_empty() {
+        writeln!(
+            &mut w,
+            "PersistentKeepalive = {}",
+            tunnel.peer.persistentKeepalive
+        )
+        .unwrap();
     }
-    if disallowedApps.is_some() {
-        writeln!(&mut w, "DisallowedApps = {}", disallowedApps.unwrap()).unwrap();
+    if !tunnel.rules.allowed.apps.is_empty() {
+        writeln!(
+            &mut w,
+            "AllowedApps = {} {}",
+            tunnel.rules.allowed.apps, tunnel.rules.allowed.folders
+        )
+        .unwrap();
     }
-    if allowedIPs.is_some() {
-        writeln!(&mut w, "AllowedIPs = {}", allowedIPs.unwrap()).unwrap();
+    if !tunnel.rules.disallowed.apps.is_empty() {
+        writeln!(
+            &mut w,
+            "DisallowedApps = {} {}",
+            tunnel.rules.disallowed.apps, tunnel.rules.disallowed.folders
+        )
+        .unwrap();
     }
-    if disallowedIPs.is_some() {
-        writeln!(&mut w, "DisallowedIPs = {}", disallowedIPs.unwrap()).unwrap();
+    if !tunnel.rules.allowed.ipAddresses.is_empty() {
+        writeln!(&mut w, "AllowedIPs = {}", tunnel.rules.allowed.ipAddresses).unwrap();
+    }
+    if !tunnel.rules.disallowed.ipAddresses.is_empty() {
+        writeln!(
+            &mut w,
+            "DisallowedIPs = {}",
+            tunnel.rules.disallowed.ipAddresses
+        )
+        .unwrap();
     }
 
     // Build the full path to the wiresock executable
@@ -200,29 +279,77 @@ async fn enable_wiresock(
         .spawn()
         .expect("Unable to start WireSock process");
 
+    // Update the WIRESOCK_STATE and emit the change
+    update_state(&app_handle, |state| {
+        state.wiresock_status = "RUNNING".to_string();
+    });
+
     // Add process to global Job object
+    // This ensures if TunnlTo process finishes, wiresock will also exit
     if let Some(tracker) = ChildProcessTracker::global() {
         tracker.add_process(child.as_raw_handle()).ok();
     }
 
-    // Check the stdout data
-    if let Some(stdout) = &mut child.stdout {
-        let lines = BufReader::new(stdout).lines().enumerate().take(20);
-        for (counter, line) in lines {
-            let line_string = &line.unwrap();
-            println!("enable_wiresock: {}, {:?}", counter, line_string);
-            
-            if line_string.contains("Handshake response received from") {
-                return Ok("WireSock started successfully".into());
-            } else if line_string.contains("WireSock WireGuard VPN Client is running already") {
-                return Err("WireSock WireGuard VPN Client is running already".into());
-            } else if line_string.contains("Endpoint is either invalid of failed to resolve") {
-                return Err("Endpoint is either invalid of failed to resolve".into());
+    // Process the stdout data
+    if let Some(stdout) = &mut child.stdout.take() {
+        let reader = BufReader::new(stdout);
+
+        for line in reader.lines() {
+            let line_string = line.unwrap();
+
+            if line_string.is_empty() {
+                continue;
             }
+
+            if cfg!(debug_assertions) {
+                println!("wiresock_log: {}", line_string);
+            }
+
+            // Update the WIRESOCK_STATE and emit the change
+            update_state(&app_handle, |state| {
+                if line_string.contains("Tunnel has started") {
+                    state.tunnel_status = "CONNECTED".to_string();
+                }
+
+                // Append the log data to the state
+                state.logs.push(line_string.clone());
+            });
         }
     }
 
-    Err("Unknown error starting WireSock process".into())
+    // Handle the wiresock process stopping
+    match child.wait() {
+        Ok(status) => {
+            println!("wiresock process exited with: {}", status);
+
+            // Update the WIRESOCK_STATE and emit the change
+            update_state(&app_handle, |state| {
+                state.wiresock_status = "STOPPED".to_string();
+                state.tunnel_status = "DISCONNECTED".to_string();
+                state.logs.push("Tunnel Disabled. Wiresock process stopped".into())
+            });
+        }
+        Err(e) => println!("error attempting to wait: {}", e),
+    }
+
+    println!("End of enable_wiresock function");
+    Ok(())
+}
+
+fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
+where
+    F: FnOnce(&mut WiresockState),
+{
+    let mut state = WIRESOCK_STATE.lock().unwrap();
+    update(&mut state);
+    app_handle.emit_all("wiresock_state", &*state).unwrap();
+}
+
+#[tauri::command]
+fn get_wiresock_state(app_handle: tauri::AppHandle) -> Result<(), String> {
+    let state = WIRESOCK_STATE.lock().unwrap();
+    app_handle.emit_all("wiresock_state", &*state).unwrap();
+    Ok(())
 }
 
 fn get_wiresock_install_path() -> Result<String, String> {
@@ -245,7 +372,7 @@ fn get_wiresock_install_path() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn disable_wiresock() -> Result<String, String> {
+fn disable_wiresock() -> Result<(), String> {
     println!("Attempting to stop WireSock");
     Command::new("taskkill")
         .arg("/F")
@@ -255,17 +382,19 @@ fn disable_wiresock() -> Result<String, String> {
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .spawn()
         .expect("command failed to start");
-    Ok("WireSock stopped".into())
+
+    // If killing the process was succesful, it will be emitted from the child.wait in enable_wiresock function
+    Ok(())
 }
 
 #[tauri::command]
-fn install_wiresock() -> Result<String, String> {
+async fn install_wiresock() -> Result<String, String> {
     // Get the current directory
     let current_dir = env::current_dir().unwrap();
 
     // Build the path to the WireSock installer
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
-    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.17.1.msi"#);
+    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.32.1.msi"#);
 
     // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
@@ -357,7 +486,8 @@ fn main() {
             check_wiresock_process,
             install_wiresock,
             check_wiresock_installed,
-            check_wiresock_service
+            check_wiresock_service,
+            get_wiresock_state
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -389,8 +519,13 @@ fn main() {
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
 
-            app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
+            app.emit_all("single-instance", Payload { args: argv, cwd })
+                .unwrap();
         }))
+        .plugin(tauri_plugin_autostart::init(
+            MacosLauncher::LaunchAgent,
+            Some(vec!["--flag1", "--flag2"]), /* arbitrary number of args to pass to your app */
+        ))
         .build(tauri::generate_context!())
         .expect("error while running tauri application")
         .run(|app, event| match event {
