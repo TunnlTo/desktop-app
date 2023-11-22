@@ -1,0 +1,7 @@
+{
+  "extends": "prettier-config-standard",
+  "tabWidth": 2,
+  "semi": false,
+  "singleQuote": true,
+  "printWidth": 120
+}

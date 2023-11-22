@@ -1,15 +1,14 @@
 {
-  "$schema": "../node_modules/@tauri-apps/cli/schema.json",
   "build": {
-    "beforeBuildCommand": "",
     "beforeDevCommand": "npm run dev",
-    "devPath": "http://localhost:5555",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
     "distDir": "../dist",
-    "withGlobalTauri": true
+    "withGlobalTauri": false
   },
   "package": {
     "productName": "TunnlTo",
-    "version": "0.1.8"
+    "version": "1.0.0"
   },
   "tauri": {
     "systemTray": {
@@ -22,16 +21,18 @@
           "$RESOURCE/*"
         ]
       },
-      "all": true
+      "all": true,
+      "shell": {
+        "all": false,
+        "open": true
+      }
     },
     "bundle": {
       "active": true,
       "category": "DeveloperTool",
       "copyright": "",
-      "deb": {
-        "depends": []
-      },
-      "externalBin": [],
+      "targets": "all",
+      "identifier": "com.tunnl.to",
       "icon": [
         "icons/32x32.png",
         "icons/128x128.png",
@@ -39,20 +40,9 @@
         "icons/icon.icns",
         "icons/icon.ico"
       ],
-      "identifier": "com.tunnl.to",
-      "longDescription": "",
-      "macOS": {
-        "entitlements": null,
-        "exceptionDomain": "",
-        "frameworks": [],
-        "providerShortName": null,
-        "signingIdentity": null
-      },
       "resources": [
-        "wiresock/wiresock-vpn-client-x64-1.2.17.1.msi"
+        "wiresock/wiresock-vpn-client-x64-1.2.32.1.msi"
       ],
-      "shortDescription": "",
-      "targets": "all",
       "windows": {
         "certificateThumbprint": null,
         "digestAlgorithm": "sha256",
@@ -73,10 +63,10 @@
     "windows": [
       {
         "fullscreen": false,
-        "height": 700,
-        "resizable": false,
+        "resizable": true,
         "title": "TunnlTo",
-        "width": 850
+        "width": 900,
+        "height": 700
       }
     ]
   }
