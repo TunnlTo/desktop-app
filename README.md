@@ -26,9 +26,6 @@
 # What does this application do?
 TunnlTo is a tool for controlling which Windows applications, processes, and IP addresses can use a WireGuard VPN tunnel.
 
-# Download
-Download directly be clicking [here](https://github.com/TunnlTo/desktop-app/releases/download/v0.1.7/TunnlTo_0.1.7_x64_en-US.msi) or visit the [releases page](https://github.com/TunnlTo/desktop-app/releases).
-
 ## Example use cases
 * Route only FireFox through a privacy VPN
 * Route Slack and Microsoft Office through a work VPN
@@ -300,7 +297,6 @@ Counter Strike traffic is routed through the WireGuard tunnel except for when a 
 * WireSock
 * WireGuard
 * Tauri
-* Rust, TypeScript, React, TailwindCSS
 
 # License
 Copyright (c) 2023 TunnlTo. TunnlTo is not currently licensed.
