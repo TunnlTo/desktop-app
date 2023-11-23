@@ -157,7 +157,10 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
     {
         let state = WIRESOCK_STATE.lock().unwrap();
         if state.wiresock_status != "STOPPED" {
-            println!("wiresock_state at start of enable_wiresock is {:?}", &*state);
+            println!(
+                "wiresock_state at start of enable_wiresock is {:?}",
+                &*state
+            );
             return Err("enable_wiresock is already running".into());
         }
     }
@@ -231,25 +234,61 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
         )
         .unwrap();
     }
+
+    // Rules
+
+    // Allowed
+
+    // Allowed Apps
+    let mut allowed_apps = String::new();
     if !tunnel.rules.allowed.apps.is_empty() {
-        writeln!(
-            &mut w,
-            "AllowedApps = {} {}",
-            tunnel.rules.allowed.apps, tunnel.rules.allowed.folders
-        )
-        .unwrap();
+        allowed_apps = format!("AllowedApps = {}", tunnel.rules.allowed.apps);
     }
-    if !tunnel.rules.disallowed.apps.is_empty() {
-        writeln!(
-            &mut w,
-            "DisallowedApps = {} {}",
-            tunnel.rules.disallowed.apps, tunnel.rules.disallowed.folders
-        )
-        .unwrap();
+
+    // Allowed Folders
+    if !tunnel.rules.allowed.folders.is_empty() {
+        if !allowed_apps.is_empty() {
+            // Ensure there is comma between the allowed apps and allowed folders
+            allowed_apps = format!("{}, {}", allowed_apps, tunnel.rules.allowed.folders);
+        } else {
+            allowed_apps = format!("AllowedApps = {}", tunnel.rules.allowed.folders);
+        }
     }
+
+    // Write Allowed Apps/Folders to the config file
+    if !allowed_apps.is_empty() {
+        writeln!(&mut w, "{}", allowed_apps).unwrap();
+    }
+
+    // Allowed IP Addresses
     if !tunnel.rules.allowed.ipAddresses.is_empty() {
         writeln!(&mut w, "AllowedIPs = {}", tunnel.rules.allowed.ipAddresses).unwrap();
     }
+
+    // Disallowed
+
+    // Disallowed Apps
+    let mut disallowed_apps = String::new();
+    if !tunnel.rules.disallowed.apps.is_empty() {
+        disallowed_apps = format!("DisallowedApps = {}", tunnel.rules.disallowed.apps);
+    }
+
+    // Disallowed Folders
+    if !tunnel.rules.disallowed.folders.is_empty() {
+        if !disallowed_apps.is_empty() {
+            // Ensure there is comma between the disallowed apps and disallowed folders
+            disallowed_apps = format!("{}, {}", disallowed_apps, tunnel.rules.disallowed.folders);
+        } else {
+            disallowed_apps = format!("DisallowedApps = {}", tunnel.rules.disallowed.folders);
+        }
+    }
+
+    // Write Disallowed Apps/Folders to the config file
+    if !disallowed_apps.is_empty() {
+        writeln!(&mut w, "{}", disallowed_apps).unwrap();
+    }
+
+    // Disallowed IP Addresses
     if !tunnel.rules.disallowed.ipAddresses.is_empty() {
         writeln!(
             &mut w,
@@ -326,7 +365,9 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
             update_state(&app_handle, |state| {
                 state.wiresock_status = "STOPPED".to_string();
                 state.tunnel_status = "DISCONNECTED".to_string();
-                state.logs.push("Tunnel Disabled. Wiresock process stopped".into())
+                state
+                    .logs
+                    .push("Tunnel Disabled. Wiresock process stopped".into())
             });
         }
         Err(e) => println!("error attempting to wait: {}", e),
