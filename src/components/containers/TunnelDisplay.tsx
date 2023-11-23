@@ -27,13 +27,11 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
       <div className="flex flex-col sm:flex-row">
         {/* Start of name, status and buttons */}
         <div className="flex-col mb-4 sm:mb-0">
-
           {/* Tunnel name */}
           <h1 className="text-xl font-semibold leading-7 text-gray-900">{selectedTunnel?.name}</h1>
 
           {/* Tunnel status section */}
           <div className="flex items-center align-center mt-1">
-
             {/* Start of Tunnel status icon */}
             <div
               className={`${
@@ -51,10 +49,8 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
                 ? 'Enabled'
                 : 'Disabled'}
             </p>
-            
           </div>
           {/* End tunnel status section */}
-
         </div>
         {/* End of name, status and buttons */}
 
@@ -112,21 +108,27 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
           <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
             <dt className="text-sm font-medium leading-6 text-gray-900">Allowed</dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {selectedTunnel.rules.allowed.apps}
-              {selectedTunnel.rules.allowed.folders.length > 0 ? `, ${selectedTunnel.rules.allowed.folders}` : ''}
-              {selectedTunnel.rules.allowed.ipAddresses.length > 0
-                ? `, ${selectedTunnel.rules.allowed.ipAddresses}`
-                : ''}
+              {/* Create an array of the values and seperate with a comma */}
+              {[
+                selectedTunnel.rules.allowed.apps,
+                selectedTunnel.rules.allowed.folders,
+                selectedTunnel.rules.allowed.ipAddresses,
+              ]
+                .filter(Boolean)
+                .join(', ')}
             </dd>
           </div>
           <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
             <dt className="text-sm font-medium leading-6 text-gray-900">Disallowed</dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {selectedTunnel.rules.disallowed.apps}
-              {selectedTunnel.rules.disallowed.folders.length > 0 ? `, ${selectedTunnel.rules.disallowed.folders}` : ''}
-              {selectedTunnel.rules.disallowed.ipAddresses.length > 0
-                ? `, ${selectedTunnel.rules.disallowed.ipAddresses}`
-                : ''}
+              {/* Create an array of the values and seperate with a comma */}
+              {[
+                selectedTunnel.rules.disallowed.apps,
+                selectedTunnel.rules.disallowed.folders,
+                selectedTunnel.rules.disallowed.ipAddresses,
+              ]
+                .filter(Boolean)
+                .join(', ')}
             </dd>
           </div>
         </dl>
