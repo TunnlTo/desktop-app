@@ -26,10 +26,16 @@ function Main(): JSX.Element {
   /* ------------------------- */
   /* ------- useState -------- */
   /* ------------------------- */
+  // For checking if Wiresock is installed on app launch, so we know to show the setup component or not.
   const [isWiresockInstalled, setIsWiresockInstalled] = useState<boolean | null>(null)
+
+  // For keeping track of the state of the wiresock process and tunnel connection status emitted from Tauri.
   const [wiresockState, setWiresockState] = useState<WiresockStateModel | null>(null)
+
+  // Keep track of whether auto connect has already fired. Don't want it running again on component reload.
   const [hasRunAutoConnect, setHasRunAutoConnect] = useState(false)
 
+  // Keep track of which tunnel the UI is showing
   const [selectedTunnel, setSelectedTunnel] = useState<Tunnel | null>(() => {
     // Get the previously selected tunnel from settings on first load
     const selectedTunnelID = getSelectedTunnelIDFromStorage()
@@ -40,8 +46,8 @@ function Main(): JSX.Element {
     }
   })
 
+  // Get the tunnel configs from local storage
   const [tunnels, setTunnels] = useState<Record<string, Tunnel>>(() => {
-    // Get the tunnels from settings
     const tunnelsFromStorage = getTunnelsFromStorage()
     const filteredTunnels = Object.fromEntries(
       Object.entries(tunnelsFromStorage).filter(([_, value]) => value !== null),
@@ -62,7 +68,7 @@ function Main(): JSX.Element {
   }, [])
 
   // Wait for wiresockState data to arrive from Tauri
-  // Auto connect a tunnel if there is one set
+  // Auto connect a tunnel if one is set
   useEffect(() => {
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
