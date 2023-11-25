@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react'
 import ReactDOM from 'react-dom/client'
 import './main.css'
 import type SettingsModel from './models/SettingsModel.ts'
-import Tunnel from './models/Tunnel.ts'
+import type Tunnel from './models/Tunnel.ts'
 import { invoke } from '@tauri-apps/api'
 import { listen } from '@tauri-apps/api/event'
 import type WiresockStateModel from './models/WiresockStateModel.ts'
@@ -17,6 +17,9 @@ import {
   getSettingsFromStorage,
   saveSelectedTunnelIDInStorage,
   saveAllTunnelsInStorage,
+  removePreVersion1Tunnel,
+  removePreVersion1SelectedTunnel,
+  convertOldData,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
@@ -57,7 +60,11 @@ function Main(): JSX.Element {
   useEffect(() => {
     void checkWiresockInstalled()
     void setupTauriEventListener()
-    convertOldData()
+
+    const updatedTunnels = convertOldData(tunnels)
+    if (updatedTunnels !== null) {
+      setTunnels(updatedTunnels)
+    }
   }, [])
 
   // Monitor selectedTunnel for changes
@@ -96,69 +103,6 @@ function Main(): JSX.Element {
   /* ------------------------- */
   /* ------- functions ------- */
   /* ------------------------- */
-
-  // Convert local storage data for versions <1.0.0 to the 1.0.0 data structure changes.
-  function convertOldData(): void {
-    // Get all keys from local storage
-    const keys = Object.keys(localStorage)
-
-    // Remove the old selectedTunnel key
-    localStorage.removeItem('selectedTunnel')
-
-    // Filter keys that start with 'tunnel-wireguard-'
-    const oldTunnelKeys = keys.filter((key) => key.startsWith('tunnel-wireguard-'))
-
-    // Iterate over each old tunnel key
-    oldTunnelKeys.forEach((oldTunnelKey) => {
-      // Get the old tunnel data from local storage
-      const oldTunnelData = localStorage.getItem(oldTunnelKey)
-
-      if (oldTunnelData != null) {
-        // Parse the old tunnel data into a JavaScript object
-        const oldTunnel = JSON.parse(oldTunnelData)
-
-        // Create a new Tunnel object and assign the old tunnel data to it
-        const newTunnel = new Tunnel(tunnels)
-        newTunnel.name = oldTunnel.name
-
-        // Interface
-
-        newTunnel.interface.privateKey = oldTunnel.privateKey
-        newTunnel.interface.dns = oldTunnel.dns
-        newTunnel.interface.mtu = oldTunnel.mtu
-        // The /32 is no longer required
-        const [interfaceIpAddress] = oldTunnel.interfaceAddress.split('/')
-        newTunnel.interface.ipAddress = interfaceIpAddress
-
-        // Peer
-
-        newTunnel.peer.publicKey = oldTunnel.publicKey
-        newTunnel.peer.presharedKey = oldTunnel.presharedKey
-        // The old endpoint had the port included and now it is seperated
-        const [peerEndpoint, peerPort] = oldTunnel.endpoint.split(':')
-        newTunnel.peer.endpoint = peerEndpoint
-        newTunnel.peer.port = peerPort
-
-        // Rules
-
-        newTunnel.rules.allowed.apps = oldTunnel.allowedApps
-        newTunnel.rules.disallowed.apps = oldTunnel.disallowedApps
-        newTunnel.rules.allowed.ipAddresses = oldTunnel.allowedIPs
-        newTunnel.rules.disallowed.ipAddresses = oldTunnel.disallowedIPs
-
-        // Save the new tunnel
-        saveTunnelInStorage(tunnels, newTunnel)
-        console.log(`Migrated tunnel "${oldTunnel.name}" to TunnlTo v1.0.0 data structure.`)
-
-        // Update the tunnels useState
-        setTunnels(getAllTunnelsFromStorage())
-
-        // Delete the old tunnel from local storage
-        localStorage.removeItem(oldTunnelKey)
-        console.log(`Removed old version of "${oldTunnel.name}" tunnel data from local storage.`)
-      }
-    })
-  }
 
   async function checkWiresockInstalled(): Promise<void> {
     console.log('Checking if Wiresock is installed')

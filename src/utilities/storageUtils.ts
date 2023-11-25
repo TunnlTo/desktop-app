@@ -1,4 +1,4 @@
-import type Tunnel from '../models/Tunnel.ts'
+import Tunnel from '../models/Tunnel.ts'
 import SettingsModel from '../models/SettingsModel.ts'
 
 /* --------------- */
@@ -49,6 +49,11 @@ export function saveSelectedTunnelIDInStorage(selectedTunnelID: string): void {
   localStorage.setItem('selectedTunnelID', selectedTunnelID)
 }
 
+// Remove selectedTunnel key that was used in <1.0.0
+export function removePreVersion1SelectedTunnel(): void {
+  localStorage.removeItem('selectedTunnel')
+}
+
 /* --------------- */
 /* Settings        */
 /* --------------- */
@@ -63,4 +68,75 @@ export function getSettingsFromStorage(): SettingsModel {
   const settingsStorageItem = localStorage.getItem('settings')
   const settings = settingsStorageItem !== null ? JSON.parse(settingsStorageItem) : new SettingsModel()
   return settings
+}
+
+/* --------------------------------------------- */
+/* Local storage data migration for <1.0.0 data  */
+/* --------------------------------------------- */
+
+// Convert local storage data for versions <1.0.0 to the 1.0.0 data structure changes.
+export function convertOldData(tunnels: Record<string, Tunnel>): Record<string, Tunnel> | null {
+  // Remove old selected tunnel data
+  removePreVersion1SelectedTunnel()
+
+  // Get all keys from local storage
+  const keys = Object.keys(localStorage)
+
+  // Filter keys that start with 'tunnel-wireguard-'
+  const oldTunnelKeys = keys.filter((key) => key.startsWith('tunnel-wireguard-'))
+
+  if (oldTunnelKeys.length === 0) {
+    return null
+  }
+
+  let updatedTunnels = { ...tunnels }
+
+  // Iterate over each old tunnel key
+  oldTunnelKeys.forEach((oldTunnelKey) => {
+    // Get the old tunnel data from local storage
+    const oldTunnelData = localStorage.getItem(oldTunnelKey)
+
+    if (oldTunnelData != null) {
+      // Parse the old tunnel data into a JavaScript object
+      const oldTunnel = JSON.parse(oldTunnelData)
+
+      // Create a new Tunnel object and assign the old tunnel data to it
+      const newTunnel = new Tunnel(tunnels)
+      newTunnel.name = oldTunnel.name
+
+      // Interface
+
+      newTunnel.interface.privateKey = oldTunnel.privateKey
+      newTunnel.interface.dns = oldTunnel.dns
+      newTunnel.interface.mtu = oldTunnel.mtu
+      // The /32 is no longer required
+      const [interfaceIpAddress] = oldTunnel.interfaceAddress.split('/')
+      newTunnel.interface.ipAddress = interfaceIpAddress
+
+      // Peer
+
+      newTunnel.peer.publicKey = oldTunnel.publicKey
+      newTunnel.peer.presharedKey = oldTunnel.presharedKey
+      // The old endpoint had the port included and now it is seperated
+      const [peerEndpoint, peerPort] = oldTunnel.endpoint.split(':')
+      newTunnel.peer.endpoint = peerEndpoint
+      newTunnel.peer.port = peerPort
+
+      // Rules
+
+      newTunnel.rules.allowed.apps = oldTunnel.allowedApps
+      newTunnel.rules.disallowed.apps = oldTunnel.disallowedApps
+      newTunnel.rules.allowed.ipAddresses = oldTunnel.allowedIPs
+      newTunnel.rules.disallowed.ipAddresses = oldTunnel.disallowedIPs
+
+      // Delete the old tunnel from local storage
+      localStorage.removeItem(oldTunnelKey)
+      console.log(`Removed old version of "${oldTunnel.name}" tunnel data from local storage.`)
+
+      // Create a new object that includes all existing tunnels and the new tunnel
+      updatedTunnels = { ...updatedTunnels, [newTunnel.id]: newTunnel }
+    }
+  })
+
+  return updatedTunnels
 }
