@@ -1,17 +1,16 @@
 import { Cog6ToothIcon } from '@heroicons/react/24/outline'
-import type Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
 import type WiresockStateModel from '../../models/WiresockStateModel.ts'
 import type TunnelManager from '../../models/TunnelManager.ts'
 
 interface SidebarProps {
   tunnelManager: TunnelManager | null
-  selectedTunnel: Tunnel | null
+  selectedTunnelID: string | null
   wiresockState: WiresockStateModel | null
-  setSelectedTunnel: (tunnel: Tunnel) => void
+  setSelectedTunnelID: (tunnelID: string) => void
 }
 
-function Sidebar({ tunnelManager, selectedTunnel, wiresockState, setSelectedTunnel }: SidebarProps): JSX.Element {
+function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTunnelID }: SidebarProps): JSX.Element {
   const { tunnels } = tunnelManager ?? {}
   const menuItems = Object.keys(tunnels ?? {})
   const navigate = useNavigate()
@@ -24,11 +23,8 @@ function Sidebar({ tunnelManager, selectedTunnel, wiresockState, setSelectedTunn
     navigate('/settings')
   }
 
-  function handleListItemClick(id: string): void {
-    const selectedTunnel = tunnels?.[id]
-    if (selectedTunnel != null) {
-      setSelectedTunnel(selectedTunnel)
-    }
+  function handleListItemClick(tunnelID: string): void {
+    setSelectedTunnelID(tunnelID)
   }
 
   return (
@@ -40,7 +36,7 @@ function Sidebar({ tunnelManager, selectedTunnel, wiresockState, setSelectedTunn
           <li
             key={id}
             className={`${
-              selectedTunnel?.id === id ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              selectedTunnelID === id ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             } rounded-md px-2 cursor-pointer text-sm font-medium py-2 flex items-center align-center`}
             onClick={() => {
               handleListItemClick(id)

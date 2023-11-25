@@ -41,12 +41,9 @@ function Main(): JSX.Element {
   const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
 
   // Keep track of which tunnel the UI is showing
-  const [selectedTunnel, setSelectedTunnel] = useState<Tunnel | null>(() => {
-    // Retrieve the selected tunnel id from local storage
-    const selectedTunnelID = getSelectedTunnelIDFromStorage()
-
-    // Retrieve the associated tunnel data
-    return selectedTunnelID != null ? getTunnelFromStorage(selectedTunnelID) : null
+  const [selectedTunnelID, setSelectedTunnelID] = useState<string | null>(() => {
+    // Retrieve the selected tunnel ID from storage
+    return getSelectedTunnelIDFromStorage() ?? null
   })
 
   /* ------------------------- */
@@ -64,12 +61,12 @@ function Main(): JSX.Element {
     }
   }, [])
 
-  // Monitor selectedTunnel for changes
+  // Monitor selectedTunnelID for changes
   useEffect(() => {
-    if (selectedTunnel !== null) {
-      saveSelectedTunnelIDInStorage(selectedTunnel.id)
+    if (selectedTunnelID !== null) {
+      saveSelectedTunnelIDInStorage(selectedTunnelID)
     }
-  }, [selectedTunnel])
+  }, [selectedTunnelID])
 
   // Wait for wiresockState data to arrive from Tauri
   // Auto connect a tunnel if one is set
@@ -123,7 +120,7 @@ function Main(): JSX.Element {
   function enableTunnel(tunnelData?: Tunnel): void {
     // use tunnelData if provided, otherwise use selectedTunnel
     invoke('enable_wiresock', {
-      tunnel: tunnelData ?? selectedTunnel,
+      tunnel: tunnelData ?? (selectedTunnelID != null ? tunnelManager.getTunnel(selectedTunnelID) : null),
     }).catch((error) => {
       // Handle any issues starting the wiresock_process or the tunnel connecting
       console.error('Invoking enable_wiresock returned error: ', error)
@@ -157,17 +154,18 @@ function Main(): JSX.Element {
                     <div>
                       <Sidebar
                         tunnelManager={tunnelManager}
-                        selectedTunnel={selectedTunnel}
+                        selectedTunnelID={selectedTunnelID}
                         wiresockState={wiresockState}
-                        setSelectedTunnel={setSelectedTunnel}
+                        setSelectedTunnelID={setSelectedTunnelID}
                       />
                     </div>
-                    {selectedTunnel !== null && (
+                    {selectedTunnelID !== null && (
                       <TunnelDisplay
-                        selectedTunnel={selectedTunnel}
+                        selectedTunnelID={selectedTunnelID}
                         wiresockState={wiresockState}
                         enableTunnel={enableTunnel}
                         disableTunnel={disableTunnel}
+                        tunnelManager={tunnelManager}
                       />
                     )}
                   </div>
@@ -189,8 +187,8 @@ function Main(): JSX.Element {
                 <div className="flex min-h-screen justify-center">
                   <TunnelEditor
                     tunnelManager={tunnelManager}
-                    selectedTunnel={selectedTunnel}
-                    setSelectedTunnel={setSelectedTunnel}
+                    selectedTunnelID={selectedTunnelID}
+                    setSelectedTunnelID={setSelectedTunnelID}
                     setTunnelManager={setTunnelManager}
                   />
                 </div>
@@ -202,8 +200,8 @@ function Main(): JSX.Element {
                 <div className="flex min-h-screen justify-center">
                   <TunnelEditor
                     tunnelManager={tunnelManager}
-                    selectedTunnel={null}
-                    setSelectedTunnel={setSelectedTunnel}
+                    selectedTunnelID={null}
+                    setSelectedTunnelID={setSelectedTunnelID}
                     setTunnelManager={setTunnelManager}
                   />
                 </div>

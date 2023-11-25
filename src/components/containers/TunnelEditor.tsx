@@ -7,15 +7,15 @@ import type TunnelManager from '../../models/TunnelManager.ts'
 
 interface ConfigProps {
   tunnelManager: TunnelManager
-  selectedTunnel: Tunnel | null
-  setSelectedTunnel: (tunnel: Tunnel | null) => void
+  selectedTunnelID: string | null
+  setSelectedTunnelID: (tunnelID: string | null) => void
   setTunnelManager: (tunnelManager: TunnelManager) => void
 }
 
 function TunnelEditor({
   tunnelManager,
-  selectedTunnel,
-  setSelectedTunnel,
+  selectedTunnelID,
+  setSelectedTunnelID,
   setTunnelManager,
 }: ConfigProps): JSX.Element {
   /* ------------------------- */
@@ -30,11 +30,18 @@ function TunnelEditor({
   const [isPresharedKeyHidden, setIsPresharedKeyHidden] = useState(true)
   const [editedTunnel, setEditedTunnel] = useState<Tunnel>(() => {
     // If a tunnel is passed in we are editing it, otherwise we are creating a new tunnel
-    if (selectedTunnel === null) {
+    if (selectedTunnelID === null) {
       const newTunnel = new Tunnel(tunnelManager.getTunnelIDList())
       return newTunnel
     } else {
-      return selectedTunnel
+      const getTunnel = tunnelManager?.getTunnel(selectedTunnelID)
+      if (getTunnel !== null) {
+        return getTunnel
+      } else {
+        // Problem retrieving the tunnel from storage
+        const newTunnel = new Tunnel(tunnelManager.getTunnelIDList())
+        return newTunnel
+      }
     }
   })
 
@@ -108,13 +115,13 @@ function TunnelEditor({
   function deleteTunnel(): void {
     tunnelManager.removeTunnel(editedTunnel.id)
     setTunnelManager(tunnelManager)
-    setSelectedTunnel(null)
+    setSelectedTunnelID(null)
   }
 
   function saveTunnel(): void {
     tunnelManager.addTunnel(editedTunnel)
     setTunnelManager(tunnelManager)
-    setSelectedTunnel(editedTunnel)
+    setSelectedTunnelID(editedTunnel.id)
   }
 
   function handleNameCheck(): void {
@@ -581,7 +588,7 @@ function TunnelEditor({
           >
             Cancel
           </button>
-          {selectedTunnel !== null && (
+          {selectedTunnelID !== null && (
             <button
               onClick={handleDeleteButtonClick}
               type="button"
