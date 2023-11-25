@@ -13,14 +13,13 @@ import TunnelEditor from './components/containers/TunnelEditor.tsx'
 import {
   getSelectedTunnelIDFromStorage,
   getTunnelFromStorage,
-  getAllTunnelsFromStorage,
   getSettingsFromStorage,
   saveSelectedTunnelIDInStorage,
-  saveAllTunnelsInStorage,
   convertOldData,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
+import TunnelManager from './models/TunnelManager.ts'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
@@ -38,8 +37,8 @@ function Main(): JSX.Element {
   // Keep track of whether auto connect has already fired. Don't want it running again on component reload.
   const [hasRunAutoConnect, setHasRunAutoConnect] = useState(false)
 
-  // Get the tunnel configs from local storage
-  const [tunnels, setTunnels] = useState<Record<string, Tunnel>>(getAllTunnelsFromStorage())
+  // Get the tunnels from local storage
+  const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
 
   // Keep track of which tunnel the UI is showing
   const [selectedTunnel, setSelectedTunnel] = useState<Tunnel | null>(() => {
@@ -59,9 +58,9 @@ function Main(): JSX.Element {
     void checkWiresockInstalled()
     void setupTauriEventListener()
 
-    const updatedTunnels = convertOldData(tunnels)
-    if (updatedTunnels !== null) {
-      setTunnels(updatedTunnels)
+    const updatedTunnelManager = convertOldData(tunnelManager)
+    if (updatedTunnelManager !== null) {
+      setTunnelManager(updatedTunnelManager)
     }
   }, [])
 
@@ -71,13 +70,6 @@ function Main(): JSX.Element {
       saveSelectedTunnelIDInStorage(selectedTunnel.id)
     }
   }, [selectedTunnel])
-
-  // Monitor tunnels for changes
-  useEffect(() => {
-    if (tunnels !== null) {
-      saveAllTunnelsInStorage(tunnels)
-    }
-  }, [tunnels])
 
   // Wait for wiresockState data to arrive from Tauri
   // Auto connect a tunnel if one is set
@@ -164,7 +156,7 @@ function Main(): JSX.Element {
                   <div className="flex min-h-screen w-full bg-gray-100">
                     <div>
                       <Sidebar
-                        tunnels={tunnels}
+                        tunnelManager={tunnelManager}
                         selectedTunnel={selectedTunnel}
                         wiresockState={wiresockState}
                         setSelectedTunnel={setSelectedTunnel}
@@ -196,10 +188,10 @@ function Main(): JSX.Element {
               element={
                 <div className="flex min-h-screen justify-center">
                   <TunnelEditor
-                    tunnels={tunnels}
+                    tunnelManager={tunnelManager}
                     selectedTunnel={selectedTunnel}
                     setSelectedTunnel={setSelectedTunnel}
-                    setTunnels={setTunnels}
+                    setTunnelManager={setTunnelManager}
                   />
                 </div>
               }
@@ -209,10 +201,10 @@ function Main(): JSX.Element {
               element={
                 <div className="flex min-h-screen justify-center">
                   <TunnelEditor
-                    tunnels={tunnels}
+                    tunnelManager={tunnelManager}
                     selectedTunnel={null}
                     setSelectedTunnel={setSelectedTunnel}
-                    setTunnels={setTunnels}
+                    setTunnelManager={setTunnelManager}
                   />
                 </div>
               }
@@ -221,7 +213,7 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnels={tunnels} />
+                  <Settings tunnelManager={tunnelManager} />
                 </div>
               }
             />

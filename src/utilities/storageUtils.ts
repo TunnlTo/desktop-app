@@ -1,5 +1,6 @@
 import Tunnel from '../models/Tunnel.ts'
 import SettingsModel from '../models/SettingsModel.ts'
+import type TunnelManager from '../models/TunnelManager.ts'
 
 /* --------------- */
 /* Tunnels         */
@@ -75,7 +76,7 @@ export function getSettingsFromStorage(): SettingsModel {
 /* --------------------------------------------- */
 
 // Convert local storage data for versions <1.0.0 to the 1.0.0 data structure changes.
-export function convertOldData(tunnels: Record<string, Tunnel>): Record<string, Tunnel> | null {
+export function convertOldData(tunnelManager: TunnelManager): TunnelManager | null {
   // Remove old selected tunnel data
   removePreVersion1SelectedTunnel()
 
@@ -89,8 +90,6 @@ export function convertOldData(tunnels: Record<string, Tunnel>): Record<string, 
     return null
   }
 
-  let updatedTunnels = { ...tunnels }
-
   // Iterate over each old tunnel key
   oldTunnelKeys.forEach((oldTunnelKey) => {
     // Get the old tunnel data from local storage
@@ -101,7 +100,10 @@ export function convertOldData(tunnels: Record<string, Tunnel>): Record<string, 
       const oldTunnel = JSON.parse(oldTunnelData)
 
       // Create a new Tunnel object and assign the old tunnel data to it
-      const newTunnel = new Tunnel(tunnels)
+      const newTunnel = new Tunnel(oldTunnel)
+
+      // Name
+
       newTunnel.name = oldTunnel.name
 
       // Interface
@@ -109,7 +111,7 @@ export function convertOldData(tunnels: Record<string, Tunnel>): Record<string, 
       newTunnel.interface.privateKey = oldTunnel.privateKey
       newTunnel.interface.dns = oldTunnel.dns
       newTunnel.interface.mtu = oldTunnel.mtu
-      // The /32 is no longer required
+      // /32 is no longer required
       const [interfaceIpAddress] = oldTunnel.interfaceAddress.split('/')
       newTunnel.interface.ipAddress = interfaceIpAddress
 
@@ -133,10 +135,10 @@ export function convertOldData(tunnels: Record<string, Tunnel>): Record<string, 
       localStorage.removeItem(oldTunnelKey)
       console.log(`Removed old version of "${oldTunnel.name}" tunnel data from local storage.`)
 
-      // Create a new object that includes all existing tunnels and the new tunnel
-      updatedTunnels = { ...updatedTunnels, [newTunnel.id]: newTunnel }
+      // Add it to the tunnelManager
+      tunnelManager.addTunnel(newTunnel)
     }
   })
 
-  return updatedTunnels
+  return tunnelManager
 }

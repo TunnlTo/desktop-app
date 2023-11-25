@@ -2,16 +2,18 @@ import { Cog6ToothIcon } from '@heroicons/react/24/outline'
 import type Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
 import type WiresockStateModel from '../../models/WiresockStateModel.ts'
+import type TunnelManager from '../../models/TunnelManager.ts'
 
 interface SidebarProps {
-  tunnels: Record<string, Tunnel> | null
+  tunnelManager: TunnelManager | null
   selectedTunnel: Tunnel | null
   wiresockState: WiresockStateModel | null
   setSelectedTunnel: (tunnel: Tunnel) => void
 }
 
-function Sidebar({ tunnels, selectedTunnel, wiresockState, setSelectedTunnel }: SidebarProps): JSX.Element {
-  const menuItems = tunnels != null ? Object.keys(tunnels) : []
+function Sidebar({ tunnelManager, selectedTunnel, wiresockState, setSelectedTunnel }: SidebarProps): JSX.Element {
+  const { tunnels } = tunnelManager ?? {}
+  const menuItems = Object.keys(tunnels ?? {})
   const navigate = useNavigate()
 
   function handleAddTunnelButtonClick(): void {
@@ -22,25 +24,30 @@ function Sidebar({ tunnels, selectedTunnel, wiresockState, setSelectedTunnel }: 
     navigate('/settings')
   }
 
+  function handleListItemClick(id: string): void {
+    const selectedTunnel = tunnels?.[id]
+    if (selectedTunnel != null) {
+      setSelectedTunnel(selectedTunnel)
+    }
+  }
+
   return (
     <div className="bg-gray-800 w-64 p-4 flex flex-col min-h-screen">
       <h1 className="text-4xl font-semibold text-gray-300 mb-8">TunnlTo</h1>
       <div className="font-medium text-gray-200 text-xs mb-4">Your tunnels</div>
       <ul className="space-y-2">
-        {menuItems.map((item, index) => (
+        {menuItems.map((id) => (
           <li
-            key={index}
+            key={id}
             className={`${
-              selectedTunnel?.id === item
-                ? 'bg-gray-900 text-white'
-                : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+              selectedTunnel?.id === id ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             } rounded-md px-2 cursor-pointer text-sm font-medium py-2 flex items-center align-center`}
             onClick={() => {
-              if (tunnels != null) setSelectedTunnel(tunnels[item])
+              handleListItemClick(id)
             }}
           >
-            {tunnels != null ? tunnels[item].name : ''}
-            {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === item ? (
+            {tunnels?.[id]?.name ?? ''}
+            {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === id ? (
               <span className="ml-auto bg-green-400/30 p-1 text-green-400 flex-none rounded-full" aria-hidden="true">
                 <div className="h-2 w-2 rounded-full bg-current" />
               </span>

@@ -3,15 +3,21 @@ import Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
 import DeleteModal from '../DeleteModal.tsx'
 import { ExclamationTriangleIcon, EyeIcon, EyeSlashIcon, LinkIcon } from '@heroicons/react/24/outline'
+import type TunnelManager from '../../models/TunnelManager.ts'
 
 interface ConfigProps {
-  tunnels: Record<string, Tunnel>
+  tunnelManager: TunnelManager
   selectedTunnel: Tunnel | null
   setSelectedTunnel: (tunnel: Tunnel | null) => void
-  setTunnels: (tunnels: Record<string, Tunnel>) => void
+  setTunnelManager: (tunnelManager: TunnelManager) => void
 }
 
-function TunnelEditor({ tunnels, selectedTunnel, setSelectedTunnel, setTunnels }: ConfigProps): JSX.Element {
+function TunnelEditor({
+  tunnelManager,
+  selectedTunnel,
+  setSelectedTunnel,
+  setTunnelManager,
+}: ConfigProps): JSX.Element {
   /* ------------------------- */
   /* ------- useState -------- */
   /* ------------------------- */
@@ -25,7 +31,7 @@ function TunnelEditor({ tunnels, selectedTunnel, setSelectedTunnel, setTunnels }
   const [editedTunnel, setEditedTunnel] = useState<Tunnel>(() => {
     // If a tunnel is passed in we are editing it, otherwise we are creating a new tunnel
     if (selectedTunnel === null) {
-      const newTunnel = new Tunnel(tunnels)
+      const newTunnel = new Tunnel(tunnelManager.getTunnelIDList())
       return newTunnel
     } else {
       return selectedTunnel
@@ -100,38 +106,23 @@ function TunnelEditor({ tunnels, selectedTunnel, setSelectedTunnel, setTunnels }
   }
 
   function deleteTunnel(): void {
-    // Create a copy of the tunnels object
-    const updatedTunnels = { ...tunnels }
-
-    // Delete the tunnel from the copied object
-    Reflect.deleteProperty(updatedTunnels, editedTunnel.id)
-
-    setTunnels(updatedTunnels)
-
+    tunnelManager.removeTunnel(editedTunnel.id)
+    setTunnelManager(tunnelManager)
     setSelectedTunnel(null)
   }
 
   function saveTunnel(): void {
-    // Create a new object that includes all tunnels and the new tunnel
-    const updatedTunnels = { ...tunnels, [editedTunnel.id]: editedTunnel }
-
-    // Update the state
-    setTunnels(updatedTunnels)
-
+    tunnelManager.addTunnel(editedTunnel)
+    setTunnelManager(tunnelManager)
     setSelectedTunnel(editedTunnel)
   }
 
   function handleNameCheck(): void {
-    // Check the desired name isn't already in use
-    for (const x of Object.values(tunnels)) {
-      if (x.name === editedTunnel.name && x.id !== editedTunnel.id) {
-        // Alert the user
-        setNameError(true)
-        return
-      } else {
-        setNameError(false)
-      }
-    }
+    const tunnelNames = tunnelManager.getTunnelNames()
+    const currentTunnelName = editedTunnel.name
+
+    const isNameUsedByAnotherTunnel = tunnelNames.includes(currentTunnelName)
+    setNameError(isNameUsedByAnotherTunnel)
   }
 
   function handleSaveButtonClick(event: React.FormEvent): void {

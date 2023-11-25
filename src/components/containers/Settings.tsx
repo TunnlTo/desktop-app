@@ -1,15 +1,15 @@
-import type Tunnel from '../../models/Tunnel.ts'
 import type SettingsModel from '../../models/SettingsModel.ts'
 import { useNavigate } from 'react-router-dom'
 import { useState } from 'react'
 import { getSettingsFromStorage, saveSettingsInStorage } from '../../utilities/storageUtils.ts'
 import { enable, isEnabled, disable } from 'tauri-plugin-autostart-api'
+import type TunnelManager from '../../models/TunnelManager.ts'
 
 interface SettingsProps {
-  tunnels: Record<string, Tunnel> | null
+  tunnelManager: TunnelManager | null
 }
 
-function Settings({ tunnels }: SettingsProps): JSX.Element {
+function Settings({ tunnelManager }: SettingsProps): JSX.Element {
   const [settings, setSettings] = useState<SettingsModel>(() => {
     return getSettingsFromStorage()
   })
@@ -25,10 +25,10 @@ function Settings({ tunnels }: SettingsProps): JSX.Element {
   async function enableAutoStart(): Promise<void> {
     try {
       // Note: If trying to enable autostart when its already enabled, it returns a system cannot find specified file error,
-      //       so we check if its current status first to avoid the error 
+      //       so we check if its current status first to avoid the error
       const isAutoStartEnabled: boolean = await isEnabled()
       console.log('AutoStart enabled:', isAutoStartEnabled)
-      
+
       if (settings.autoStart && !isAutoStartEnabled) {
         // Handle user turning on autostart
         await enable()
@@ -99,8 +99,8 @@ function Settings({ tunnels }: SettingsProps): JSX.Element {
             className="block rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
           >
             <option value="">Disabled</option>
-            {tunnels != null &&
-              Object.values(tunnels).map((tunnel, index) => (
+            {tunnelManager?.tunnels != null &&
+              Object.values(tunnelManager.tunnels).map((tunnel, index) => (
                 <option key={index} value={tunnel.id}>
                   {tunnel.name}
                 </option>

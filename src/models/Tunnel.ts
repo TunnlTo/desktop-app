@@ -30,7 +30,7 @@ export default class Tunnel {
     }
   }
 
-  constructor(tunnels: Record<string, Tunnel>) {
+  constructor(tunnelIDList: string[]) {
     this.id = ''
     this.name = ''
     this.interface = {
@@ -68,7 +68,7 @@ export default class Tunnel {
       for (let i = 0; i < 4; i++) {
         uniqueId += characters.charAt(Math.floor(Math.random() * characters.length))
       }
-    } while (Object.prototype.hasOwnProperty.call(tunnels, uniqueId))
+    } while (tunnelIDList.includes(uniqueId))
 
     this.id = uniqueId
   }
