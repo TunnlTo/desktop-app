@@ -15,7 +15,6 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use sysinfo::{System, SystemExt};
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 use tauri_plugin_autostart::MacosLauncher;
@@ -413,6 +412,38 @@ fn get_wiresock_install_path() -> Result<String, String> {
 }
 
 #[tauri::command]
+fn get_wiresock_version() -> Result<String, String> {
+    println!("Starting get_wiresock_version");
+
+    let uninstall_keys = RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
+        .map_err(|e| e.to_string())?;
+
+    for name in uninstall_keys.enum_keys().map(|x| x.unwrap()) {
+        let subkey = uninstall_keys
+            .open_subkey(&name)
+            .map_err(|e| e.to_string())?;
+        match subkey.get_value::<String, _>("DisplayName") {
+            Ok(display_name) => {
+                if display_name.starts_with("WireSock VPN Client") {
+                    println!("Found WireSock VPN Client key");
+                    match subkey.get_value::<String, _>("DisplayVersion") {
+                        Ok(version) => {
+                            println!("DisplayVersion: {}", version);
+                            return Ok(version);
+                        }
+                        Err(e) => eprintln!("Error getting display version: {:?}", e),
+                    }
+                }
+            }
+            Err(_) => (),
+        }
+    }
+
+    Ok("wiresock_not_installed".into())
+}
+
+#[tauri::command]
 fn disable_wiresock() -> Result<(), String> {
     println!("Attempting to stop WireSock");
     Command::new("taskkill")
@@ -487,26 +518,6 @@ fn check_wiresock_service() -> Result<String, String> {
     }
 }
 
-#[tauri::command]
-fn check_wiresock_process() -> Result<String, String> {
-    let s = System::new_all();
-
-    for _process in s.processes_by_exact_name("wiresock-client.exe") {
-        println!("WireSock client is running");
-        return Ok("WIRESOCK_IS_RUNNING".into());
-    }
-
-    Ok("WIRESOCK_NOT_RUNNING".into())
-}
-
-#[tauri::command]
-fn check_wiresock_installed() -> Result<String, String> {
-    match get_wiresock_install_path() {
-        Ok(_result) => return Ok("WIRESOCK_INSTALLED".into()),
-        Err(_e) => return Ok("WIRESOCK_NOT_INSTALLED".into()),
-    }
-}
-
 fn main() {
     // Initialize global job object
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
@@ -524,11 +535,10 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
             disable_wiresock,
-            check_wiresock_process,
             install_wiresock,
-            check_wiresock_installed,
             check_wiresock_service,
-            get_wiresock_state
+            get_wiresock_state,
+            get_wiresock_version
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {

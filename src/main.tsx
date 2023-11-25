@@ -28,9 +28,6 @@ function Main(): JSX.Element {
   /* ------- useState -------- */
   /* ------------------------- */
 
-  // For checking if Wiresock is installed on app launch, so we know to show the setup component or not.
-  const [isWiresockInstalled, setIsWiresockInstalled] = useState<boolean | null>(null)
-
   // For keeping track of the state of the wiresock process and tunnel connection status emitted from Tauri.
   const [wiresockState, setWiresockState] = useState<WiresockStateModel | null>(null)
 
@@ -39,6 +36,9 @@ function Main(): JSX.Element {
 
   // Get the tunnels from local storage
   const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
+
+  // For deciding where to route
+  const [supportedWiresockInstalled, setSupportedWiresockInstalled] = useState<boolean | null>(null)
 
   // Keep track of which tunnel the UI is showing
   const [selectedTunnelID, setSelectedTunnelID] = useState<string | null>(() => {
@@ -52,8 +52,8 @@ function Main(): JSX.Element {
 
   // Functions to run on component mount/dismount
   useEffect(() => {
-    void checkWiresockInstalled()
     void setupTauriEventListener()
+    void getWiresockVersion()
 
     const updatedTunnelManager = convertOldData(tunnelManager)
     if (updatedTunnelManager !== null) {
@@ -91,17 +91,24 @@ function Main(): JSX.Element {
   /* ------- functions ------- */
   /* ------------------------- */
 
-  async function checkWiresockInstalled(): Promise<void> {
-    console.log('Checking if Wiresock is installed')
+  async function getWiresockVersion(): Promise<void> {
+    console.log('Checking Wiresock version')
 
-    const result = await invoke('check_wiresock_installed')
+    const result = await invoke('get_wiresock_version')
 
-    if (result === 'WIRESOCK_INSTALLED') {
-      setIsWiresockInstalled(true)
-      console.log('Wiresock is installed')
-    } else if (result === 'WIRESOCK_NOT_INSTALLED') {
-      console.log('Wiresock is not installed. Router will load the setup component.')
-      setIsWiresockInstalled(false)
+    if (result === 'wiresock_not_installed') {
+      console.log('WireSock is not installed')
+      setSupportedWiresockInstalled(false)
+      return
+    }
+
+    console.log('Wiresock version is ', result)
+    if (result === '1.2.32.1') {
+      console.log('Supported version of Wiresock installed')
+      setSupportedWiresockInstalled(true)
+    } else {
+      console.log('An unsupported version of Wiresock is installed')
+      setSupportedWiresockInstalled(false)
     }
   }
 
@@ -144,9 +151,9 @@ function Main(): JSX.Element {
       <div>
         <Router>
           <Routes>
-            {isWiresockInstalled === null ? (
+            {supportedWiresockInstalled === null ? (
               <Route path="*" element={<div>Loading...</div>} />
-            ) : isWiresockInstalled ? (
+            ) : supportedWiresockInstalled ? (
               <Route
                 path="/"
                 element={
@@ -176,7 +183,10 @@ function Main(): JSX.Element {
                 path="/"
                 element={
                   <div className="flex min-h-screen justify-center">
-                    <Setup setIsWiresockInstalled={setIsWiresockInstalled} />
+                    <Setup
+                      supportedWiresockInstalled={supportedWiresockInstalled}
+                      setSupportedWiresockInstalled={setSupportedWiresockInstalled}
+                    />
                   </div>
                 }
               />
