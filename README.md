@@ -174,10 +174,9 @@ The list of applications that can use the tunnel.
 - Use the full path to the executable
 - List the process name without the .exe extension
 - List the process name with the .exe extension
-- File paths with spaces should be encapsulated in "inverted commas".
 
 #### Examples
-- `"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"`
+- `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 - `chrome, msoffice, firefox`
 
 ### Allow Folders
@@ -185,14 +184,13 @@ The list of applications that can use the tunnel.
 
 - Use a comma to separate multiple folders.
 - If this parameter is used, the Allowed IP's parameter must also be set.
-- File paths with spaces should be encapsulated in "inverted commas".
 
 #### Options
 - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be included.
-- File paths with spaces should be encapsulated in "inverted commas".
 
 #### Examples
-- `"C:\Program Files (x86)\"`
+- `C:\Program Files (x86)\`
+- `D:\Work Apps\, C:\Program Files\Slack\`
 
 ### Allow IP Addresses
 The list of IP addresses and IP ranges that can use the tunnel.
@@ -218,7 +216,7 @@ Apps that cannot use the tunnel.
 - List the process name with the .exe extension
 
 #### Examples
-- `"C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"`
+- `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 - `chrome, msoffice,`
 - `firefox.exe`
 
@@ -227,13 +225,13 @@ The folders containing apps that cannot use the tunnel.
 
 - Allowed Folders takes precedence, and if both are specified, then Allowed Apps is matched first.
 - Use a comma to separate multiple folders.
-- File paths with spaces should be encapsulated in "inverted commas".
 
 #### Options
 - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be excluded.
 
-#### Examples
-- `"C:\Program Files (x86)\"`
+#### Example
+- `C:\Program Files (x86)\`
+- `D:\Work Apps\, C:\Program Files\Slack\`
 
 ### Disallow IP Addresses
 The IP addresses and IP ranges that cannot use the tunnel.
@@ -301,7 +299,7 @@ In this example, all apps in the `C:\Work Apps\` folder are routed through the t
 ### Configuration
 
 - DNS: `10.64.0.1`
-- Allowed Apps: `"C:\Work Apps\"`
+- Allowed Apps: `D:\Work Apps\`
 - Allowed IP's: `0.0.0.0/0`
 
 ## Route a specific IP address range when used by a specific app through a tunnel
@@ -356,7 +354,7 @@ You utilise an overseas VPN server for faster ping times to an overseas region i
 
 ### Expected Outcome
 
-Counter Strike traffic is routed through the tunnel except for when a specific IP address range is accessed by the game. In this case the IP range would be the local servers.
+Counter Strike traffic is routed through the tunnel except for when a specific IP address range is accessed by the game. In this case the IP range are local servers.
 
 ### Configuration
 
