@@ -100,7 +100,7 @@ export function convertOldData(tunnelManager: TunnelManager): TunnelManager | nu
       const oldTunnel = JSON.parse(oldTunnelData)
 
       // Create a new Tunnel object and assign the old tunnel data to it
-      const newTunnel = new Tunnel(oldTunnel)
+      const newTunnel = new Tunnel(tunnelManager.getTunnelIDList())
 
       // Name
 
