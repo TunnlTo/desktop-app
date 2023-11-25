@@ -17,8 +17,6 @@ import {
   getSettingsFromStorage,
   saveSelectedTunnelIDInStorage,
   saveAllTunnelsInStorage,
-  removePreVersion1Tunnel,
-  removePreVersion1SelectedTunnel,
   convertOldData,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
