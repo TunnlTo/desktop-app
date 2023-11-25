@@ -4,13 +4,13 @@ import { useNavigate } from 'react-router-dom'
 import type WiresockStateModel from '../../models/WiresockStateModel.ts'
 
 interface SidebarProps {
-  childHandleTunnelSelect: (tunnel: Tunnel) => void
   tunnels: Record<string, Tunnel> | null
   selectedTunnel: Tunnel | null
   wiresockState: WiresockStateModel | null
+  setSelectedTunnel: (tunnel: Tunnel) => void
 }
 
-function Sidebar({ childHandleTunnelSelect, tunnels, selectedTunnel, wiresockState }: SidebarProps): JSX.Element {
+function Sidebar({ tunnels, selectedTunnel, wiresockState, setSelectedTunnel }: SidebarProps): JSX.Element {
   const menuItems = tunnels != null ? Object.keys(tunnels) : []
   const navigate = useNavigate()
 
@@ -36,7 +36,7 @@ function Sidebar({ childHandleTunnelSelect, tunnels, selectedTunnel, wiresockSta
                 : 'text-gray-300 hover:bg-gray-700 hover:text-white'
             } rounded-md px-2 cursor-pointer text-sm font-medium py-2 flex items-center align-center`}
             onClick={() => {
-              if (tunnels != null) childHandleTunnelSelect(tunnels[item])
+              if (tunnels != null) setSelectedTunnel(tunnels[item])
             }}
           >
             {tunnels != null ? tunnels[item].name : ''}

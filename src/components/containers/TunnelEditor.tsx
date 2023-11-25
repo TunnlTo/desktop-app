@@ -1,46 +1,47 @@
 import { useState, useRef } from 'react'
 import Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
-import { saveTunnelInStorage, deleteTunnelFromStorage } from '../../utilities/storageUtils.ts'
 import DeleteModal from '../DeleteModal.tsx'
 import { ExclamationTriangleIcon, EyeIcon, EyeSlashIcon, LinkIcon } from '@heroicons/react/24/outline'
 
 interface ConfigProps {
   tunnels: Record<string, Tunnel>
   selectedTunnel: Tunnel | null
-  childHandleTunnelSelect: (tunnel: Tunnel | null) => void
+  setSelectedTunnel: (tunnel: Tunnel | null) => void
+  setTunnels: (tunnels: Record<string, Tunnel>) => void
 }
 
-function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: ConfigProps): JSX.Element {
+function TunnelEditor({ tunnels, selectedTunnel, setSelectedTunnel, setTunnels }: ConfigProps): JSX.Element {
+  /* ------------------------- */
+  /* ------- useState -------- */
+  /* ------------------------- */
+
   const [wasValidated, setWasValidated] = useState(false)
   const [nameError, setNameError] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isPrivateKeyHidden, setIsPrivateKeyHidden] = useState(true)
   const [isPublicKeyHidden, setIsPublicKeyHidden] = useState(true)
   const [isPresharedKeyHidden, setIsPresharedKeyHidden] = useState(true)
-  const [tunnel, setTunnel] = useState<Tunnel>(() => {
+  const [editedTunnel, setEditedTunnel] = useState<Tunnel>(() => {
+    // If a tunnel is passed in we are editing it, otherwise we are creating a new tunnel
     if (selectedTunnel === null) {
-      // Generate a unique ID and return a new Tunnel with that ID
-      let uniqueId = ''
-      const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'
-
-      do {
-        uniqueId = ''
-        for (let i = 0; i < 4; i++) {
-          uniqueId += characters.charAt(Math.floor(Math.random() * characters.length))
-        }
-      } while (Object.prototype.hasOwnProperty.call(tunnels, uniqueId))
-
-      const newTunnel = new Tunnel()
-      newTunnel.id = uniqueId
+      const newTunnel = new Tunnel(tunnels)
       return newTunnel
     } else {
       return selectedTunnel
     }
   })
 
+  /* ------------------------- */
+  /* ------- variables ------- */
+  /* ------------------------- */
+
   const navigate = useNavigate()
   const formRef = useRef<HTMLFormElement>(null)
+
+  /* ------------------------- */
+  /* ------- functions ------- */
+  /* ------------------------- */
 
   function toggleKeyVisibility(key: 'privateKey' | 'publicKey' | 'presharedKey'): void {
     if (key === 'privateKey') {
@@ -58,26 +59,26 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
 
     if (keys.length === 1) {
       if (keys[0] === 'name') {
-        setTunnel({ ...tunnel, name: value ?? '' })
+        setEditedTunnel({ ...editedTunnel, name: value ?? '' })
       }
     } else if (keys.length === 2) {
       if (keys[0] === 'interface') {
-        setTunnel({
-          ...tunnel,
-          interface: { ...tunnel?.interface, [keys[1]]: value },
+        setEditedTunnel({
+          ...editedTunnel,
+          interface: { ...editedTunnel?.interface, [keys[1]]: value },
         })
       } else if (keys[0] === 'peer') {
-        setTunnel({ ...tunnel, peer: { ...tunnel?.peer, [keys[1]]: value } })
+        setEditedTunnel({ ...editedTunnel, peer: { ...editedTunnel?.peer, [keys[1]]: value } })
       }
     } else if (keys.length === 3) {
       if (keys[0] === 'rules') {
         if (keys[1] === 'allowed' || keys[1] === 'disallowed') {
-          setTunnel({
-            ...tunnel,
+          setEditedTunnel({
+            ...editedTunnel,
             rules: {
-              ...tunnel?.rules,
+              ...editedTunnel?.rules,
               [keys[1]]: {
-                ...tunnel?.rules[keys[1]],
+                ...editedTunnel?.rules[keys[1]],
                 [keys[2]]: value,
               },
             },
@@ -93,19 +94,37 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
 
   function handleUserDeleteDecision(decision: 'delete' | 'cancel'): void {
     if (decision === 'delete') {
-      if (selectedTunnel !== null) deleteTunnelFromStorage(tunnels, selectedTunnel.id)
-
-      // Notify parent that the selected tunenl no longer exists
-      childHandleTunnelSelect(null)
-
+      deleteTunnel()
       navigate('/')
     }
+  }
+
+  function deleteTunnel(): void {
+    // Create a copy of the tunnels object
+    const updatedTunnels = { ...tunnels }
+
+    // Delete the tunnel from the copied object
+    Reflect.deleteProperty(updatedTunnels, editedTunnel.id)
+
+    setTunnels(updatedTunnels)
+
+    setSelectedTunnel(null)
+  }
+
+  function saveTunnel(): void {
+    // Create a new object that includes all tunnels and the new tunnel
+    const updatedTunnels = { ...tunnels, [editedTunnel.id]: editedTunnel }
+
+    // Update the state
+    setTunnels(updatedTunnels)
+
+    setSelectedTunnel(editedTunnel)
   }
 
   function handleNameCheck(): void {
     // Check the desired name isn't already in use
     for (const x of Object.values(tunnels)) {
-      if (x.name === tunnel.name && x.id !== tunnel.id) {
+      if (x.name === editedTunnel.name && x.id !== editedTunnel.id) {
         // Alert the user
         setNameError(true)
         return
@@ -120,13 +139,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
 
     if (formRef.current?.checkValidity() === true && !nameError) {
       // Form is valid
-
-      // Update or Add the new tunnel
-      saveTunnelInStorage(tunnels, tunnel)
-
-      // Notify parent of a new selected tunnel
-      // If a user creates a new tunnel, this tells the parent to show the new tunnel on TunnelDisplay
-      childHandleTunnelSelect(tunnel)
+      saveTunnel()
 
       navigate('/')
     } else {
@@ -155,8 +168,10 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
       <div className="flex flex-row items-center gap-2 mt-4">
         <LinkIcon className="h-4 w-4 text-gray-600" />
         <a
-          href="https://github.com/TunnlTo/desktop-app#documentation" target="_blank"
-          className="text-sm leading-6 text-gray-600 hover:text-gray-900" rel="noreferrer"
+          href="https://github.com/TunnlTo/desktop-app#documentation"
+          target="_blank"
+          className="text-sm leading-6 text-gray-600 hover:text-gray-900"
+          rel="noreferrer"
         >
           Documentation
         </a>
@@ -165,8 +180,10 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
       <div className="flex flex-row items-center gap-2 mb-6 mt-2">
         <LinkIcon className="h-4 w-4 text-gray-600" />
         <a
-          href="https://github.com/TunnlTo/desktop-app#example-configurations" target="_blank"
-          className="text-sm leading-6 text-gray-600 hover:text-gray-900" rel="noreferrer"
+          href="https://github.com/TunnlTo/desktop-app#example-configurations"
+          target="_blank"
+          className="text-sm leading-6 text-gray-600 hover:text-gray-900"
+          rel="noreferrer"
         >
           Examples
         </a>
@@ -180,7 +197,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               Name
             </label>
             <input
-              value={tunnel?.name}
+              value={editedTunnel?.name}
               onChange={handleInputChange}
               onBlur={handleNameCheck}
               type="text"
@@ -214,7 +231,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2 flex rounded-md shadow-sm">
               <input
-                value={tunnel?.interface?.ipAddress}
+                value={editedTunnel?.interface?.ipAddress}
                 onChange={handleInputChange}
                 type="text"
                 name="interface.ipAddress"
@@ -235,7 +252,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.interface?.port}
+                value={editedTunnel?.interface?.port}
                 onChange={handleInputChange}
                 type="text"
                 name="interface.port"
@@ -267,7 +284,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.interface?.privateKey}
+                value={editedTunnel?.interface?.privateKey}
                 onChange={handleInputChange}
                 type={isPrivateKeyHidden ? 'password' : 'text'}
                 name="interface.privateKey"
@@ -286,7 +303,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.interface?.dns}
+                value={editedTunnel?.interface?.dns}
                 onChange={handleInputChange}
                 type="text"
                 name="interface.dns"
@@ -300,7 +317,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.interface?.mtu}
+                value={editedTunnel?.interface?.mtu}
                 onChange={handleInputChange}
                 placeholder="1420"
                 type="text"
@@ -326,7 +343,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.peer?.endpoint}
+                value={editedTunnel?.peer?.endpoint}
                 onChange={handleInputChange}
                 type="text"
                 name="peer.endpoint"
@@ -345,7 +362,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.peer?.port}
+                value={editedTunnel?.peer?.port}
                 onChange={handleInputChange}
                 type="text"
                 name="peer.port"
@@ -377,7 +394,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                defaultValue={tunnel?.peer?.publicKey}
+                defaultValue={editedTunnel?.peer?.publicKey}
                 onChange={handleInputChange}
                 type={isPublicKeyHidden ? 'password' : 'text'}
                 name="peer.publicKey"
@@ -412,7 +429,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                defaultValue={tunnel?.peer?.presharedKey}
+                defaultValue={editedTunnel?.peer?.presharedKey}
                 onChange={handleInputChange}
                 type={isPresharedKeyHidden ? 'password' : 'text'}
                 name="peer.presharedKey"
@@ -428,7 +445,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
             </label>
             <div className="mt-2">
               <input
-                value={tunnel?.peer?.persistentKeepalive}
+                value={editedTunnel?.peer?.persistentKeepalive}
                 placeholder="25"
                 onChange={handleInputChange}
                 type="text"
@@ -460,7 +477,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               </label>
               <div className="mt-2">
                 <textarea
-                  value={tunnel?.rules?.allowed.apps}
+                  value={editedTunnel?.rules?.allowed.apps}
                   onChange={handleInputChange}
                   id="rules.allowed.apps"
                   name="rules.allowed.apps"
@@ -473,7 +490,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               </label>
               <div className="mt-2">
                 <textarea
-                  value={tunnel?.rules?.allowed.folders}
+                  value={editedTunnel?.rules?.allowed.folders}
                   onChange={handleInputChange}
                   id="rules.allowed.folders"
                   name="rules.allowed.folders"
@@ -489,7 +506,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               </label>
               <div className="mt-2">
                 <textarea
-                  value={tunnel?.rules?.allowed.ipAddresses}
+                  value={editedTunnel?.rules?.allowed.ipAddresses}
                   onChange={handleInputChange}
                   id="rules.allowed.ipAddresses"
                   name="rules.allowed.ipAddresses"
@@ -510,7 +527,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               </label>
               <div className="mt-2">
                 <textarea
-                  value={tunnel?.rules?.disallowed.apps}
+                  value={editedTunnel?.rules?.disallowed.apps}
                   onChange={handleInputChange}
                   id="rules.disallowed.apps"
                   name="rules.disallowed.apps"
@@ -526,7 +543,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               </label>
               <div className="mt-2">
                 <textarea
-                  value={tunnel?.rules?.disallowed.folders}
+                  value={editedTunnel?.rules?.disallowed.folders}
                   onChange={handleInputChange}
                   id="rules.disallowed.folders"
                   name="rules.disallowed.folders"
@@ -542,7 +559,7 @@ function TunnelEditor({ tunnels, selectedTunnel, childHandleTunnelSelect }: Conf
               </label>
               <div className="mt-2">
                 <textarea
-                  value={tunnel?.rules?.disallowed.ipAddresses}
+                  value={editedTunnel?.rules?.disallowed.ipAddresses}
                   onChange={handleInputChange}
                   id="rules.disallowed.ipAddresses"
                   name="rules.disallowed.ipAddresses"

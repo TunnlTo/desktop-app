@@ -30,7 +30,7 @@ export default class Tunnel {
     }
   }
 
-  constructor() {
+  constructor(tunnels: Record<string, Tunnel>) {
     this.id = ''
     this.name = ''
     this.interface = {
@@ -59,5 +59,17 @@ export default class Tunnel {
         ipAddresses: '',
       },
     }
+
+    let uniqueId = ''
+    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+    do {
+      uniqueId = ''
+      for (let i = 0; i < 4; i++) {
+        uniqueId += characters.charAt(Math.floor(Math.random() * characters.length))
+      }
+    } while (Object.prototype.hasOwnProperty.call(tunnels, uniqueId))
+
+    this.id = uniqueId
   }
 }
