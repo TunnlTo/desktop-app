@@ -79,8 +79,10 @@ export function convertInterfaceIPAddresses(tunnelManager: TunnelManager): Tunne
   // Iterate over each tunnel in the manager
   for (const tunnelId in tunnelManager.tunnels) {
     const tunnel = tunnelManager.tunnels[tunnelId]
+
     // Check if the tunnel has an ipAddress field in its interface
     const ipAddress = (tunnel.interface as any).ipAddress
+
     if (ipAddress !== undefined && ipAddress !== null) {
       // Split the ipAddress field by comma and remove spaces
       const ipAddresses = ipAddress.replace(/\s/g, '').split(',')
@@ -95,6 +97,14 @@ export function convertInterfaceIPAddresses(tunnelManager: TunnelManager): Tunne
           // Add the IP address to the ipv4Address field
           tunnel.interface.ipv4Address = ip
         }
+      }
+
+      // If tunnel parameters do not have values we save them with empty values
+      if (tunnel.interface.ipv4Address === undefined) {
+        tunnel.interface.ipv4Address = ''
+      }
+      if (tunnel.interface.ipv6Address === undefined) {
+        tunnel.interface.ipv6Address = ''
       }
 
       // Remove the ipAddress field
