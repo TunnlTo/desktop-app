@@ -2,7 +2,8 @@ export default class Tunnel {
   id: string
   name: string
   interface: {
-    ipAddress: string
+    ipv4Address: string
+    ipv6Address: string
     port: string
     privateKey: string
     dns: string
@@ -34,7 +35,8 @@ export default class Tunnel {
     this.id = ''
     this.name = ''
     this.interface = {
-      ipAddress: '',
+      ipv4Address: '',
+      ipv6Address: '',
       port: '',
       privateKey: '',
       dns: '',

@@ -24,6 +24,7 @@ function TunnelEditor({
 
   const [wasValidated, setWasValidated] = useState(false)
   const [nameError, setNameError] = useState(false)
+  const [ipError, setIpError] = useState(false)
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isPrivateKeyHidden, setIsPrivateKeyHidden] = useState(true)
   const [isPublicKeyHidden, setIsPublicKeyHidden] = useState(true)
@@ -56,6 +57,16 @@ function TunnelEditor({
   /* ------- functions ------- */
   /* ------------------------- */
 
+  function handleIpValidation(): void {
+    if ((editedTunnel.interface.ipv4Address.length === 0) && (editedTunnel.interface.ipv6Address.length === 0)) {
+      console.log('Setting ip error to true')
+      setIpError(true)
+    } else {
+      console.log('Setting ip error to false')
+      setIpError(false)
+    }
+  }
+
   function toggleKeyVisibility(key: 'privateKey' | 'publicKey' | 'presharedKey'): void {
     if (key === 'privateKey') {
       setIsPrivateKeyHidden(!isPrivateKeyHidden)
@@ -78,10 +89,10 @@ function TunnelEditor({
       if (keys[0] === 'interface') {
         setEditedTunnel({
           ...editedTunnel,
-          interface: { ...editedTunnel?.interface, [keys[1]]: value },
+          interface: { ...editedTunnel.interface, [keys[1]]: value },
         })
       } else if (keys[0] === 'peer') {
-        setEditedTunnel({ ...editedTunnel, peer: { ...editedTunnel?.peer, [keys[1]]: value } })
+        setEditedTunnel({ ...editedTunnel, peer: { ...editedTunnel.peer, [keys[1]]: value } })
       }
     } else if (keys.length === 3) {
       if (keys[0] === 'rules') {
@@ -89,9 +100,9 @@ function TunnelEditor({
           setEditedTunnel({
             ...editedTunnel,
             rules: {
-              ...editedTunnel?.rules,
+              ...editedTunnel.rules,
               [keys[1]]: {
-                ...editedTunnel?.rules[keys[1]],
+                ...editedTunnel.rules[keys[1]],
                 [keys[2]]: value,
               },
             },
@@ -135,7 +146,9 @@ function TunnelEditor({
   function handleSaveButtonClick(event: React.FormEvent): void {
     event?.preventDefault() // Prevent form from submitting
 
-    if (formRef.current?.checkValidity() === true && !nameError) {
+    handleIpValidation()
+
+    if (formRef.current?.checkValidity() === true && !nameError && !ipError) {
       // Form is valid
       saveTunnel()
 
@@ -195,7 +208,7 @@ function TunnelEditor({
               Name
             </label>
             <input
-              value={editedTunnel?.name}
+              value={editedTunnel.name}
               onChange={handleInputChange}
               onBlur={handleNameCheck}
               type="text"
@@ -223,106 +236,143 @@ function TunnelEditor({
             <p className="mt-1 text-sm leading-6 text-gray-600">Configure the local network interface.</p>
           </div>
 
-          <div className="sm:col-span-4">
-            <label htmlFor="interface.ipAddress" className="block text-sm font-medium leading-6 text-gray-900">
-              IP Address
-            </label>
-            <div className="mt-2 flex rounded-md shadow-sm">
-              <input
-                value={editedTunnel?.interface?.ipAddress}
-                onChange={handleInputChange}
-                type="text"
-                name="interface.ipAddress"
-                id="interface.ipAddress"
-                required
-                className={`${
-                  wasValidated ? 'invalid:ring-pink-600' : ''
-                } block w-full min-w-0 flex-1 rounded-none rounded-l-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
-              />
-              <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
-                /32
-              </span>
-            </div>
-          </div>
-          <div className="sm:col-span-2">
-            <label htmlFor="interface.port" className="block text-sm font-medium leading-6 text-gray-900">
-              Port
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.interface?.port}
-                onChange={handleInputChange}
-                type="text"
-                name="interface.port"
-                id="interface.port"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-4">
+              <label htmlFor="interface.ipv4Address" className="block text-sm font-medium leading-6 text-gray-900">
+                IPv4 Address
+              </label>
+              <div className="mt-2 flex rounded-md shadow-sm">
+                <input
+                  value={editedTunnel.interface.ipv4Address}
+                  onChange={handleInputChange}
+                  type="text"
+                  name="interface.ipv4Address"
+                  id="interface.ipv4Address"
+                  onBlur={handleIpValidation}
+                  className={`${
+                    ipError ? 'ring-pink-600' : ''
+                  } block w-full min-w-0 flex-1 rounded-none rounded-l-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                />
+                <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
+                  /32
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="sm:col-span-full">
-            <label
-              htmlFor="interface.privateKey"
-              className="text-sm font-medium leading-6 text-gray-900 flex items-center"
-            >
-              Private Key
-              <button
-                type="button"
-                onClick={() => {
-                  toggleKeyVisibility('privateKey')
-                }}
-                className="inline-block ml-2"
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-7">
+              <label htmlFor="interface.ipv6Address" className="block text-sm font-medium leading-6 text-gray-900">
+                IPv6 Address
+              </label>
+              <div className="mt-2 flex rounded-md shadow-sm">
+                <input
+                  value={editedTunnel.interface.ipv6Address}
+                  onChange={handleInputChange}
+                  type="text"
+                  name="interface.ipv6Address"
+                  id="interface.ipv6Address"
+                  onBlur={handleIpValidation}
+                  className={`${
+                    ipError ? 'ring-pink-600' : ''
+                  } block w-full min-w-0 flex-1 rounded-none rounded-l-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                />
+                <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
+                  /128
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <label htmlFor="interface.port" className="block text-sm font-medium leading-6 text-gray-900">
+                Port
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.interface.port}
+                  onChange={handleInputChange}
+                  type="text"
+                  name="interface.port"
+                  id="interface.port"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-full">
+              <label
+                htmlFor="interface.privateKey"
+                className="text-sm font-medium leading-6 text-gray-900 flex items-center"
               >
-                {isPrivateKeyHidden ? (
-                  <EyeIcon className="h-4 w-4 text-gray-600" />
-                ) : (
-                  <EyeSlashIcon className="h-4 w-4 text-gray-600" />
-                )}
-              </button>
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.interface?.privateKey}
-                onChange={handleInputChange}
-                type={isPrivateKeyHidden ? 'password' : 'text'}
-                name="interface.privateKey"
-                id="interface.privateKey"
-                required
-                className={`${
-                  wasValidated ? 'invalid:ring-pink-600' : ''
-                } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
-              />
+                Private Key
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleKeyVisibility('privateKey')
+                  }}
+                  className="inline-block ml-2"
+                >
+                  {isPrivateKeyHidden ? (
+                    <EyeIcon className="h-4 w-4 text-gray-600" />
+                  ) : (
+                    <EyeSlashIcon className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.interface.privateKey}
+                  onChange={handleInputChange}
+                  type={isPrivateKeyHidden ? 'password' : 'text'}
+                  name="interface.privateKey"
+                  id="interface.privateKey"
+                  required
+                  className={`${
+                    wasValidated ? 'invalid:ring-pink-600' : ''
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="sm:col-span-3 space-y-4">
-            <label htmlFor="interface.dns" className="block text-sm font-medium leading-6 text-gray-900">
-              DNS
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.interface?.dns}
-                onChange={handleInputChange}
-                type="text"
-                name="interface.dns"
-                id="interface.dns"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <label htmlFor="interface.dns" className="block text-sm font-medium leading-6 text-gray-900">
+                DNS
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.interface.dns}
+                  onChange={handleInputChange}
+                  type="text"
+                  name="interface.dns"
+                  id="interface.dns"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
+          </div>
 
-            <label htmlFor="interface.mtu" className="block text-sm font-medium leading-6 text-gray-900">
-              MTU
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.interface?.mtu}
-                onChange={handleInputChange}
-                placeholder="1420"
-                type="text"
-                name="interface.mtu"
-                id="interface.mtu"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <label htmlFor="interface.mtu" className="block text-sm font-medium leading-6 text-gray-900">
+                MTU
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.interface.mtu}
+                  onChange={handleInputChange}
+                  placeholder="1420"
+                  type="text"
+                  name="interface.mtu"
+                  id="interface.mtu"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -335,122 +385,132 @@ function TunnelEditor({
             <p className="mt-1 text-sm leading-6 text-gray-600">Details of the remote WireGuard peer.</p>
           </div>
 
-          <div className="sm:col-span-3">
-            <label htmlFor="peer.endpoint" className="block text-sm font-medium leading-6 text-gray-900">
-              Endpoint
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.peer?.endpoint}
-                onChange={handleInputChange}
-                type="text"
-                name="peer.endpoint"
-                id="peer.endpoint"
-                required
-                className={`${
-                  wasValidated ? 'invalid:ring-pink-600' : ''
-                } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
-              />
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <label htmlFor="peer.endpoint" className="block text-sm font-medium leading-6 text-gray-900">
+                Endpoint Address
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.peer.endpoint}
+                  onChange={handleInputChange}
+                  type="text"
+                  name="peer.endpoint"
+                  id="peer.endpoint"
+                  required
+                  className={`${
+                    wasValidated ? 'invalid:ring-pink-600' : ''
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="sm:col-span-2">
-            <label htmlFor="peer.port" className="block text-sm font-medium leading-6 text-gray-900">
-              Port
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.peer?.port}
-                onChange={handleInputChange}
-                type="text"
-                name="peer.port"
-                id="peer.port"
-                required
-                className={`${
-                  wasValidated ? 'invalid:ring-pink-600' : ''
-                } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
-              />
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <label htmlFor="peer.port" className="block text-sm font-medium leading-6 text-gray-900">
+                Port
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.peer.port}
+                  onChange={handleInputChange}
+                  type="text"
+                  name="peer.port"
+                  id="peer.port"
+                  required
+                  className={`${
+                    wasValidated ? 'invalid:ring-pink-600' : ''
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="sm:col-span-full">
-            <label htmlFor="peer.publicKey" className="text-sm font-medium leading-6 text-gray-900 flex items-center">
-              Public Key
-              <button
-                type="button"
-                onClick={() => {
-                  toggleKeyVisibility('publicKey')
-                }}
-                className="inline-block ml-2"
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-full">
+              <label htmlFor="peer.publicKey" className="text-sm font-medium leading-6 text-gray-900 flex items-center">
+                Public Key
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleKeyVisibility('publicKey')
+                  }}
+                  className="inline-block ml-2"
+                >
+                  {isPublicKeyHidden ? (
+                    <EyeIcon className="h-4 w-4 text-gray-600" />
+                  ) : (
+                    <EyeSlashIcon className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              </label>
+              <div className="mt-2">
+                <input
+                  defaultValue={editedTunnel.peer.publicKey}
+                  onChange={handleInputChange}
+                  type={isPublicKeyHidden ? 'password' : 'text'}
+                  name="peer.publicKey"
+                  id="peer.publicKey"
+                  required
+                  className={`${
+                    wasValidated ? 'invalid:ring-pink-600' : ''
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-full">
+              <label
+                htmlFor="peer.presharedKey"
+                className="text-sm font-medium leading-6 text-gray-900 flex items-center"
               >
-                {isPublicKeyHidden ? (
-                  <EyeIcon className="h-4 w-4 text-gray-600" />
-                ) : (
-                  <EyeSlashIcon className="h-4 w-4 text-gray-600" />
-                )}
-              </button>
-            </label>
-            <div className="mt-2">
-              <input
-                defaultValue={editedTunnel?.peer?.publicKey}
-                onChange={handleInputChange}
-                type={isPublicKeyHidden ? 'password' : 'text'}
-                name="peer.publicKey"
-                id="peer.publicKey"
-                required
-                className={`${
-                  wasValidated ? 'invalid:ring-pink-600' : ''
-                } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
-              />
+                Preshared Key
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleKeyVisibility('presharedKey')
+                  }}
+                  className="inline-block ml-2"
+                >
+                  {isPresharedKeyHidden ? (
+                    <EyeIcon className="h-4 w-4 text-gray-600" />
+                  ) : (
+                    <EyeSlashIcon className="h-4 w-4 text-gray-600" />
+                  )}
+                </button>
+              </label>
+              <div className="mt-2">
+                <input
+                  defaultValue={editedTunnel.peer.presharedKey}
+                  onChange={handleInputChange}
+                  type={isPresharedKeyHidden ? 'password' : 'text'}
+                  name="peer.presharedKey"
+                  id="peer.presharedKey"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="sm:col-span-full">
-            <label
-              htmlFor="peer.presharedKey"
-              className="text-sm font-medium leading-6 text-gray-900 flex items-center"
-            >
-              Preshared Key
-              <button
-                type="button"
-                onClick={() => {
-                  toggleKeyVisibility('presharedKey')
-                }}
-                className="inline-block ml-2"
-              >
-                {isPresharedKeyHidden ? (
-                  <EyeIcon className="h-4 w-4 text-gray-600" />
-                ) : (
-                  <EyeSlashIcon className="h-4 w-4 text-gray-600" />
-                )}
-              </button>
-            </label>
-            <div className="mt-2">
-              <input
-                defaultValue={editedTunnel?.peer?.presharedKey}
-                onChange={handleInputChange}
-                type={isPresharedKeyHidden ? 'password' : 'text'}
-                name="peer.presharedKey"
-                id="peer.presharedKey"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
-            </div>
-          </div>
-
-          <div className="sm:col-span-3">
-            <label htmlFor="peer.persistentKeepalive" className="block text-sm font-medium leading-6 text-gray-900">
-              Persistent Keep-Alive
-            </label>
-            <div className="mt-2">
-              <input
-                value={editedTunnel?.peer?.persistentKeepalive}
-                placeholder="25"
-                onChange={handleInputChange}
-                type="text"
-                name="peer.persistentKeepalive"
-                id="peer.persistentKeepalive"
-                className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
-              />
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-3">
+              <label htmlFor="peer.persistentKeepalive" className="block text-sm font-medium leading-6 text-gray-900">
+                Persistent Keep-Alive
+              </label>
+              <div className="mt-2">
+                <input
+                  value={editedTunnel.peer.persistentKeepalive}
+                  placeholder="25"
+                  onChange={handleInputChange}
+                  type="text"
+                  name="peer.persistentKeepalive"
+                  id="peer.persistentKeepalive"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -460,7 +520,7 @@ function TunnelEditor({
         <div className="border-b border-gray-900/10 pb-8 pt-4">
           <h2 className="text-base font-semibold leading-7 text-gray-900">Rules</h2>
           <p className="mt-1 text-sm leading-6 text-gray-600">
-            Configure what should and should not route through the tunnel.
+            Configure what should and should not route through the tunnel. Seperate entries with a comma.
           </p>
 
           {/* Beginning of Allow/Disallow section **/}
@@ -475,7 +535,7 @@ function TunnelEditor({
               </label>
               <div className="mt-2">
                 <textarea
-                  value={editedTunnel?.rules?.allowed.apps}
+                  value={editedTunnel.rules.allowed.apps}
                   onChange={handleInputChange}
                   id="rules.allowed.apps"
                   name="rules.allowed.apps"
@@ -488,7 +548,7 @@ function TunnelEditor({
               </label>
               <div className="mt-2">
                 <textarea
-                  value={editedTunnel?.rules?.allowed.folders}
+                  value={editedTunnel.rules.allowed.folders}
                   onChange={handleInputChange}
                   id="rules.allowed.folders"
                   name="rules.allowed.folders"
@@ -504,7 +564,7 @@ function TunnelEditor({
               </label>
               <div className="mt-2">
                 <textarea
-                  value={editedTunnel?.rules?.allowed.ipAddresses}
+                  value={editedTunnel.rules.allowed.ipAddresses}
                   onChange={handleInputChange}
                   id="rules.allowed.ipAddresses"
                   name="rules.allowed.ipAddresses"
@@ -525,7 +585,7 @@ function TunnelEditor({
               </label>
               <div className="mt-2">
                 <textarea
-                  value={editedTunnel?.rules?.disallowed.apps}
+                  value={editedTunnel.rules.disallowed.apps}
                   onChange={handleInputChange}
                   id="rules.disallowed.apps"
                   name="rules.disallowed.apps"
@@ -541,7 +601,7 @@ function TunnelEditor({
               </label>
               <div className="mt-2">
                 <textarea
-                  value={editedTunnel?.rules?.disallowed.folders}
+                  value={editedTunnel.rules.disallowed.folders}
                   onChange={handleInputChange}
                   id="rules.disallowed.folders"
                   name="rules.disallowed.folders"
@@ -557,7 +617,7 @@ function TunnelEditor({
               </label>
               <div className="mt-2">
                 <textarea
-                  value={editedTunnel?.rules?.disallowed.ipAddresses}
+                  value={editedTunnel.rules.disallowed.ipAddresses}
                   onChange={handleInputChange}
                   id="rules.disallowed.ipAddresses"
                   name="rules.disallowed.ipAddresses"
@@ -578,6 +638,7 @@ function TunnelEditor({
         <div className={`${wasValidated ? 'visible' : 'invisible'} flex flex-row flex-auto gap-x-2 items-center`}>
           <ExclamationTriangleIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
           <p className="text-red-600 text-sm">Some required fields are empty.</p>
+          {ipError && <p className="text-red-600 text-sm">At least one IP address is required.</p>}
         </div>
 
         <div className="flex justify-end gap-x-6">

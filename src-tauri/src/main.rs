@@ -198,33 +198,71 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
 
     // Interface section
     writeln!(&mut w, "[Interface]").unwrap();
+
+    // Interface Private Key
     writeln!(&mut w, "PrivateKey = {}", tunnel.interface.privateKey).unwrap();
-    writeln!(&mut w, "Address = {}", tunnel.interface.ipAddress).unwrap();
+
+    // Interface addresses
+    let mut interface_addresses = String::new();
+
+    if !tunnel.interface.ipv4Address.is_empty() {
+        interface_addresses = format!("Address = {}", tunnel.interface.ipv4Address);
+    }
+
+    if !tunnel.interface.ipv6Address.is_empty() {
+        if !interface_addresses.is_empty() {
+            // Ensure there is comma between the ipv4 and ipv6 addresses
+            interface_addresses =
+                format!("{}, {}", interface_addresses, tunnel.interface.ipv6Address);
+        } else {
+            // There is no ipv4 address set, but a ipv6 address is set
+            interface_addresses = format!("Address = {}", tunnel.interface.ipv6Address);
+        }
+    }
+
+    // Write the interface addresses to the config file
+    if !interface_addresses.is_empty() {
+        writeln!(&mut w, "{}", interface_addresses).unwrap();
+    }
+
+    // Interface ListenPort
     if !tunnel.interface.port.is_empty() {
         writeln!(&mut w, "ListenPort = {}", tunnel.interface.port).unwrap();
     }
+
+    // Interface DNS
     if !tunnel.interface.dns.is_empty() {
         writeln!(&mut w, "DNS = {}", tunnel.interface.dns).unwrap();
     }
+
+    // Interface MTU
     if !tunnel.interface.mtu.is_empty() {
         writeln!(&mut w, "MTU = {}", tunnel.interface.mtu).unwrap();
     }
 
-    // Put a space between the sections for readability
+    // Put a space between the interface and peer sections for readability
     writeln!(&mut w, "").unwrap();
 
     // Peer section
     writeln!(&mut w, "[Peer]").unwrap();
+
+    // Peer Public Key
     writeln!(&mut w, "PublicKey = {}", tunnel.peer.publicKey).unwrap();
+
+    // Peer Preshared Key
     if !tunnel.peer.presharedKey.is_empty() {
         writeln!(&mut w, "PresharedKey = {}", tunnel.peer.presharedKey).unwrap();
     }
+
+    // Peer Endpoint
     writeln!(
         &mut w,
         "Endpoint = {}:{}",
         tunnel.peer.endpoint, tunnel.peer.port
     )
     .unwrap();
+
+    // Peer Persistent Keep-alive
     if !tunnel.peer.persistentKeepalive.is_empty() {
         writeln!(
             &mut w,
