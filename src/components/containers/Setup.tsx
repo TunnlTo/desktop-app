@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { invoke } from '@tauri-apps/api'
 
 interface SetupProps {
-  supportedWiresockInstalled: boolean
-  setSupportedWiresockInstalled: (supportedWiresockInstalled: boolean) => void
+  supportedWiresockInstalled: string
+  setSupportedWiresockInstalled: (supportedWiresockInstalled: string) => void
 }
 
 function Setup({ supportedWiresockInstalled, setSupportedWiresockInstalled }: SetupProps): JSX.Element {
@@ -19,7 +19,7 @@ function Setup({ supportedWiresockInstalled, setSupportedWiresockInstalled }: Se
         console.info(result)
         if (result === 'WIRESOCK_INSTALLED') {
           // Tell the parent that WireSock is now installed and it will handle routing to a new page
-          setSupportedWiresockInstalled(true)
+          setSupportedWiresockInstalled('supported_version_installed')
         }
       } catch (error) {
         console.error('Error in handleInstallButtonClick: ', error)
@@ -33,11 +33,11 @@ function Setup({ supportedWiresockInstalled, setSupportedWiresockInstalled }: Se
     <div className="flex flex-col items-center justify-center w-1/2 text-center mx-auto space-y-6">
       <div className="flex flex-col items-center border-b border-gray-200 pb-6">
         <h1 className="text-2xl font-semibold leading-7 text-gray-900">
-        {supportedWiresockInstalled ? 'Install WireSock' : <>Uh oh! <br /><br /> An unsupported version of WireSock is currently installed.</>}        </h1>
+        {supportedWiresockInstalled !== 'unsupported_version_installed' ? 'Install WireSock' : <>Uh oh! <br /><br /> An unsupported version of WireSock is currently installed.</>}        </h1>
         <p className="pt-6 text-sm leading-6 text-gray-600 text-center">
-          {supportedWiresockInstalled
-            ? 'WireSock serves as a network driver designed to manage WireGuard connections and facilitate split tunneling.'
-            : 'But don\'t worry! Simply click the Install WireSock button to get the supported version.'}
+          {supportedWiresockInstalled !== 'unsupported_version_installed'
+            ? 'WireSock is a network driver to manage WireGuard connections and facilitate split tunneling. It is required by TunnlTo.'
+            : 'But don\'t worry! Simply click the Install WireSock button to install the supported version.'}
         </p>
       </div>
 

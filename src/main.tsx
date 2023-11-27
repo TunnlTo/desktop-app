@@ -38,7 +38,7 @@ function Main(): JSX.Element {
   const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
 
   // For deciding where to route
-  const [supportedWiresockInstalled, setSupportedWiresockInstalled] = useState<boolean | null>(null)
+  const [supportedWiresockInstalled, setSupportedWiresockInstalled] = useState<string | null>(null)
 
   // Keep track of which tunnel the UI is showing
   const [selectedTunnelID, setSelectedTunnelID] = useState<string | null>(() => {
@@ -98,17 +98,17 @@ function Main(): JSX.Element {
 
     if (result === 'wiresock_not_installed') {
       console.log('WireSock is not installed')
-      setSupportedWiresockInstalled(false)
+      setSupportedWiresockInstalled('wiresock_not_installed')
       return
     }
 
     console.log('Wiresock version is ', result)
     if (result === '1.2.32.1') {
       console.log('Supported version of Wiresock installed')
-      setSupportedWiresockInstalled(true)
+      setSupportedWiresockInstalled('supported_version_installed')
     } else {
       console.log('An unsupported version of Wiresock is installed')
-      setSupportedWiresockInstalled(false)
+      setSupportedWiresockInstalled('unsupported_version_installed')
     }
   }
 
@@ -153,7 +153,7 @@ function Main(): JSX.Element {
           <Routes>
             {supportedWiresockInstalled === null ? (
               <Route path="*" element={<div>Loading...</div>} />
-            ) : supportedWiresockInstalled ? (
+            ) : supportedWiresockInstalled === 'supported_version_installed' ? (
               <Route
                 path="/"
                 element={
