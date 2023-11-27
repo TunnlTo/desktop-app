@@ -71,6 +71,48 @@ export function getSettingsFromStorage(): SettingsModel {
   return settings
 }
 
+/* ------------------------------------------------- */
+/* Update tunnel data structure from 1.0.0 to 1.0.1  */
+/* ------------------------------------------------- */
+
+export function convertInterfaceIPAddresses(tunnelManager: TunnelManager): TunnelManager | null {
+  // Iterate over each tunnel in the manager
+  for (const tunnelId in tunnelManager.tunnels) {
+    const tunnel = tunnelManager.tunnels[tunnelId]
+    // Check if the tunnel has an ipAddress field in its interface
+    const ipAddress = (tunnel.interface as any).ipAddress
+    if (ipAddress !== undefined && ipAddress !== null) {
+      // Split the ipAddress field by comma and remove spaces
+      const ipAddresses = ipAddress.replace(/\s/g, '').split(',')
+
+      // Iterate over each IP address
+      for (const ip of ipAddresses) {
+        // If the address has a : we assume its ipv6, otherwise if it has a . we assume its ipv4
+        if (ip.includes(':') === true) {
+          // Add the IP address to the ipv6Address field
+          tunnel.interface.ipv6Address = ip
+        } else if (ip.includes('.') === true) {
+          // Add the IP address to the ipv4Address field
+          tunnel.interface.ipv4Address = ip
+        }
+      }
+
+      // Remove the ipAddress field
+      delete (tunnel.interface as any).ipAddress
+
+      // Remove the old tunnel from the manager
+      tunnelManager.removeTunnel(tunnelId)
+
+      // Add the updated tunnel back to the manager
+      tunnelManager.addTunnel(tunnel)
+
+      console.log(`Updated ${tunnelId} tunnel data structure from v1.0.0 to v1.0.1`)
+    }
+  }
+
+  return tunnelManager
+}
+
 /* --------------------------------------------- */
 /* Local storage data migration for <1.0.0 data  */
 /* --------------------------------------------- */
@@ -113,7 +155,7 @@ export function convertOldData(tunnelManager: TunnelManager): TunnelManager | nu
       newTunnel.interface.mtu = oldTunnel.mtu
       // /32 is no longer required
       const [interfaceIpAddress] = oldTunnel.interfaceAddress.split('/')
-      newTunnel.interface.ipAddress = interfaceIpAddress
+      newTunnel.interface.ipv4Address = interfaceIpAddress
 
       // Peer
 

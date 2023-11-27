@@ -16,6 +16,7 @@ import {
   getSettingsFromStorage,
   saveSelectedTunnelIDInStorage,
   convertOldData,
+  convertInterfaceIPAddresses,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
@@ -55,10 +56,20 @@ function Main(): JSX.Element {
     void setupTauriEventListener()
     void getWiresockVersion()
 
-    const updatedTunnelManager = convertOldData(tunnelManager)
-    if (updatedTunnelManager !== null) {
-      setTunnelManager(updatedTunnelManager)
+    // Handle <1.0.0 > 1.0.0 tunnel data structure changes
+    const convertOldResult = convertOldData(tunnelManager)
+    if (convertOldResult !== null) {
+      // Update tunnelManager state with converted data
+      setTunnelManager(convertOldResult)
     }
+
+    // Handle 1.0.0 > 1.0.1 tunnel data structure changes
+    // Use functional update form of setState to ensure we're working with the most recent state
+    setTunnelManager((currentTunnelManager) => {
+      // Convert interface IP addresses and update state
+      const convertInterfaceResult = convertInterfaceIPAddresses(currentTunnelManager)
+      return convertInterfaceResult ?? currentTunnelManager
+    })
   }, [])
 
   // Monitor selectedTunnelID for changes
