@@ -87,7 +87,6 @@ These are requests made by the community. Please review them before making a new
 - Trigger System - WiFi on/off, location, 4g/5g status, Bluetooth status, endpoint status
 - System tray controls. Icon colour to reflect status. Tooltip for status/IP. Right click for menu.
 - Statistics / Status data in UI
-- Persistent KeepAlive parameter in config
 - Bulk VPN config import
 
 # Issues and Suggestions
@@ -99,64 +98,88 @@ Please use [issues](https://github.com/TunnlTo/desktop-app/issues) for any probl
 # Tunnel Config
 
 ### Tunnel Name (Required)
+
 The description of your WireGuard tunnel.
 
 #### Example
+
 - `Work VPN`
 
-----
+---
 
 ## Local Interface
 
-### IP Address (Required)
-The local interface IP address.
+### IPv4 Address (At least one IPv4 or IPv6 Address is required)
+
+The local interface IPv4 address.
 
 #### Example
+
 - `10.0.0.1`
 
+### IPv6 Address (At least one IPv4 or IPv6 Address is required)
+
+The local interface IPv6 address.
+
+#### Example
+
+- `662a:622d:33aa:6ad0:adba:865f:d13c:85f1`
+
 ### Port
+
 The local interface port.
 
 - If nothing is set, the port will be automatically assigned.
 
 #### Example
+
 - `54236`
 
 ### Private Key (Required)
+
 The private key for the local interface.
 
 ### DNS
+
 The DNS server to use for the tunnel.
 
 - If left blank, the systems default DNS server will be used.
 - Use a comma to separate multiple DNS servers.
 
 #### Example
+
 - `1.1.1.1, 8.8.8.8`
 
 ### MTU
+
 The MTU for the tunnel.
 
-#### 
+####
+
 - `1420`
 
-----
+---
 
 ## Remote Peer
 
 ### Endpoint (Required)
+
 The address of the Wireguard endpoint.
 
 ### Port (Required)
+
 The port of the Wireguard endpoint.
 
 ### Public Key (Required)
+
 The Public key for the tunnel.
 
 ### Preshared Key
+
 The Preshared key for the tunnel.
 
 ### Persistent Keep-Alive
+
 The persistent keep-alive setting for the tunnel.
 
 ## Rules
@@ -164,6 +187,7 @@ The persistent keep-alive setting for the tunnel.
 ## Allow
 
 ### Allow Apps
+
 The list of applications that can use the tunnel.
 
 - If left blank, all applications will be allowed.
@@ -171,75 +195,90 @@ The list of applications that can use the tunnel.
 - If this parameter is used, the Allowed IP's parameter must also be set.
 
 #### Options
+
 - Use the full path to the executable
 - List the process name without the .exe extension
 - List the process name with the .exe extension
 
 #### Examples
+
 - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 - `chrome, msoffice, firefox`
 
 ### Allow Folders
+
 The list of applications that can use the tunnel.
 
 - Use a comma to separate multiple folders.
 - If this parameter is used, the Allowed IP's parameter must also be set.
 
 #### Options
+
 - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be included.
 
 #### Examples
+
 - `C:\Program Files (x86)\`
 - `D:\Work Apps\, C:\Program Files\Slack\`
 
 ### Allow IP Addresses
+
 The list of IP addresses and IP ranges that can use the tunnel.
 
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will forward all the listed IP addresses and IP ranges used by the Allowed Apps through the tunnel.
 
 #### Example
+
 - `0.0.0.0/0`
 - `192.168.1.0/24`
 
 ## Disallow
 
 ### Disallow Apps
+
 Apps that cannot use the tunnel.
 
 - Allowed Apps takes precedence, and if both are specified, then Allowed Apps is matched first.
 - Use a comma to separate multiple applications.
 
 #### Options
+
 - Use the full path to the executable
 - List the process name without the .exe extension
 - List the process name with the .exe extension
 
 #### Examples
+
 - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 - `chrome, msoffice,`
 - `firefox.exe`
 
 ### Disallow Folders
+
 The folders containing apps that cannot use the tunnel.
 
 - Allowed Folders takes precedence, and if both are specified, then Allowed Apps is matched first.
 - Use a comma to separate multiple folders.
 
 #### Options
+
 - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be excluded.
 
 #### Example
+
 - `C:\Program Files (x86)\`
 - `D:\Work Apps\, C:\Program Files\Slack\`
 
 ### Disallow IP Addresses
+
 The IP addresses and IP ranges that cannot use the tunnel.
 
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will block all the listed IP addresses and IP ranges used by the Allowed Apps from using the tunnel.
 
 #### Example
+
 - `1.1.1.1, 192.168.1.0/24`
 
 ---
