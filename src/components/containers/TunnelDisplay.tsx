@@ -1,16 +1,23 @@
-import type Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
 import type WiresockStateModel from '../../models/WiresockStateModel.ts'
 import Logs from '../Logs.tsx'
+import type TunnelManager from '../../models/TunnelManager.ts'
 
 interface ConfigProps {
-  selectedTunnel: Tunnel
+  selectedTunnelID: string
   wiresockState: WiresockStateModel | null
   enableTunnel: () => void
   disableTunnel: () => Promise<void>
+  tunnelManager: TunnelManager
 }
 
-function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTunnel }: ConfigProps): JSX.Element {
+function TunnelDisplay({
+  selectedTunnelID,
+  wiresockState,
+  enableTunnel,
+  disableTunnel,
+  tunnelManager,
+}: ConfigProps): JSX.Element {
   const navigate = useNavigate()
 
   function handleEditButtonClick(): void {
@@ -27,17 +34,17 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
       <div className="flex flex-col sm:flex-row">
         {/* Start of name, status and buttons */}
         <div className="flex-col mb-4 sm:mb-0">
-
           {/* Tunnel name */}
-          <h1 className="text-xl font-semibold leading-7 text-gray-900">{selectedTunnel?.name}</h1>
+          <h1 className="text-xl font-semibold leading-7 text-gray-900">
+            {tunnelManager?.getTunnel(selectedTunnelID)?.name}
+          </h1>
 
           {/* Tunnel status section */}
           <div className="flex items-center align-center mt-1">
-
             {/* Start of Tunnel status icon */}
             <div
               className={`${
-                wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnel.id
+                wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID
                   ? 'bg-green-400/30 p-1 text-green-400'
                   : 'text-red-400'
               } flex-none rounded-full mr-2`}
@@ -47,14 +54,12 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
 
             {/* Tunnel status description */}
             <p className="max-w-2xl text-sm leading-6 text-gray-500">
-              {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnel.id
+              {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID
                 ? 'Enabled'
                 : 'Disabled'}
             </p>
-            
           </div>
           {/* End tunnel status section */}
-
         </div>
         {/* End of name, status and buttons */}
 
@@ -72,10 +77,10 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
           {/* Enable/Disable Button */}
           <button
             type="button"
-            disabled={wiresockState?.tunnel_id !== selectedTunnel.id && wiresockState?.tunnel_status === 'CONNECTED'}
+            disabled={wiresockState?.tunnel_id !== selectedTunnelID && wiresockState?.tunnel_status === 'CONNECTED'}
             onClick={() => {
               void (async () => {
-                if (wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnel.id) {
+                if (wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID) {
                   await disableTunnel()
                 } else {
                   enableTunnel()
@@ -83,14 +88,14 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
               })()
             }}
             className={`${
-              wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnel.id
+              wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID
                 ? 'bg-red-500 hover:bg-red-400 focus-visible:outline-red-500'
-                : wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id !== selectedTunnel.id
+                : wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id !== selectedTunnelID
                   ? 'bg-gray-500 cursor-not-allowed'
                   : 'bg-green-500 hover:bg-green-400 focus-visible:outline-green-500'
             } w-24 rounded-md px-3 py-2 text-sm font-semibold text-white shadow-sm  focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
           >
-            {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnel.id
+            {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID
               ? 'Disable'
               : 'Enable'}
           </button>
@@ -105,28 +110,35 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
           <div className="pt-4 pb-4 items-center sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
             <dt className="text-sm font-medium leading-6 text-gray-900">Peer Endpoint</dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {selectedTunnel.peer.endpoint.length > 0 ? `${selectedTunnel.peer.endpoint}:` : ''}
-              {selectedTunnel.peer.port}
+              {`${tunnelManager?.getTunnel(selectedTunnelID)?.peer.endpoint}:${tunnelManager?.getTunnel(
+                selectedTunnelID,
+              )?.peer.port}`}
             </dd>
           </div>
           <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
             <dt className="text-sm font-medium leading-6 text-gray-900">Allowed</dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {selectedTunnel.rules.allowed.apps}
-              {selectedTunnel.rules.allowed.folders.length > 0 ? `, ${selectedTunnel.rules.allowed.folders}` : ''}
-              {selectedTunnel.rules.allowed.ipAddresses.length > 0
-                ? `, ${selectedTunnel.rules.allowed.ipAddresses}`
-                : ''}
+              {/* Create an array of the values and seperate with a comma */}
+              {[
+                tunnelManager?.getTunnel(selectedTunnelID)?.rules.allowed.apps,
+                tunnelManager?.getTunnel(selectedTunnelID)?.rules.allowed.folders,
+                tunnelManager?.getTunnel(selectedTunnelID)?.rules.allowed.ipAddresses,
+              ]
+                .filter(Boolean)
+                .join(', ')}
             </dd>
           </div>
           <div className="px-4 py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-0">
             <dt className="text-sm font-medium leading-6 text-gray-900">Disallowed</dt>
             <dd className="mt-1 text-sm leading-6 text-gray-700 sm:col-span-2 sm:mt-0">
-              {selectedTunnel.rules.disallowed.apps}
-              {selectedTunnel.rules.disallowed.folders.length > 0 ? `, ${selectedTunnel.rules.disallowed.folders}` : ''}
-              {selectedTunnel.rules.disallowed.ipAddresses.length > 0
-                ? `, ${selectedTunnel.rules.disallowed.ipAddresses}`
-                : ''}
+              {/* Create an array of the values and seperate with a comma */}
+              {[
+                tunnelManager?.getTunnel(selectedTunnelID)?.rules.disallowed.apps,
+                tunnelManager?.getTunnel(selectedTunnelID)?.rules.disallowed.folders,
+                tunnelManager?.getTunnel(selectedTunnelID)?.rules.disallowed.ipAddresses,
+              ]
+                .filter(Boolean)
+                .join(', ')}
             </dd>
           </div>
         </dl>
@@ -134,7 +146,7 @@ function TunnelDisplay({ selectedTunnel, wiresockState, enableTunnel, disableTun
       {/* End of the tunnel config data section **/}
 
       {/* Start of the logs section **/}
-      {wiresockState?.tunnel_id === selectedTunnel.id ? (
+      {wiresockState?.tunnel_id === selectedTunnelID ? (
         <div className="overflow-y-auto pt-4">
           <h2 className="text-base font-semibold leading-7 text-gray-700 pb-4">Connection Logs</h2>
           <Logs wiresockState={wiresockState} />

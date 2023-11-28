@@ -7,7 +7,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "lint": "npx eslint './src/**/*.{ts,tsx}'"
+    "lint": "npx eslint \"./src/**/*.{ts,tsx}\""
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",

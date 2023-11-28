@@ -13,12 +13,14 @@ import TunnelEditor from './components/containers/TunnelEditor.tsx'
 import {
   getSelectedTunnelIDFromStorage,
   getTunnelFromStorage,
-  getTunnelsFromStorage,
-  deleteSelectedTunnelIDFromStorage,
   getSettingsFromStorage,
+  saveSelectedTunnelIDInStorage,
+  convertOldData,
+  convertInterfaceIPAddresses,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
+import TunnelManager from './models/TunnelManager.ts'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
@@ -26,43 +28,59 @@ function Main(): JSX.Element {
   /* ------------------------- */
   /* ------- useState -------- */
   /* ------------------------- */
-  const [isWiresockInstalled, setIsWiresockInstalled] = useState<boolean | null>(null)
+
+  // For keeping track of the state of the wiresock process and tunnel connection status emitted from Tauri.
   const [wiresockState, setWiresockState] = useState<WiresockStateModel | null>(null)
+
+  // Keep track of whether auto connect has already fired. Don't want it running again on component reload.
   const [hasRunAutoConnect, setHasRunAutoConnect] = useState(false)
 
-  const [selectedTunnel, setSelectedTunnel] = useState<Tunnel | null>(() => {
-    // Get the previously selected tunnel from settings on first load
-    const selectedTunnelID = getSelectedTunnelIDFromStorage()
-    if (selectedTunnelID !== null) {
-      return getTunnelFromStorage(selectedTunnelID)
-    } else {
-      return null
-    }
-  })
+  // Get the tunnels from local storage
+  const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
 
-  const [tunnels, setTunnels] = useState<Record<string, Tunnel>>(() => {
-    // Get the tunnels from settings
-    const tunnelsFromStorage = getTunnelsFromStorage()
-    const filteredTunnels = Object.fromEntries(
-      Object.entries(tunnelsFromStorage).filter(([_, value]) => value !== null),
-    )
-    return filteredTunnels
+  // For deciding where to route
+  const [supportedWiresockInstalled, setSupportedWiresockInstalled] = useState<string | null>(null)
+
+  // Keep track of which tunnel the UI is showing
+  const [selectedTunnelID, setSelectedTunnelID] = useState<string | null>(() => {
+    // Retrieve the selected tunnel ID from storage
+    return getSelectedTunnelIDFromStorage() ?? null
   })
 
   /* ------------------------- */
   /* ------- useEffect ------- */
   /* ------------------------- */
 
+  // Functions to run on component mount/dismount
   useEffect(() => {
-    // Check if Wiresock is installed
-    void checkWiresockInstalled()
-
-    // Setup Tauri event listeners
     void setupTauriEventListener()
+    void getWiresockVersion()
+
+    // Handle <1.0.0 > 1.0.0 tunnel data structure changes
+    const convertOldResult = convertOldData(tunnelManager)
+    if (convertOldResult !== null) {
+      // Update tunnelManager state with converted data
+      setTunnelManager(convertOldResult)
+    }
+
+    // Handle 1.0.0 > 1.0.1 tunnel data structure changes
+    // Use functional update form of setState to ensure we're working with the most recent state
+    setTunnelManager((currentTunnelManager) => {
+      // Convert interface IP addresses and update state
+      const convertInterfaceResult = convertInterfaceIPAddresses(currentTunnelManager)
+      return convertInterfaceResult ?? currentTunnelManager
+    })
   }, [])
 
+  // Monitor selectedTunnelID for changes
+  useEffect(() => {
+    if (selectedTunnelID !== null) {
+      saveSelectedTunnelIDInStorage(selectedTunnelID)
+    }
+  }, [selectedTunnelID])
+
   // Wait for wiresockState data to arrive from Tauri
-  // Auto connect a tunnel if there is one set
+  // Auto connect a tunnel if one is set
   useEffect(() => {
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
@@ -84,17 +102,24 @@ function Main(): JSX.Element {
   /* ------- functions ------- */
   /* ------------------------- */
 
-  async function checkWiresockInstalled(): Promise<void> {
-    console.log('Checking if Wiresock is installed')
+  async function getWiresockVersion(): Promise<void> {
+    console.log('Checking Wiresock version')
 
-    const result = await invoke('check_wiresock_installed')
+    const result = await invoke('get_wiresock_version')
 
-    if (result === 'WIRESOCK_INSTALLED') {
-      setIsWiresockInstalled(true)
-      console.log('Wiresock is installed')
-    } else if (result === 'WIRESOCK_NOT_INSTALLED') {
-      console.log('Wiresock is not installed. Router will load the setup component.')
-      setIsWiresockInstalled(false)
+    if (result === 'wiresock_not_installed') {
+      console.log('WireSock is not installed')
+      setSupportedWiresockInstalled('wiresock_not_installed')
+      return
+    }
+
+    console.log('Wiresock version is ', result)
+    if (result === '1.2.32.1') {
+      console.log('Supported version of Wiresock installed')
+      setSupportedWiresockInstalled('supported_version_installed')
+    } else {
+      console.log('An unsupported version of Wiresock is installed')
+      setSupportedWiresockInstalled('unsupported_version_installed')
     }
   }
 
@@ -110,21 +135,10 @@ function Main(): JSX.Element {
     await invoke('get_wiresock_state')
   }
 
-  function parentHandleTunnelSelect(tunnel: Tunnel | null): void {
-    if (tunnel === null) {
-      deleteSelectedTunnelIDFromStorage()
-      setSelectedTunnel(null)
-    } else {
-      localStorage.setItem('selectedTunnelID', tunnel.id)
-      setSelectedTunnel(tunnel)
-    }
-    setTunnels(getTunnelsFromStorage())
-  }
-
   function enableTunnel(tunnelData?: Tunnel): void {
     // use tunnelData if provided, otherwise use selectedTunnel
     invoke('enable_wiresock', {
-      tunnel: tunnelData ?? selectedTunnel,
+      tunnel: tunnelData ?? (selectedTunnelID != null ? tunnelManager.getTunnel(selectedTunnelID) : null),
     }).catch((error) => {
       // Handle any issues starting the wiresock_process or the tunnel connecting
       console.error('Invoking enable_wiresock returned error: ', error)
@@ -148,27 +162,28 @@ function Main(): JSX.Element {
       <div>
         <Router>
           <Routes>
-            {isWiresockInstalled === null ? (
+            {supportedWiresockInstalled === null ? (
               <Route path="*" element={<div>Loading...</div>} />
-            ) : isWiresockInstalled ? (
+            ) : supportedWiresockInstalled === 'supported_version_installed' ? (
               <Route
                 path="/"
                 element={
                   <div className="flex min-h-screen w-full bg-gray-100">
                     <div>
                       <Sidebar
-                        childHandleTunnelSelect={parentHandleTunnelSelect}
-                        tunnels={tunnels}
-                        selectedTunnel={selectedTunnel}
+                        tunnelManager={tunnelManager}
+                        selectedTunnelID={selectedTunnelID}
                         wiresockState={wiresockState}
+                        setSelectedTunnelID={setSelectedTunnelID}
                       />
                     </div>
-                    {selectedTunnel !== null && (
+                    {selectedTunnelID !== null && (
                       <TunnelDisplay
-                        selectedTunnel={selectedTunnel}
+                        selectedTunnelID={selectedTunnelID}
                         wiresockState={wiresockState}
                         enableTunnel={enableTunnel}
                         disableTunnel={disableTunnel}
+                        tunnelManager={tunnelManager}
                       />
                     )}
                   </div>
@@ -179,7 +194,10 @@ function Main(): JSX.Element {
                 path="/"
                 element={
                   <div className="flex min-h-screen justify-center">
-                    <Setup setIsWiresockInstalled={setIsWiresockInstalled} />
+                    <Setup
+                      supportedWiresockInstalled={supportedWiresockInstalled}
+                      setSupportedWiresockInstalled={setSupportedWiresockInstalled}
+                    />
                   </div>
                 }
               />
@@ -189,9 +207,10 @@ function Main(): JSX.Element {
               element={
                 <div className="flex min-h-screen justify-center">
                   <TunnelEditor
-                    tunnels={tunnels}
-                    selectedTunnel={selectedTunnel}
-                    childHandleTunnelSelect={parentHandleTunnelSelect}
+                    tunnelManager={tunnelManager}
+                    selectedTunnelID={selectedTunnelID}
+                    setSelectedTunnelID={setSelectedTunnelID}
+                    setTunnelManager={setTunnelManager}
                   />
                 </div>
               }
@@ -201,9 +220,10 @@ function Main(): JSX.Element {
               element={
                 <div className="flex min-h-screen justify-center">
                   <TunnelEditor
-                    tunnels={tunnels}
-                    selectedTunnel={null}
-                    childHandleTunnelSelect={parentHandleTunnelSelect}
+                    tunnelManager={tunnelManager}
+                    selectedTunnelID={null}
+                    setSelectedTunnelID={setSelectedTunnelID}
+                    setTunnelManager={setTunnelManager}
                   />
                 </div>
               }
@@ -212,7 +232,7 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnels={tunnels} />
+                  <Settings tunnelManager={tunnelManager} />
                 </div>
               }
             />

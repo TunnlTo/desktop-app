@@ -2,7 +2,8 @@ export default class Tunnel {
   id: string
   name: string
   interface: {
-    ipAddress: string
+    ipv4Address: string
+    ipv6Address: string
     port: string
     privateKey: string
     dns: string
@@ -30,11 +31,12 @@ export default class Tunnel {
     }
   }
 
-  constructor() {
+  constructor(tunnelIDList: string[]) {
     this.id = ''
     this.name = ''
     this.interface = {
-      ipAddress: '',
+      ipv4Address: '',
+      ipv6Address: '',
       port: '',
       privateKey: '',
       dns: '',
@@ -59,5 +61,17 @@ export default class Tunnel {
         ipAddresses: '',
       },
     }
+
+    let uniqueId = ''
+    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789'
+
+    do {
+      uniqueId = ''
+      for (let i = 0; i < 4; i++) {
+        uniqueId += characters.charAt(Math.floor(Math.random() * characters.length))
+      }
+    } while (tunnelIDList.includes(uniqueId))
+
+    this.id = uniqueId
   }
 }

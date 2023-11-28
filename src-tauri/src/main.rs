@@ -15,7 +15,6 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use sysinfo::{System, SystemExt};
 use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
 use tauri_plugin_autostart::MacosLauncher;
@@ -157,7 +156,10 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
     {
         let state = WIRESOCK_STATE.lock().unwrap();
         if state.wiresock_status != "STOPPED" {
-            println!("wiresock_state at start of enable_wiresock is {:?}", &*state);
+            println!(
+                "wiresock_state at start of enable_wiresock is {:?}",
+                &*state
+            );
             return Err("enable_wiresock is already running".into());
         }
     }
@@ -196,33 +198,71 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
 
     // Interface section
     writeln!(&mut w, "[Interface]").unwrap();
+
+    // Interface Private Key
     writeln!(&mut w, "PrivateKey = {}", tunnel.interface.privateKey).unwrap();
-    writeln!(&mut w, "Address = {}", tunnel.interface.ipAddress).unwrap();
+
+    // Interface addresses
+    let mut interface_addresses = String::new();
+
+    if !tunnel.interface.ipv4Address.is_empty() {
+        interface_addresses = format!("Address = {}", tunnel.interface.ipv4Address);
+    }
+
+    if !tunnel.interface.ipv6Address.is_empty() {
+        if !interface_addresses.is_empty() {
+            // Ensure there is comma between the ipv4 and ipv6 addresses
+            interface_addresses =
+                format!("{}, {}", interface_addresses, tunnel.interface.ipv6Address);
+        } else {
+            // There is no ipv4 address set, but a ipv6 address is set
+            interface_addresses = format!("Address = {}", tunnel.interface.ipv6Address);
+        }
+    }
+
+    // Write the interface addresses to the config file
+    if !interface_addresses.is_empty() {
+        writeln!(&mut w, "{}", interface_addresses).unwrap();
+    }
+
+    // Interface ListenPort
     if !tunnel.interface.port.is_empty() {
         writeln!(&mut w, "ListenPort = {}", tunnel.interface.port).unwrap();
     }
+
+    // Interface DNS
     if !tunnel.interface.dns.is_empty() {
         writeln!(&mut w, "DNS = {}", tunnel.interface.dns).unwrap();
     }
+
+    // Interface MTU
     if !tunnel.interface.mtu.is_empty() {
         writeln!(&mut w, "MTU = {}", tunnel.interface.mtu).unwrap();
     }
 
-    // Put a space between the sections for readability
+    // Put a space between the interface and peer sections for readability
     writeln!(&mut w, "").unwrap();
 
     // Peer section
     writeln!(&mut w, "[Peer]").unwrap();
+
+    // Peer Public Key
     writeln!(&mut w, "PublicKey = {}", tunnel.peer.publicKey).unwrap();
+
+    // Peer Preshared Key
     if !tunnel.peer.presharedKey.is_empty() {
         writeln!(&mut w, "PresharedKey = {}", tunnel.peer.presharedKey).unwrap();
     }
+
+    // Peer Endpoint
     writeln!(
         &mut w,
         "Endpoint = {}:{}",
         tunnel.peer.endpoint, tunnel.peer.port
     )
     .unwrap();
+
+    // Peer Persistent Keep-alive
     if !tunnel.peer.persistentKeepalive.is_empty() {
         writeln!(
             &mut w,
@@ -231,25 +271,61 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
         )
         .unwrap();
     }
+
+    // Rules
+
+    // Allowed
+
+    // Allowed Apps
+    let mut allowed_apps = String::new();
     if !tunnel.rules.allowed.apps.is_empty() {
-        writeln!(
-            &mut w,
-            "AllowedApps = {} {}",
-            tunnel.rules.allowed.apps, tunnel.rules.allowed.folders
-        )
-        .unwrap();
+        allowed_apps = format!("AllowedApps = {}", tunnel.rules.allowed.apps);
     }
-    if !tunnel.rules.disallowed.apps.is_empty() {
-        writeln!(
-            &mut w,
-            "DisallowedApps = {} {}",
-            tunnel.rules.disallowed.apps, tunnel.rules.disallowed.folders
-        )
-        .unwrap();
+
+    // Allowed Folders
+    if !tunnel.rules.allowed.folders.is_empty() {
+        if !allowed_apps.is_empty() {
+            // Ensure there is comma between the allowed apps and allowed folders
+            allowed_apps = format!("{}, {}", allowed_apps, tunnel.rules.allowed.folders);
+        } else {
+            allowed_apps = format!("AllowedApps = {}", tunnel.rules.allowed.folders);
+        }
     }
+
+    // Write Allowed Apps/Folders to the config file
+    if !allowed_apps.is_empty() {
+        writeln!(&mut w, "{}", allowed_apps).unwrap();
+    }
+
+    // Allowed IP Addresses
     if !tunnel.rules.allowed.ipAddresses.is_empty() {
         writeln!(&mut w, "AllowedIPs = {}", tunnel.rules.allowed.ipAddresses).unwrap();
     }
+
+    // Disallowed
+
+    // Disallowed Apps
+    let mut disallowed_apps = String::new();
+    if !tunnel.rules.disallowed.apps.is_empty() {
+        disallowed_apps = format!("DisallowedApps = {}", tunnel.rules.disallowed.apps);
+    }
+
+    // Disallowed Folders
+    if !tunnel.rules.disallowed.folders.is_empty() {
+        if !disallowed_apps.is_empty() {
+            // Ensure there is comma between the disallowed apps and disallowed folders
+            disallowed_apps = format!("{}, {}", disallowed_apps, tunnel.rules.disallowed.folders);
+        } else {
+            disallowed_apps = format!("DisallowedApps = {}", tunnel.rules.disallowed.folders);
+        }
+    }
+
+    // Write Disallowed Apps/Folders to the config file
+    if !disallowed_apps.is_empty() {
+        writeln!(&mut w, "{}", disallowed_apps).unwrap();
+    }
+
+    // Disallowed IP Addresses
     if !tunnel.rules.disallowed.ipAddresses.is_empty() {
         writeln!(
             &mut w,
@@ -326,7 +402,9 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
             update_state(&app_handle, |state| {
                 state.wiresock_status = "STOPPED".to_string();
                 state.tunnel_status = "DISCONNECTED".to_string();
-                state.logs.push("Tunnel Disabled. Wiresock process stopped".into())
+                state
+                    .logs
+                    .push("Tunnel Disabled. Wiresock process stopped".into())
             });
         }
         Err(e) => println!("error attempting to wait: {}", e),
@@ -369,6 +447,38 @@ fn get_wiresock_install_path() -> Result<String, String> {
         .expect("Failed to read registry key");
 
     Ok(wiresock_location)
+}
+
+#[tauri::command]
+fn get_wiresock_version() -> Result<String, String> {
+    println!("Starting get_wiresock_version");
+
+    let uninstall_keys = RegKey::predef(HKEY_LOCAL_MACHINE)
+        .open_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
+        .map_err(|e| e.to_string())?;
+
+    for name in uninstall_keys.enum_keys().map(|x| x.unwrap()) {
+        let subkey = uninstall_keys
+            .open_subkey(&name)
+            .map_err(|e| e.to_string())?;
+        match subkey.get_value::<String, _>("DisplayName") {
+            Ok(display_name) => {
+                if display_name.starts_with("WireSock VPN Client") {
+                    println!("Found WireSock VPN Client key");
+                    match subkey.get_value::<String, _>("DisplayVersion") {
+                        Ok(version) => {
+                            println!("DisplayVersion: {}", version);
+                            return Ok(version);
+                        }
+                        Err(e) => eprintln!("Error getting display version: {:?}", e),
+                    }
+                }
+            }
+            Err(_) => (),
+        }
+    }
+
+    Ok("wiresock_not_installed".into())
 }
 
 #[tauri::command]
@@ -446,26 +556,6 @@ fn check_wiresock_service() -> Result<String, String> {
     }
 }
 
-#[tauri::command]
-fn check_wiresock_process() -> Result<String, String> {
-    let s = System::new_all();
-
-    for _process in s.processes_by_exact_name("wiresock-client.exe") {
-        println!("WireSock client is running");
-        return Ok("WIRESOCK_IS_RUNNING".into());
-    }
-
-    Ok("WIRESOCK_NOT_RUNNING".into())
-}
-
-#[tauri::command]
-fn check_wiresock_installed() -> Result<String, String> {
-    match get_wiresock_install_path() {
-        Ok(_result) => return Ok("WIRESOCK_INSTALLED".into()),
-        Err(_e) => return Ok("WIRESOCK_NOT_INSTALLED".into()),
-    }
-}
-
 fn main() {
     // Initialize global job object
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
@@ -483,11 +573,10 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
             disable_wiresock,
-            check_wiresock_process,
             install_wiresock,
-            check_wiresock_installed,
             check_wiresock_service,
-            get_wiresock_state
+            get_wiresock_state,
+            get_wiresock_version
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {

@@ -3,7 +3,8 @@ use serde::{Deserialize, Serialize};
 #[allow(non_snake_case)]
 #[derive(Debug, Deserialize, Serialize)]
 pub struct Interface {
-    pub ipAddress: String,
+    pub ipv4Address: String,
+    pub ipv6Address: String,
     pub port: String,
     pub privateKey: String,
     pub dns: String,

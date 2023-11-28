@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { invoke } from '@tauri-apps/api'
 
 interface SetupProps {
-  setIsWiresockInstalled: (isWireSockInstalled: boolean) => void
+  supportedWiresockInstalled: string
+  setSupportedWiresockInstalled: (supportedWiresockInstalled: string) => void
 }
 
-function Setup({ setIsWiresockInstalled }: SetupProps): JSX.Element {
+function Setup({ supportedWiresockInstalled, setSupportedWiresockInstalled }: SetupProps): JSX.Element {
   const [errorMessage, setErrorMessage] = useState('')
   const [installing, setInstalling] = useState(false)
 
@@ -18,7 +19,7 @@ function Setup({ setIsWiresockInstalled }: SetupProps): JSX.Element {
         console.info(result)
         if (result === 'WIRESOCK_INSTALLED') {
           // Tell the parent that WireSock is now installed and it will handle routing to a new page
-          setIsWiresockInstalled(true)
+          setSupportedWiresockInstalled('supported_version_installed')
         }
       } catch (error) {
         console.error('Error in handleInstallButtonClick: ', error)
@@ -29,12 +30,14 @@ function Setup({ setIsWiresockInstalled }: SetupProps): JSX.Element {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center w-2/3 mx-auto space-y-6">
+    <div className="flex flex-col items-center justify-center w-1/2 text-center mx-auto space-y-6">
       <div className="flex flex-col items-center border-b border-gray-200 pb-6">
-        <h1 className="text-2xl font-semibold leading-7 text-gray-900">Setup</h1>
+        <h1 className="text-2xl font-semibold leading-7 text-gray-900">
+        {supportedWiresockInstalled !== 'unsupported_version_installed' ? 'Install WireSock' : <>Uh oh! <br /><br /> An unsupported version of WireSock is currently installed.</>}        </h1>
         <p className="pt-6 text-sm leading-6 text-gray-600 text-center">
-          Installation of WireSock is required. WireSock serves as a network driver designed to manage WireGuard
-          connections and facilitate split tunneling.
+          {supportedWiresockInstalled !== 'unsupported_version_installed'
+            ? 'WireSock is a network driver to manage WireGuard connections and facilitate split tunneling. It is required by TunnlTo.'
+            : 'But don\'t worry! Simply click the Install WireSock button to install the supported version.'}
         </p>
       </div>
 
