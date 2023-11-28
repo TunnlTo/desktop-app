@@ -1,4 +1,4 @@
-import { Cog6ToothIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, ChatBubbleBottomCenterTextIcon, BugAntIcon } from '@heroicons/react/24/outline'
 import { useNavigate } from 'react-router-dom'
 import type WiresockStateModel from '../../models/WiresockStateModel.ts'
 import type TunnelManager from '../../models/TunnelManager.ts'
@@ -58,10 +58,40 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
       >
         Add Tunnel
       </button>
+      <a
+        href="https://github.com/TunnlTo/desktop-app/discussions/110"
+        target="_blank"
+        className="flex w-full mt-auto"
+        rel="noreferrer"
+      >
+        <button
+          type="button"
+          className="flex flex-grow items-center align-center gap-3 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
+        >
+          <ChatBubbleBottomCenterTextIcon className="h-6 w-6" aria-hidden="true" />
+          Feedback
+        </button>
+      </a>
+
+      <a
+        href="https://github.com/TunnlTo/desktop-app/issues"
+        target="_blank"
+        className="flex w-full"
+        rel="noreferrer"
+      >
+        <button
+          type="button"
+          className="flex flex-grow items-center align-center gap-3 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
+        >
+          <BugAntIcon className="h-6 w-6" aria-hidden="true" />
+          Issues
+        </button>
+      </a>
+
       <button
         type="button"
         onClick={handleSettingsButtonClick}
-        className="flex items-center align-center gap-3 mt-auto ali bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
+        className="flex items-center align-center gap-3 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
       >
         <Cog6ToothIcon className="h-6 w-6" aria-hidden="true" />
         Settings
