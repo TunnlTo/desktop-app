@@ -230,8 +230,8 @@ The list of IP addresses and IP ranges that can use the tunnel.
 
 #### Example
 
-- `0.0.0.0/0, ::/0`
-- `1.1.1.1, 192.168.1.0/24`
+- `0.0.0.0/0`
+- `192.168.1.0/24`
 
 ## Disallow
 
