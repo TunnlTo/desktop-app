@@ -58,7 +58,7 @@ function TunnelEditor({
   /* ------------------------- */
 
   function handleIpValidation(): void {
-    if ((editedTunnel.interface.ipv4Address.length === 0) && (editedTunnel.interface.ipv6Address.length === 0)) {
+    if (editedTunnel.interface.ipv4Address.length === 0 && editedTunnel.interface.ipv6Address.length === 0) {
       console.log('Setting ip error to true')
       setIpError(true)
     } else {
@@ -163,6 +163,212 @@ function TunnelEditor({
     navigate('/')
   }
 
+  function handleImportButtonClick(): void {
+    const input = document.createElement('input')
+    input.type = 'file'
+
+    input.onchange = (_) => {
+      if (input.files !== null) {
+        const files = Array.from(input.files)
+
+        for (const file of files) {
+          const reader = new FileReader()
+
+          reader.onload = function (_) {
+            // Get the text in the file
+            const text = this.result as string
+
+            // Use the file name as the name of the tunnel
+            const tunnelName = file.name.slice(0, file.name.lastIndexOf('.'))
+            setEditedTunnel((prevState) => ({
+              ...prevState,
+              name: tunnelName,
+            }))
+
+            // Fill out the form data with what is in the file
+            const lines = text.split('\n')
+            for (let line = 0; line < lines.length; line++) {
+              const lineText = lines[line]
+
+              // Interface
+
+              // Interface ipv4 and ipv6 addresses
+              if (lineText.startsWith('Address = ')) {
+                const addresses = lineText.replace('Address = ', '').split(',')
+                let ipv4Address = ''
+                let ipv6Address = ''
+
+                for (const address of addresses) {
+                  const trimmedAddress = address.trim()
+
+                  if (trimmedAddress.includes('.')) {
+                    // Assuming strings with . are ipv4
+                    ipv4Address = trimmedAddress
+                  } else if (trimmedAddress.includes(':')) {
+                    // Assuming strings with : are ipv6
+                    ipv6Address = trimmedAddress
+                  }
+                }
+
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  interface: { ...prevState.interface, ipv4Address, ipv6Address },
+                }))
+
+                // Interface Port
+              } else if (lineText.startsWith('Port = ')) {
+                const x = lineText.replace('Port = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  interface: { ...prevState.interface, port: x },
+                }))
+
+                // Interface Private Key
+              } else if (lineText.startsWith('PrivateKey = ')) {
+                const x = lineText.replace('PrivateKey = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  interface: { ...prevState.interface, privateKey: x },
+                }))
+
+                // Interface DNS
+              } else if (lineText.startsWith('DNS = ')) {
+                const x = lineText.replace('DNS = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  interface: { ...prevState.interface, dns: x },
+                }))
+
+                // Interface MTU
+              } else if (lineText.startsWith('MTU = ')) {
+                const x = lineText.replace('MTU = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  interface: { ...prevState.interface, mtu: x },
+                }))
+
+                // Peer
+
+                // Peer Endpoint and Port
+              } else if (lineText.startsWith('Endpoint = ')) {
+                const x = lineText.replace('Endpoint = ', '')
+
+                // Split by the last colon to handle cases where a ipv6 address is used
+                const lastColonIndex = x.lastIndexOf(':')
+                const endpoint = x.substring(0, lastColonIndex)
+                const port = x.substring(lastColonIndex + 1)
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  peer: { ...prevState.peer, endpoint, port },
+                }))
+
+                // Peer Public Key
+              } else if (lineText.startsWith('PublicKey = ')) {
+                const x = lineText.replace('PublicKey = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  peer: { ...prevState.peer, publicKey: x },
+                }))
+
+                // Peer Preshared Key
+              } else if (lineText.startsWith('PresharedKey = ')) {
+                const x = lineText.replace('PresharedKey = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  peer: { ...prevState.peer, presharedKey: x },
+                }))
+
+                // Peer Persistent Keepalive
+              } else if (lineText.startsWith('PersistentKeepalive = ')) {
+                const x = lineText.replace('PersistentKeepalive = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  peer: { ...prevState.peer, persistentKeepalive: x },
+                }))
+
+                // Rules (in case it is a Wiresock config)
+
+                // Rules Allowed IP's
+              } else if (lineText.startsWith('AllowedIPs = ')) {
+                const x = lineText.replace('AllowedIPs = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  rules: { ...prevState.rules, allowed: { ...prevState.rules.allowed, ipAddresses: x } },
+                }))
+
+                // Rules Disallowed IP's
+              } else if (lineText.startsWith('DisallowedIPs = ')) {
+                const x = lineText.replace('DisallowedIPs = ', '')
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  rules: { ...prevState.rules, disallowed: { ...prevState.rules.disallowed, ipAddresses: x } },
+                }))
+
+                // Rules Allowed Apps
+              } else if (lineText.startsWith('AllowedApps = ')) {
+                const items = lineText.replace('AllowedApps = ', '').split(',')
+                let apps = ''
+                let folders = ''
+
+                for (const item of items) {
+                  const trimmedItem = item.trim()
+                  if (trimmedItem.includes('/') || trimmedItem.includes('\\')) {
+                    folders += folders.length > 0 ? `, ${trimmedItem}` : trimmedItem
+                  } else {
+                    apps += apps.length > 0 ? `, ${trimmedItem}` : trimmedItem
+                  }
+                }
+
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  rules: {
+                    ...prevState.rules,
+                    allowed: {
+                      ...prevState.rules.allowed,
+                      apps,
+                      folders,
+                    },
+                  },
+                }))
+
+                // Rules Disallowed Apps
+              } else if (lineText.startsWith('DisallowedApps = ')) {
+                const items = lineText.replace('DisallowedApps = ', '').split(',')
+                let apps = ''
+                let folders = ''
+
+                for (const item of items) {
+                  const trimmedItem = item.trim()
+                  if (trimmedItem.includes('/') || trimmedItem.includes('\\')) {
+                    folders += folders.length > 0 ? `, ${trimmedItem}` : trimmedItem
+                  } else {
+                    apps += apps.length > 0 ? `, ${trimmedItem}` : trimmedItem
+                  }
+                }
+
+                setEditedTunnel((prevState) => ({
+                  ...prevState,
+                  rules: {
+                    ...prevState.rules,
+                    disallowed: {
+                      ...prevState.rules.disallowed,
+                      apps,
+                      folders,
+                    },
+                  },
+                }))
+              }
+            }
+          }
+
+          reader.readAsText(file)
+        }
+      }
+    }
+
+    input.click()
+  }
+
   return (
     <div className="container py-12 px-8">
       <DeleteModal
@@ -174,7 +380,16 @@ function TunnelEditor({
       />
 
       {/* Page Title section **/}
-      <h1 className="text-2xl font-semibold leading-7 text-gray-900">Tunnel Config</h1>
+      <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-semibold leading-7 text-gray-900">Tunnel Config</h1>
+        <button
+          type="button"
+          onClick={handleImportButtonClick}
+          className="rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+        >
+          Import
+        </button>
+      </div>
 
       <div className="flex flex-row items-center gap-2 mt-4">
         <LinkIcon className="h-4 w-4 text-gray-600" />
