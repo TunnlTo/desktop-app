@@ -228,10 +228,10 @@ The list of IP addresses and IP ranges that can use the tunnel.
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will forward all the listed IP addresses and IP ranges used by the Allowed Apps through the tunnel.
 
-#### Example
+#### Examples
 
-- `0.0.0.0/0`
-- `192.168.1.0/24`
+- `0.0.0.0/0, ::/0`
+- `192.168.1.0/24, 662a:622d:33aa:6ad0:adba:865f:d13c:85f1, 1.1.1.1`
 
 ## Disallow
 
