@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
 import DeleteModal from '../DeleteModal.tsx'
@@ -29,6 +29,7 @@ function TunnelEditor({
   const [isPrivateKeyHidden, setIsPrivateKeyHidden] = useState(true)
   const [isPublicKeyHidden, setIsPublicKeyHidden] = useState(true)
   const [isPresharedKeyHidden, setIsPresharedKeyHidden] = useState(true)
+  const [tunnelNames] = useState(tunnelManager.getTunnelNames())
   const [editedTunnel, setEditedTunnel] = useState<Tunnel>(() => {
     // If a tunnel is passed in we are editing it, otherwise we are creating a new tunnel
     if (selectedTunnelID === null) {
@@ -54,18 +55,29 @@ function TunnelEditor({
   const formRef = useRef<HTMLFormElement>(null)
 
   /* ------------------------- */
-  /* ------- functions ------- */
+  /* ------ useEffect's ------ */
   /* ------------------------- */
 
-  function handleIpValidation(): void {
+  // Monitor the tunnel name to see if it is already in use
+  useEffect(() => {
+    const isNameUsedByAnotherTunnel = tunnelNames.includes(editedTunnel.name)
+    setNameError(isNameUsedByAnotherTunnel)
+  }, [editedTunnel.name])
+
+  // Monitor interface ipv4 and ipv6 addresses to make sure one exists
+  useEffect(() => {
     if (editedTunnel.interface.ipv4Address.length === 0 && editedTunnel.interface.ipv6Address.length === 0) {
-      console.log('Setting ip error to true')
       setIpError(true)
+      console.log('setIpError to true')
     } else {
-      console.log('Setting ip error to false')
       setIpError(false)
+      console.log('setIpError to false')
     }
-  }
+  }, [editedTunnel.interface.ipv4Address, editedTunnel.interface.ipv6Address])
+
+  /* ------------------------- */
+  /* ------- functions ------- */
+  /* ------------------------- */
 
   function toggleKeyVisibility(key: 'privateKey' | 'publicKey' | 'presharedKey'): void {
     if (key === 'privateKey') {
@@ -131,22 +143,11 @@ function TunnelEditor({
 
   function saveTunnel(): void {
     tunnelManager.addTunnel(editedTunnel)
-    setTunnelManager(tunnelManager)
     setSelectedTunnelID(editedTunnel.id)
-  }
-
-  function handleNameCheck(): void {
-    const tunnelNames = tunnelManager.getTunnelNames()
-    const currentTunnelName = editedTunnel.name
-
-    const isNameUsedByAnotherTunnel = tunnelNames.includes(currentTunnelName)
-    setNameError(isNameUsedByAnotherTunnel)
   }
 
   function handleSaveButtonClick(event: React.FormEvent): void {
     event?.preventDefault() // Prevent form from submitting
-
-    handleIpValidation()
 
     if (formRef.current?.checkValidity() === true && !nameError && !ipError) {
       // Form is valid
@@ -425,13 +426,12 @@ function TunnelEditor({
             <input
               value={editedTunnel.name}
               onChange={handleInputChange}
-              onBlur={handleNameCheck}
               type="text"
               name="name"
               id="name"
               required
               className={`${
-                wasValidated ? 'invalid:ring-pink-600' : ''
+                wasValidated || nameError ? 'invalid:ring-pink-600' : ''
               } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
             />
           </div>
@@ -463,10 +463,9 @@ function TunnelEditor({
                   type="text"
                   name="interface.ipv4Address"
                   id="interface.ipv4Address"
-                  onBlur={handleIpValidation}
                   className={`${
-                    ipError ? 'ring-pink-600' : ''
-                  } block w-full min-w-0 flex-1 rounded-none rounded-l-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                    wasValidated && ipError ? 'ring-pink-600' : ''
+                  } block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
                 />
                 <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
                   /32
@@ -486,11 +485,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   type="text"
                   name="interface.ipv6Address"
-                  id="interface.ipv6Address"
-                  onBlur={handleIpValidation}
-                  className={`${
-                    ipError ? 'ring-pink-600' : ''
-                  } block w-full min-w-0 flex-1 rounded-none rounded-l-md border-0 py-1.5 text-gray-900 ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                  className="block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
                 <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
                   /128
@@ -852,8 +847,8 @@ function TunnelEditor({
       <div className="mt-6 flex align-center items-center">
         <div className={`${wasValidated ? 'visible' : 'invisible'} flex flex-row flex-auto gap-x-2 items-center`}>
           <ExclamationTriangleIcon className="h-6 w-6 text-red-600" aria-hidden="true" />
-          <p className="text-red-600 text-sm">Some required fields are empty.</p>
-          {ipError && <p className="text-red-600 text-sm">At least one IP address is required.</p>}
+          <p className="text-red-600 text-sm">Some fields are not valid.</p>
+          {ipError && <p className="text-red-600 text-sm">At least one interface IP address is required.</p>}
         </div>
 
         <div className="flex justify-end gap-x-6">
