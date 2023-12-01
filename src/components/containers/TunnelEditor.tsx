@@ -29,7 +29,6 @@ function TunnelEditor({
   const [isPrivateKeyHidden, setIsPrivateKeyHidden] = useState(true)
   const [isPublicKeyHidden, setIsPublicKeyHidden] = useState(true)
   const [isPresharedKeyHidden, setIsPresharedKeyHidden] = useState(true)
-  const [tunnelNames] = useState(tunnelManager.getTunnelNames())
   const [editedTunnel, setEditedTunnel] = useState<Tunnel>(() => {
     // If a tunnel is passed in we are editing it, otherwise we are creating a new tunnel
     if (selectedTunnelID === null) {
@@ -60,7 +59,9 @@ function TunnelEditor({
 
   // Monitor the tunnel name to see if it is already in use
   useEffect(() => {
-    const isNameUsedByAnotherTunnel = tunnelNames.includes(editedTunnel.name)
+    const isNameUsedByAnotherTunnel = Object.values(tunnelManager.tunnels).some((tunnel) => {
+      return tunnel.name === editedTunnel.name && tunnel.id !== editedTunnel.id
+    })
     setNameError(isNameUsedByAnotherTunnel)
   }, [editedTunnel.name])
 
