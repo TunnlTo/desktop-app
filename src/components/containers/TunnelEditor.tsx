@@ -714,7 +714,6 @@ function TunnelEditor({
               <div className="mt-2">
                 <input
                   value={editedTunnel.peer.persistentKeepalive}
-                  placeholder="25"
                   onChange={handleInputChange}
                   type="text"
                   name="peer.persistentKeepalive"
