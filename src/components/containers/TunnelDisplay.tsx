@@ -24,10 +24,6 @@ function TunnelDisplay({
     navigate('/edit')
   }
 
-  if (wiresockState === null) {
-    ;<div></div>
-  }
-
   return (
     <main className="py-8 pl-72">
       <div className="px-8 flex flex-grow flex-col">

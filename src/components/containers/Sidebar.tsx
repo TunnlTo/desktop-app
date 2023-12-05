@@ -27,10 +27,10 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
   return (
     <div className="fixed inset-y-0 z-50 flex w-72 flex-col">
       <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6">
-        <h1 className="text-4xl font-semibold text-white pb-4 pt-8">TunnlTo</h1>
+        <h1 className="text-4xl font-semibold text-white pt-8">TunnlTo</h1>
 
         <nav className="flex flex-1 flex-col">
-          <ul role="list" className="flex flex-1 flex-col gap-y-7">
+          <ul role="list" className="flex flex-1 flex-col gap-y-4">
             <li>
               <ul role="list" className="-mx-2 space-y-1 cursor-pointer">
                 {menuItems.map((id) => (
@@ -59,22 +59,24 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
               </ul>
             </li>
 
-            {Object.keys(tunnels ?? {}).length !== 0 ? <div className="w-full border-t border-gray-700" /> : null}
-
-            <ul role="list" className="-mx-2 space-y-1">
-              <li>
-                <button
-                  type="button"
-                  onClick={handleAddTunnelButtonClick}
-                  className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
-                >
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
-                    <PlusIcon className="h-4 w-4" aria-hidden="true" />
-                  </span>
-                  <span className="truncate">Create Tunnel</span>
-                </button>
-              </li>
-            </ul>
+            {Object.keys(tunnels ?? {}).length !== 0 ? (
+              <div className="border-t border-gray-500/10">
+                <ul role="list" className="-mx-2 space-y-1 pt-4">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={handleAddTunnelButtonClick}
+                      className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                    >
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-700 bg-gray-800">
+                        <PlusIcon className="h-4 w-4 text-green-400" aria-hidden="true" />
+                      </span>
+                      <span className="truncate">Create Tunnel</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
+            ) : null}
 
             <ul role="list" className="-mx-2 space-y-1 mt-auto pb-4">
               <li>
@@ -89,7 +91,7 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
                     className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                   >
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
-                      <ChatBubbleBottomCenterTextIcon className="h-4 w-4" aria-hidden="true" />
+                      <ChatBubbleBottomCenterTextIcon className="h-4 w-4 text-purple-400" aria-hidden="true" />
                     </span>
                     <span className="truncate">Feedback</span>
                   </button>
@@ -106,7 +108,7 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
                     className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                   >
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
-                      <BugAntIcon className="h-4 w-4" aria-hidden="true" />
+                      <BugAntIcon className="h-4 w-4 text-pink-400" aria-hidden="true" />
                     </span>
                     <span className="truncate">Issues</span>
                   </button>
@@ -118,7 +120,7 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
                   className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
                 >
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
-                    <Cog6ToothIcon className="h-4 w-4" aria-hidden="true" />
+                    <Cog6ToothIcon className="h-4 w-4 text-blue-400" aria-hidden="true" />
                   </span>
                   <span className="truncate">Settings</span>
                 </button>

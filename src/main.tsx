@@ -21,6 +21,7 @@ import {
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
 import TunnelManager from './models/TunnelManager.ts'
+import GetStarted from './components/GetStarted.tsx'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
@@ -175,15 +176,23 @@ function Main(): JSX.Element {
                       wiresockState={wiresockState}
                       setSelectedTunnelID={setSelectedTunnelID}
                     />
-                    {selectedTunnelID !== null && (
-                      <TunnelDisplay
-                        selectedTunnelID={selectedTunnelID}
-                        wiresockState={wiresockState}
-                        enableTunnel={enableTunnel}
-                        disableTunnel={disableTunnel}
-                        tunnelManager={tunnelManager}
-                      />
-                    )}
+                    {
+                      /* If selectedTunnelID and wiresockState are not null, render the TunnelDisplay component */
+                      selectedTunnelID !== null && wiresockState !== null ? (
+                        <TunnelDisplay
+                          selectedTunnelID={selectedTunnelID}
+                          wiresockState={wiresockState}
+                          enableTunnel={enableTunnel}
+                          disableTunnel={disableTunnel}
+                          tunnelManager={tunnelManager}
+                        />
+                      ) : /* If selectedTunnelID or wiresockState are null, check if tunnelManager.tunnels is empty */
+                      Object.keys(tunnelManager.tunnels ?? {}).length === 0 ? (
+                        /* If tunnelManager.tunnels is empty, render the GetStarted component */
+                        <GetStarted />
+                      ) : /* If tunnelManager.tunnels is not empty, render nothing */
+                      null
+                    }
                   </div>
                 }
               />
