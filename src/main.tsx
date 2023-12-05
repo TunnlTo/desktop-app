@@ -168,15 +168,13 @@ function Main(): JSX.Element {
               <Route
                 path="/"
                 element={
-                  <div className="flex min-h-screen w-full bg-gray-100">
-                    <div>
-                      <Sidebar
-                        tunnelManager={tunnelManager}
-                        selectedTunnelID={selectedTunnelID}
-                        wiresockState={wiresockState}
-                        setSelectedTunnelID={setSelectedTunnelID}
-                      />
-                    </div>
+                  <div>
+                    <Sidebar
+                      tunnelManager={tunnelManager}
+                      selectedTunnelID={selectedTunnelID}
+                      wiresockState={wiresockState}
+                      setSelectedTunnelID={setSelectedTunnelID}
+                    />
                     {selectedTunnelID !== null && (
                       <TunnelDisplay
                         selectedTunnelID={selectedTunnelID}
