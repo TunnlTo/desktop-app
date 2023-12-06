@@ -2,6 +2,7 @@ import { Cog6ToothIcon, ChatBubbleBottomCenterTextIcon, BugAntIcon } from '@hero
 import { useNavigate } from 'react-router-dom'
 import type WiresockStateModel from '../../models/WiresockStateModel.ts'
 import type TunnelManager from '../../models/TunnelManager.ts'
+import { PlusIcon } from '@heroicons/react/24/solid'
 
 interface SidebarProps {
   tunnelManager: TunnelManager | null
@@ -23,79 +24,111 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
     navigate('/settings')
   }
 
-  function handleListItemClick(tunnelID: string): void {
-    setSelectedTunnelID(tunnelID)
-  }
-
   return (
-    <div className="bg-gray-800 w-64 p-4 flex flex-col min-h-screen">
-      <h1 className="text-4xl font-semibold text-gray-300 mb-8">TunnlTo</h1>
-      <div className="font-medium text-gray-200 text-xs mb-4">Your tunnels</div>
-      <ul className="space-y-2">
-        {menuItems.map((id) => (
-          <li
-            key={id}
-            className={`${
-              selectedTunnelID === id ? 'bg-gray-900 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-            } rounded-md px-2 cursor-pointer text-sm font-medium py-2 flex items-center align-center`}
-            onClick={() => {
-              handleListItemClick(id)
-            }}
-          >
-            {tunnels?.[id]?.name ?? ''}
-            {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === id ? (
-              <span className="ml-auto bg-green-400/30 p-1 text-green-400 flex-none rounded-full" aria-hidden="true">
-                <div className="h-2 w-2 rounded-full bg-current" />
-              </span>
+    <div className="fixed inset-y-0 z-50 flex w-72 flex-col">
+      <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-gray-900 px-6">
+        <h1 className="text-4xl font-semibold text-white pt-8">TunnlTo</h1>
+
+        <nav className="flex flex-1 flex-col">
+          <ul role="list" className="flex flex-1 flex-col gap-y-4">
+            <li>
+              <ul role="list" className="-mx-2 space-y-1 cursor-pointer">
+                {menuItems.map((id) => (
+                  <li
+                    key={id}
+                    className={`${
+                      selectedTunnelID === id
+                        ? 'bg-gray-800 text-white'
+                        : 'text-gray-400 hover:text-white hover:bg-gray-800'
+                    } group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold`}
+                    onClick={() => {
+                      setSelectedTunnelID(id)
+                    }}
+                  >
+                    <span className="truncate">{tunnels?.[id]?.name ?? 'Undefined'}</span>
+                    {wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === id ? (
+                      <span
+                        className="ml-auto bg-green-400/30 text-green-400 rounded-full p-1 my-auto"
+                        aria-hidden="true"
+                      >
+                        <div className="h-2 w-2 rounded-full bg-current" />
+                      </span>
+                    ) : null}
+                  </li>
+                ))}
+              </ul>
+            </li>
+
+            {Object.keys(tunnels ?? {}).length !== 0 ? (
+              <div className="border-t border-gray-500/10">
+                <ul role="list" className="-mx-2 space-y-1 pt-4">
+                  <li>
+                    <button
+                      type="button"
+                      onClick={handleAddTunnelButtonClick}
+                      className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                    >
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border border-gray-700 bg-gray-800">
+                        <PlusIcon className="h-4 w-4 text-green-400" aria-hidden="true" />
+                      </span>
+                      <span className="truncate">Create Tunnel</span>
+                    </button>
+                  </li>
+                </ul>
+              </div>
             ) : null}
-          </li>
-        ))}
-      </ul>
-      <button
-        type="button"
-        onClick={handleAddTunnelButtonClick}
-        className="mt-4 rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-      >
-        Add Tunnel
-      </button>
-      <a
-        href="https://github.com/TunnlTo/desktop-app/discussions/110"
-        target="_blank"
-        className="flex w-full mt-auto"
-        rel="noreferrer"
-      >
-        <button
-          type="button"
-          className="flex flex-grow items-center align-center gap-3 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
-        >
-          <ChatBubbleBottomCenterTextIcon className="h-6 w-6" aria-hidden="true" />
-          Feedback
-        </button>
-      </a>
 
-      <a
-        href="https://github.com/TunnlTo/desktop-app/issues"
-        target="_blank"
-        className="flex w-full"
-        rel="noreferrer"
-      >
-        <button
-          type="button"
-          className="flex flex-grow items-center align-center gap-3 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
-        >
-          <BugAntIcon className="h-6 w-6" aria-hidden="true" />
-          Issues
-        </button>
-      </a>
+            <ul role="list" className="-mx-2 space-y-1 mt-auto pb-4">
+              <li>
+                <a
+                  href="https://github.com/TunnlTo/desktop-app/discussions/110"
+                  target="_blank"
+                  className="flex"
+                  rel="noreferrer"
+                >
+                  <button
+                    type="button"
+                    className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
+                      <ChatBubbleBottomCenterTextIcon className="h-4 w-4 text-purple-400" aria-hidden="true" />
+                    </span>
+                    <span className="truncate">Feedback</span>
+                  </button>
+                </a>
 
-      <button
-        type="button"
-        onClick={handleSettingsButtonClick}
-        className="flex items-center align-center gap-3 bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white rounded-md px-2 cursor-pointer text-sm font-medium py-2"
-      >
-        <Cog6ToothIcon className="h-6 w-6" aria-hidden="true" />
-        Settings
-      </button>
+                <a
+                  href="https://github.com/TunnlTo/desktop-app/issues"
+                  target="_blank"
+                  className="flex"
+                  rel="noreferrer"
+                >
+                  <button
+                    type="button"
+                    className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                  >
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
+                      <BugAntIcon className="h-4 w-4 text-pink-400" aria-hidden="true" />
+                    </span>
+                    <span className="truncate">Issues</span>
+                  </button>
+                </a>
+
+                <button
+                  type="button"
+                  onClick={handleSettingsButtonClick}
+                  className="w-full text-gray-400 hover:text-white hover:bg-gray-800 flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold"
+                >
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border  border-gray-700 bg-gray-800">
+                    <Cog6ToothIcon className="h-4 w-4 text-blue-400" aria-hidden="true" />
+                  </span>
+                  <span className="truncate">Settings</span>
+                </button>
+              </li>
+            </ul>
+          </ul>
+        </nav>
+      </div>
     </div>
   )
 }
