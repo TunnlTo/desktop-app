@@ -69,10 +69,8 @@ function TunnelEditor({
   useEffect(() => {
     if (editedTunnel.interface.ipv4Address.length === 0 && editedTunnel.interface.ipv6Address.length === 0) {
       setIpError(true)
-      console.log('setIpError to true')
     } else {
       setIpError(false)
-      console.log('setIpError to false')
     }
   }, [editedTunnel.interface.ipv4Address, editedTunnel.interface.ipv6Address])
 
@@ -94,18 +92,21 @@ function TunnelEditor({
     const { name, value } = event.target
     const keys = name.split('.')
 
+    // Remove any quotes from the input value
+    const sanitizedValue = value.replace(/"/g, '')
+
     if (keys.length === 1) {
       if (keys[0] === 'name') {
-        setEditedTunnel({ ...editedTunnel, name: value ?? '' })
+        setEditedTunnel({ ...editedTunnel, name: sanitizedValue ?? '' })
       }
     } else if (keys.length === 2) {
       if (keys[0] === 'interface') {
         setEditedTunnel({
           ...editedTunnel,
-          interface: { ...editedTunnel.interface, [keys[1]]: value },
+          interface: { ...editedTunnel.interface, [keys[1]]: sanitizedValue },
         })
       } else if (keys[0] === 'peer') {
-        setEditedTunnel({ ...editedTunnel, peer: { ...editedTunnel.peer, [keys[1]]: value } })
+        setEditedTunnel({ ...editedTunnel, peer: { ...editedTunnel.peer, [keys[1]]: sanitizedValue } })
       }
     } else if (keys.length === 3) {
       if (keys[0] === 'rules') {
@@ -116,7 +117,7 @@ function TunnelEditor({
               ...editedTunnel.rules,
               [keys[1]]: {
                 ...editedTunnel.rules[keys[1]],
-                [keys[2]]: value,
+                [keys[2]]: sanitizedValue,
               },
             },
           })
@@ -464,6 +465,7 @@ function TunnelEditor({
                   type="text"
                   name="interface.ipv4Address"
                   id="interface.ipv4Address"
+                  spellCheck="false"
                   className={`${
                     wasValidated && ipError ? 'ring-pink-600' : ''
                   } block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
@@ -486,6 +488,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   type="text"
                   name="interface.ipv6Address"
+                  spellCheck="false"
                   className="block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
                 <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
@@ -506,6 +509,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   type="text"
                   name="interface.port"
+                  spellCheck="false"
                   id="interface.port"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -541,6 +545,7 @@ function TunnelEditor({
                   type={isPrivateKeyHidden ? 'password' : 'text'}
                   name="interface.privateKey"
                   id="interface.privateKey"
+                  spellCheck="false"
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
@@ -561,6 +566,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   type="text"
                   name="interface.dns"
+                  spellCheck="false"
                   id="interface.dns"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -580,6 +586,7 @@ function TunnelEditor({
                   placeholder="1420"
                   type="text"
                   name="interface.mtu"
+                  spellCheck="false"
                   id="interface.mtu"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -608,6 +615,7 @@ function TunnelEditor({
                   type="text"
                   name="peer.endpoint"
                   id="peer.endpoint"
+                  spellCheck="false"
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
@@ -629,6 +637,7 @@ function TunnelEditor({
                   type="text"
                   name="peer.port"
                   id="peer.port"
+                  spellCheck="false"
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
@@ -663,6 +672,7 @@ function TunnelEditor({
                   type={isPublicKeyHidden ? 'password' : 'text'}
                   name="peer.publicKey"
                   id="peer.publicKey"
+                  spellCheck="false"
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
@@ -699,6 +709,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   type={isPresharedKeyHidden ? 'password' : 'text'}
                   name="peer.presharedKey"
+                  spellCheck="false"
                   id="peer.presharedKey"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -717,6 +728,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   type="text"
                   name="peer.persistentKeepalive"
+                  spellCheck="false"
                   id="peer.persistentKeepalive"
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -749,10 +761,12 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   id="rules.allowed.apps"
                   name="rules.allowed.apps"
+                  spellCheck="false"
                   rows={3}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
               </div>
+
               <label htmlFor="rules.allowed.folders" className="block text-sm font-medium leading-6 text-gray-900 mt-4">
                 Folders
               </label>
@@ -762,6 +776,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   id="rules.allowed.folders"
                   name="rules.allowed.folders"
+                  spellCheck="false"
                   rows={3}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -778,6 +793,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   id="rules.allowed.ipAddresses"
                   name="rules.allowed.ipAddresses"
+                  spellCheck="false"
                   rows={3}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -799,6 +815,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   id="rules.disallowed.apps"
                   name="rules.disallowed.apps"
+                  spellCheck="false"
                   rows={3}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -815,6 +832,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   id="rules.disallowed.folders"
                   name="rules.disallowed.folders"
+                  spellCheck="false"
                   rows={3}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
@@ -831,6 +849,7 @@ function TunnelEditor({
                   onChange={handleInputChange}
                   id="rules.disallowed.ipAddresses"
                   name="rules.disallowed.ipAddresses"
+                  spellCheck="false"
                   rows={3}
                   className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
                 />
