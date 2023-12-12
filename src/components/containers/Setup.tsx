@@ -15,15 +15,38 @@ function Setup({ supportedWiresockInstalled, setSupportedWiresockInstalled }: Se
     setErrorMessage('')
     void (async () => {
       try {
-        const result = await invoke('install_wiresock')
-        console.info(result)
-        if (result === 'WIRESOCK_INSTALLED') {
-          // Tell the parent that WireSock is now installed and it will handle routing to a new page
-          setSupportedWiresockInstalled('supported_version_installed')
+        const result: string = await invoke('install_wiresock')
+        const lines = JSON.parse(result)
+        for (const line of lines) {
+          switch (line) {
+            case '0':
+              console.log('WireSock installed successfully')
+              setSupportedWiresockInstalled('supported_version_installed')
+              break
+            case '1602':
+              console.log('User cancelled the installation')
+              setErrorMessage('User cancelled the installation')
+              break
+            case '1603':
+              console.log('A newer version of WireSock is installed')
+              setErrorMessage('A newer version of WireSock is installed')
+              break
+            default:
+              console.log(`Unknown exit code: ${line}`)
+              setErrorMessage('Unknown error attempting to install WireSock. To resolve this issue, manually install WireSock. You can find the WireSock installer in the same directory where TunnlTo is installed.')
+          }
         }
       } catch (error) {
         console.error('Error in handleInstallButtonClick: ', error)
-        setErrorMessage((error as Error).toString())
+        const errorString: string = (error as Error).toString()
+        if (errorString.includes('program not found')) {
+          setErrorMessage(
+            'PowerShell failed to start. To resolve this issue, manually install WireSock. You can find the WireSock installer in the same directory where TunnlTo is installed.',
+          )
+        } else {
+          setErrorMessage(errorString)
+        }
+      } finally {
         setInstalling(false)
       }
     })()
@@ -33,11 +56,19 @@ function Setup({ supportedWiresockInstalled, setSupportedWiresockInstalled }: Se
     <div className="flex flex-col items-center justify-center w-1/2 text-center mx-auto space-y-6">
       <div className="flex flex-col items-center border-b border-gray-200 pb-6">
         <h1 className="text-2xl font-semibold leading-7 text-gray-900">
-        {supportedWiresockInstalled !== 'unsupported_version_installed' ? 'Install WireSock' : <>Uh oh! <br /><br /> An unsupported version of WireSock is currently installed.</>}        </h1>
+          {supportedWiresockInstalled !== 'unsupported_version_installed' ? (
+            'Install WireSock'
+          ) : (
+            <>
+              <br />
+              An unsupported version of WireSock is currently installed.
+            </>
+          )}{' '}
+        </h1>
         <p className="pt-6 text-sm leading-6 text-gray-600 text-center">
           {supportedWiresockInstalled !== 'unsupported_version_installed'
             ? 'WireSock is a network driver to manage WireGuard connections and facilitate split tunneling. It is required by TunnlTo.'
-            : 'But don\'t worry! Simply click the Install WireSock button to install the supported version.'}
+            : 'Please uninstall the current version of WireSock, then click Install WireSock.'}
         </p>
       </div>
 

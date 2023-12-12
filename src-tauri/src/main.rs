@@ -510,28 +510,33 @@ async fn install_wiresock() -> Result<String, String> {
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
 
     // Start the WireSock installer in quiet mode (no user prompts).
-    let mut child = Command::new("powershell")
+    let child = Command::new("powershell")
         .arg("-command")
         .arg(arg)
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .stdout(Stdio::piped())
-        .spawn()
-        .expect("msiexec failed to start");
+        .spawn();
+
+    let mut child = match child {
+        Ok(child) => child,
+        Err(e) => return Err(format!("Failed to start powershell: {}", e)),
+    };
 
     // Check the stdout data
+    let mut output_lines = Vec::new();
     if let Some(stdout) = &mut child.stdout {
-        let lines = BufReader::new(stdout).lines().enumerate().take(20);
-        for (counter, line) in lines {
-            println!("install_wiresock: {}, {:?}", counter, line);
-            match line.unwrap().as_str() {
-                "0" => return Ok("WIRESOCK_INSTALLED".into()),
-                "1602" => return Err("User cancelled the installation".into()),
-                _ => return Err("Unknown exit code while installing WireSock".into()),
+        let lines = BufReader::new(stdout).lines();
+        for line in lines {
+            if let Ok(line) = line {
+                output_lines.push(line);
             }
         }
     }
 
-    Err("Unknown error installing WireSock".into())
+    // Convert the vector of lines to a JSON string
+    let output_json = serde_json::to_string(&output_lines).unwrap_or_else(|_| "[]".to_string());
+
+    Ok(output_json)
 }
 
 #[tauri::command]
