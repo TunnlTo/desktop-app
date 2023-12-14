@@ -566,6 +566,7 @@ fn main() {
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
+
     // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
@@ -585,7 +586,7 @@ fn main() {
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::DoubleClick {
+            SystemTrayEvent::LeftClick {
                 position: _,
                 size: _,
                 ..
