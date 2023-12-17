@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import DeleteModal from '../DeleteModal.tsx'
 import { ExclamationTriangleIcon, EyeIcon, EyeSlashIcon, LinkIcon } from '@heroicons/react/24/outline'
 import type TunnelManager from '../../models/TunnelManager.ts'
+import { derivePublicKey, generateKeyPair } from '../../utilities/wireguard.ts'
 
 interface ConfigProps {
   tunnelManager: TunnelManager
@@ -25,6 +26,7 @@ function TunnelEditor({
   const [wasValidated, setWasValidated] = useState(false)
   const [nameError, setNameError] = useState(false)
   const [ipError, setIpError] = useState(false)
+  const [interfacePublicKey, setInterfacePublicKey] = useState('')
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
   const [isPrivateKeyHidden, setIsPrivateKeyHidden] = useState(true)
   const [isPublicKeyHidden, setIsPublicKeyHidden] = useState(true)
@@ -65,7 +67,7 @@ function TunnelEditor({
     setNameError(isNameUsedByAnotherTunnel)
   }, [editedTunnel.name])
 
-  // Monitor interface ipv4 and ipv6 addresses to make sure one exists
+  // Monitor local interface ipv4 and ipv6 addresses to make sure one exists
   useEffect(() => {
     if (editedTunnel.interface.ipv4Address.length === 0 && editedTunnel.interface.ipv6Address.length === 0) {
       setIpError(true)
@@ -74,9 +76,26 @@ function TunnelEditor({
     }
   }, [editedTunnel.interface.ipv4Address, editedTunnel.interface.ipv6Address])
 
+  // Monitor local interface private key for changes
+  useEffect(() => {
+    if (editedTunnel.interface.privateKey.length !== 0) {
+      const publicKey = derivePublicKey(editedTunnel.interface.privateKey)
+      setInterfacePublicKey(publicKey)
+    }
+  }, [editedTunnel.interface.privateKey])
+
   /* ------------------------- */
   /* ------- functions ------- */
   /* ------------------------- */
+
+  function generateKeys(): void {
+    const keys = generateKeyPair()
+    setInterfacePublicKey(keys.publicKey)
+    setEditedTunnel({
+      ...editedTunnel,
+      interface: { ...editedTunnel.interface, 'privateKey': keys.privateKey },
+    })
+  }
 
   function toggleKeyVisibility(key: 'privateKey' | 'publicKey' | 'presharedKey'): void {
     if (key === 'privateKey') {
@@ -434,7 +453,7 @@ function TunnelEditor({
               required
               className={`${
                 wasValidated || nameError ? 'invalid:ring-pink-600' : ''
-              } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+              } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6`}
             />
           </div>
           <div className="sm:col-span-6 flex items-end mb-1">
@@ -454,7 +473,7 @@ function TunnelEditor({
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-4">
+            <div className="sm:col-span-4 lg:col-span-3">
               <label htmlFor="interface.ipv4Address" className="block text-sm font-medium leading-6 text-gray-900">
                 IPv4 Address
               </label>
@@ -468,17 +487,17 @@ function TunnelEditor({
                   spellCheck="false"
                   className={`${
                     wasValidated && ipError ? 'ring-pink-600' : ''
-                  } block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                  } block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6`}
                 />
-                <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
+                <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 text-sm">
                   /32
                 </span>
               </div>
             </div>
           </div>
 
-          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-7">
+          <div className="col-span-full sm:grid sm:grid-cols-12">
+            <div className="sm:col-span-9 lg:col-span-6">
               <label htmlFor="interface.ipv6Address" className="block text-sm font-medium leading-6 text-gray-900">
                 IPv6 Address
               </label>
@@ -489,9 +508,9 @@ function TunnelEditor({
                   type="text"
                   name="interface.ipv6Address"
                   spellCheck="false"
-                  className="block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-none rounded-l-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
-                <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 sm:text-sm">
+                <span className="inline-flex items-center rounded-r-md border border-l-0 border-gray-300 px-3 text-gray-500 text-sm">
                   /128
                 </span>
               </div>
@@ -499,7 +518,7 @@ function TunnelEditor({
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-3 lg:col-span-2">
               <label htmlFor="interface.port" className="block text-sm font-medium leading-6 text-gray-900">
                 Port
               </label>
@@ -511,14 +530,14 @@ function TunnelEditor({
                   name="interface.port"
                   spellCheck="false"
                   id="interface.port"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-full">
+            <div className="sm:col-span-9 lg:col-span-6">
               <label
                 htmlFor="interface.privateKey"
                 className="text-sm font-medium leading-6 text-gray-900 flex items-center"
@@ -537,6 +556,13 @@ function TunnelEditor({
                     <EyeSlashIcon className="h-4 w-4 text-gray-600" />
                   )}
                 </button>
+                <button
+                  type="button"
+                  onClick={generateKeys}
+                  className="ml-auto rounded bg-indigo-50 px-2 py-1 text-xs font-semibold text-indigo-600 shadow-sm hover:bg-indigo-100"
+                >
+                  Generate Keys
+                </button>
               </label>
               <div className="mt-2">
                 <input
@@ -549,14 +575,37 @@ function TunnelEditor({
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
-                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6`}
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-9 lg:col-span-6">
+              <label
+                htmlFor="interface.publicKey"
+                className="text-sm font-medium leading-6 text-gray-900 flex items-center"
+              >
+                Public Key
+              </label>
+              <div className="mt-2">
+                <input
+                  value={interfacePublicKey}
+                  type="text"
+                  name="interface.publicKey"
+                  id="interface.publicKey"
+                  spellCheck="false"
+                  disabled
+                  readOnly
+                  className="bg-slate-50 text-slate-500 border-slate-200 border-0 shadow-none block w-full rounded-md py-1.5 ring-1 ring-inset ring-gray-300 text-sm leading-6"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
+            <div className="sm:col-span-9 lg:col-span-6">
               <label htmlFor="interface.dns" className="block text-sm font-medium leading-6 text-gray-900">
                 DNS
               </label>
@@ -568,14 +617,14 @@ function TunnelEditor({
                   name="interface.dns"
                   spellCheck="false"
                   id="interface.dns"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-3 lg:col-span-2">
               <label htmlFor="interface.mtu" className="block text-sm font-medium leading-6 text-gray-900">
                 MTU
               </label>
@@ -588,7 +637,7 @@ function TunnelEditor({
                   name="interface.mtu"
                   spellCheck="false"
                   id="interface.mtu"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
@@ -604,7 +653,7 @@ function TunnelEditor({
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-4 lg:col-span-3">
               <label htmlFor="peer.endpoint" className="block text-sm font-medium leading-6 text-gray-900">
                 Endpoint Address
               </label>
@@ -619,14 +668,14 @@ function TunnelEditor({
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
-                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6`}
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-3">
+            <div className="sm:col-span-3 lg:col-span-2">
               <label htmlFor="peer.port" className="block text-sm font-medium leading-6 text-gray-900">
                 Port
               </label>
@@ -641,14 +690,14 @@ function TunnelEditor({
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
-                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6`}
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-full">
+            <div className="sm:col-span-9 lg:col-span-6">
               <label htmlFor="peer.publicKey" className="text-sm font-medium leading-6 text-gray-900 flex items-center">
                 Public Key
                 <button
@@ -676,14 +725,14 @@ function TunnelEditor({
                   required
                   className={`${
                     wasValidated ? 'invalid:ring-pink-600' : ''
-                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6`}
+                  } block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6`}
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-full">
+            <div className="sm:col-span-9 lg:col-span-6">
               <label
                 htmlFor="peer.presharedKey"
                 className="text-sm font-medium leading-6 text-gray-900 flex items-center"
@@ -711,15 +760,18 @@ function TunnelEditor({
                   name="peer.presharedKey"
                   spellCheck="false"
                   id="peer.presharedKey"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
           </div>
 
           <div className="sm:col-span-full grid grid-cols-1 sm:grid-cols-12">
-            <div className="sm:col-span-3">
-              <label htmlFor="peer.persistentKeepalive" className="block text-sm font-medium leading-6 text-gray-900">
+            <div className="sm:col-span-3 lg:col-span-2">
+              <label
+                htmlFor="peer.persistentKeepalive"
+                className="block whitespace-nowrap text-sm font-medium leading-6 text-gray-900"
+              >
                 Persistent Keep-Alive
               </label>
               <div className="mt-2">
@@ -730,7 +782,7 @@ function TunnelEditor({
                   name="peer.persistentKeepalive"
                   spellCheck="false"
                   id="peer.persistentKeepalive"
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
@@ -763,7 +815,7 @@ function TunnelEditor({
                   name="rules.allowed.apps"
                   spellCheck="false"
                   rows={3}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
 
@@ -778,7 +830,7 @@ function TunnelEditor({
                   name="rules.allowed.folders"
                   spellCheck="false"
                   rows={3}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
               <label
@@ -795,7 +847,7 @@ function TunnelEditor({
                   name="rules.allowed.ipAddresses"
                   spellCheck="false"
                   rows={3}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
@@ -817,7 +869,7 @@ function TunnelEditor({
                   name="rules.disallowed.apps"
                   spellCheck="false"
                   rows={3}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
               <label
@@ -834,7 +886,7 @@ function TunnelEditor({
                   name="rules.disallowed.folders"
                   spellCheck="false"
                   rows={3}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
               <label
@@ -851,7 +903,7 @@ function TunnelEditor({
                   name="rules.disallowed.ipAddresses"
                   spellCheck="false"
                   rows={3}
-                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+                  className="block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6"
                 />
               </div>
             </div>
