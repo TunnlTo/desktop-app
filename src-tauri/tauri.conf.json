@@ -41,7 +41,7 @@
         "icons/icon.ico"
       ],
       "resources": [
-        "wiresock/wiresock-vpn-client-x64-1.2.32.1.msi"
+        "wiresock/wiresock-vpn-client-x64-1.2.37.1.msi"
       ],
       "windows": {
         "certificateThumbprint": null,

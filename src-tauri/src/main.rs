@@ -504,7 +504,7 @@ async fn install_wiresock() -> Result<String, String> {
 
     // Build the path to the WireSock installer
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
-    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.32.1.msi"#);
+    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.37.1.msi"#);
 
     // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);

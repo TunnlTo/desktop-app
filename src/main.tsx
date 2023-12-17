@@ -115,7 +115,7 @@ function Main(): JSX.Element {
     }
 
     console.log('Wiresock version is ', result)
-    if (result === '1.2.32.1') {
+    if (result === '1.2.37.1') {
       console.log('Supported version of Wiresock installed')
       setSupportedWiresockInstalled('supported_version_installed')
     } else {
