@@ -22,6 +22,8 @@ import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
 import TunnelManager from './models/TunnelManager.ts'
 import GetStarted from './components/GetStarted.tsx'
+import WiresockInstallDetails from './models/WiresockInstallDetails.ts'
+import { WIRESOCK_VERSION } from './config.ts'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
@@ -39,8 +41,8 @@ function Main(): JSX.Element {
   // Get the tunnels from local storage
   const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
 
-  // For deciding where to route
-  const [supportedWiresockInstalled, setSupportedWiresockInstalled] = useState<string | null>(null)
+  // For checking if WireSock is installed and its version
+  const [wiresockInstallDetails, setWiresockInstallDetails] = useState<WiresockInstallDetails | null>(null)
 
   // Keep track of which tunnel the UI is showing
   const [selectedTunnelID, setSelectedTunnelID] = useState<string | null>(() => {
@@ -106,21 +108,21 @@ function Main(): JSX.Element {
   async function getWiresockVersion(): Promise<void> {
     console.log('Checking Wiresock version')
 
-    const result = await invoke('get_wiresock_version')
+    const result: string = await invoke('get_wiresock_version')
 
     if (result === 'wiresock_not_installed') {
       console.log('WireSock is not installed')
-      setSupportedWiresockInstalled('wiresock_not_installed')
+      setWiresockInstallDetails(new WiresockInstallDetails(false, '', false))
       return
     }
 
-    console.log('Wiresock version is ', result)
-    if (result === '1.2.37.1') {
-      console.log('Supported version of Wiresock installed')
-      setSupportedWiresockInstalled('supported_version_installed')
+    console.log('Wiresock installed version:', result)
+    if (result === WIRESOCK_VERSION) {
+      console.log('Supported version of WireSock is installed')
+      setWiresockInstallDetails(new WiresockInstallDetails(true, result, true))
     } else {
-      console.log('An unsupported version of Wiresock is installed')
-      setSupportedWiresockInstalled('unsupported_version_installed')
+      console.log('Unsupported WireSock version installed')
+      setWiresockInstallDetails(new WiresockInstallDetails(true, result, false))
     }
   }
 
@@ -163,9 +165,10 @@ function Main(): JSX.Element {
       <div>
         <Router>
           <Routes>
-            {supportedWiresockInstalled === null ? (
+            {wiresockInstallDetails === null ? (
               <Route path="*" element={<div>Loading...</div>} />
-            ) : supportedWiresockInstalled === 'supported_version_installed' ? (
+            ) : wiresockInstallDetails?.isSupportedVersion ? (
+              /* Supported version of WireSock is installed, so show the main components */
               <Route
                 path="/"
                 element={
@@ -197,13 +200,14 @@ function Main(): JSX.Element {
                 }
               />
             ) : (
+              /* Unsupported version of Wiresock installed, so send user to setup component */
               <Route
                 path="/"
                 element={
                   <div className="flex min-h-screen justify-center">
                     <Setup
-                      supportedWiresockInstalled={supportedWiresockInstalled}
-                      setSupportedWiresockInstalled={setSupportedWiresockInstalled}
+                      wiresockInstallDetails={wiresockInstallDetails}
+                      setWiresockInstallDetails={setWiresockInstallDetails}
                     />
                   </div>
                 }
