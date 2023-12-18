@@ -77,17 +77,7 @@ Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to do
 
 # Feature Requests
 
-These are requests made by the community. Please review them before making a new issue or discussion.
-
-- Dark Mode
-- Kill Switch
-- Nested Tunnels (or Multi-Hop)
-- Simultaneous Tunnels
-- UWP App Support
-- Trigger System - WiFi on/off, location, 4g/5g status, Bluetooth status, endpoint status
-- System tray controls. Icon colour to reflect status. Tooltip for status/IP. Right click for menu.
-- Statistics / Status data in UI
-- Bulk VPN config import
+To request a feature, visit the [feature request discussion](https://github.com/TunnlTo/desktop-app/discussions/130).
 
 # Issues and Suggestions
 

@@ -151,7 +151,7 @@ lazy_static! {
 mod tunnel;
 use tunnel::Tunnel;
 #[tauri::command]
-async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result<(), String> {
+async fn enable_wiresock(tunnel: Tunnel, log_level: String, app_handle: tauri::AppHandle) -> Result<(), String> {
     // Check if enable_wiresock is already running
     {
         let state = WIRESOCK_STATE.lock().unwrap();
@@ -349,7 +349,7 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
         .arg("-config")
         .arg(wiresock_config_path)
         .arg("-log-level")
-        .arg("debug")
+        .arg(log_level)
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .stdout(Stdio::piped())
         .spawn()
@@ -504,34 +504,39 @@ async fn install_wiresock() -> Result<String, String> {
 
     // Build the path to the WireSock installer
     let wiresock_installer_path = &mut current_dir.into_os_string().into_string().unwrap();
-    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.32.1.msi"#);
+    wiresock_installer_path.push_str(r#"\wiresock\wiresock-vpn-client-x64-1.2.37.1.msi"#);
 
     // Use powershell to launch msiexec so we can get the exit code to see if WireSock was installed succesfully
     let arg = format!("(Start-Process -FilePath \"msiexec.exe\" -ArgumentList \"/i\", '\"{}\"', \"/qr\" -Wait -Passthru).ExitCode", wiresock_installer_path);
 
     // Start the WireSock installer in quiet mode (no user prompts).
-    let mut child = Command::new("powershell")
+    let child = Command::new("powershell")
         .arg("-command")
         .arg(arg)
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .stdout(Stdio::piped())
-        .spawn()
-        .expect("msiexec failed to start");
+        .spawn();
+
+    let mut child = match child {
+        Ok(child) => child,
+        Err(e) => return Err(format!("Failed to start powershell: {}", e)),
+    };
 
     // Check the stdout data
+    let mut output_lines = Vec::new();
     if let Some(stdout) = &mut child.stdout {
-        let lines = BufReader::new(stdout).lines().enumerate().take(20);
-        for (counter, line) in lines {
-            println!("install_wiresock: {}, {:?}", counter, line);
-            match line.unwrap().as_str() {
-                "0" => return Ok("WIRESOCK_INSTALLED".into()),
-                "1602" => return Err("User cancelled the installation".into()),
-                _ => return Err("Unknown exit code while installing WireSock".into()),
+        let lines = BufReader::new(stdout).lines();
+        for line in lines {
+            if let Ok(line) = line {
+                output_lines.push(line);
             }
         }
     }
 
-    Err("Unknown error installing WireSock".into())
+    // Convert the vector of lines to a JSON string
+    let output_json = serde_json::to_string(&output_lines).unwrap_or_else(|_| "[]".to_string());
+
+    Ok(output_json)
 }
 
 #[tauri::command]
@@ -561,6 +566,7 @@ fn main() {
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
+
     // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
     let quit = CustomMenuItem::new("quit".to_string(), "Quit");
     let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
@@ -580,7 +586,7 @@ fn main() {
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
-            SystemTrayEvent::DoubleClick {
+            SystemTrayEvent::LeftClick {
                 position: _,
                 size: _,
                 ..

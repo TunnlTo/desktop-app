@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import './main.css'
 import type SettingsModel from './models/SettingsModel.ts'
@@ -17,15 +17,23 @@ import {
   saveSelectedTunnelIDInStorage,
   convertOldData,
   convertInterfaceIPAddresses,
+  saveSettingsInStorage,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
 import TunnelManager from './models/TunnelManager.ts'
 import GetStarted from './components/GetStarted.tsx'
+import WiresockInstallDetails from './models/WiresockInstallDetails.ts'
+import { WIRESOCK_VERSION } from './config.ts'
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 function Main(): JSX.Element {
+  /* ------------------------- */
+  /* -------- useRef --------- */
+  /* ------------------------- */
+  const isFirstRender = useRef(true)
+
   /* ------------------------- */
   /* ------- useState -------- */
   /* ------------------------- */
@@ -39,8 +47,8 @@ function Main(): JSX.Element {
   // Get the tunnels from local storage
   const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
 
-  // For deciding where to route
-  const [supportedWiresockInstalled, setSupportedWiresockInstalled] = useState<string | null>(null)
+  // For checking if WireSock is installed and its version
+  const [wiresockInstallDetails, setWiresockInstallDetails] = useState<WiresockInstallDetails | null>(null)
 
   // Keep track of which tunnel the UI is showing
   const [selectedTunnelID, setSelectedTunnelID] = useState<string | null>(() => {
@@ -48,9 +56,24 @@ function Main(): JSX.Element {
     return getSelectedTunnelIDFromStorage() ?? null
   })
 
+  const [settings, setSettings] = useState<SettingsModel>(() => {
+    return getSettingsFromStorage()
+  })
+
   /* ------------------------- */
   /* ------- useEffect ------- */
   /* ------------------------- */
+
+  useEffect(() => {
+    // Don't need to save settings after they're first retrieved from storage
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
+    console.log('Saving settings to local storage')
+    saveSettingsInStorage(settings)
+  }, [settings])
 
   // Functions to run on component mount/dismount
   useEffect(() => {
@@ -71,6 +94,11 @@ function Main(): JSX.Element {
       const convertInterfaceResult = convertInterfaceIPAddresses(currentTunnelManager)
       return convertInterfaceResult ?? currentTunnelManager
     })
+
+    // Handle 1.0.3 adding logLevel to settings data
+    if (settings.logLevel === undefined) {
+      setSettings({ ...settings, logLevel: 'debug' })
+    }
   }, [])
 
   // Monitor selectedTunnelID for changes
@@ -85,9 +113,6 @@ function Main(): JSX.Element {
   useEffect(() => {
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
-
-      // Get the auto connect setting
-      const settings: SettingsModel = getSettingsFromStorage()
 
       if (settings.autoConnectTunnelID !== '') {
         // There is an auto connect tunnel so get its details from settings
@@ -106,21 +131,21 @@ function Main(): JSX.Element {
   async function getWiresockVersion(): Promise<void> {
     console.log('Checking Wiresock version')
 
-    const result = await invoke('get_wiresock_version')
+    const result: string = await invoke('get_wiresock_version')
 
     if (result === 'wiresock_not_installed') {
       console.log('WireSock is not installed')
-      setSupportedWiresockInstalled('wiresock_not_installed')
+      setWiresockInstallDetails(new WiresockInstallDetails(false, '', false))
       return
     }
 
-    console.log('Wiresock version is ', result)
-    if (result === '1.2.32.1') {
-      console.log('Supported version of Wiresock installed')
-      setSupportedWiresockInstalled('supported_version_installed')
+    console.log('Wiresock installed version:', result)
+    if (result === WIRESOCK_VERSION) {
+      console.log('Supported version of WireSock is installed')
+      setWiresockInstallDetails(new WiresockInstallDetails(true, result, true))
     } else {
-      console.log('An unsupported version of Wiresock is installed')
-      setSupportedWiresockInstalled('unsupported_version_installed')
+      console.log('Unsupported WireSock version installed')
+      setWiresockInstallDetails(new WiresockInstallDetails(true, result, false))
     }
   }
 
@@ -140,6 +165,7 @@ function Main(): JSX.Element {
     // use tunnelData if provided, otherwise use selectedTunnel
     invoke('enable_wiresock', {
       tunnel: tunnelData ?? (selectedTunnelID != null ? tunnelManager.getTunnel(selectedTunnelID) : null),
+      logLevel: settings.logLevel
     }).catch((error) => {
       // Handle any issues starting the wiresock_process or the tunnel connecting
       console.error('Invoking enable_wiresock returned error: ', error)
@@ -163,9 +189,10 @@ function Main(): JSX.Element {
       <div>
         <Router>
           <Routes>
-            {supportedWiresockInstalled === null ? (
+            {wiresockInstallDetails === null ? (
               <Route path="*" element={<div>Loading...</div>} />
-            ) : supportedWiresockInstalled === 'supported_version_installed' ? (
+            ) : wiresockInstallDetails?.isSupportedVersion ? (
+              /* Supported version of WireSock is installed, so show the main components */
               <Route
                 path="/"
                 element={
@@ -197,13 +224,14 @@ function Main(): JSX.Element {
                 }
               />
             ) : (
+              /* Unsupported version of Wiresock installed, so send user to setup component */
               <Route
                 path="/"
                 element={
                   <div className="flex min-h-screen justify-center">
                     <Setup
-                      supportedWiresockInstalled={supportedWiresockInstalled}
-                      setSupportedWiresockInstalled={setSupportedWiresockInstalled}
+                      wiresockInstallDetails={wiresockInstallDetails}
+                      setWiresockInstallDetails={setWiresockInstallDetails}
                     />
                   </div>
                 }
@@ -239,7 +267,7 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnelManager={tunnelManager} />
+                  <Settings tunnelManager={tunnelManager} settings={settings} setSettings={setSettings} wiresockInstallDetails={wiresockInstallDetails} />
                 </div>
               }
             />
