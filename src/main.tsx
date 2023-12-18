@@ -267,7 +267,7 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnelManager={tunnelManager} settings={settings} setSettings={setSettings} />
+                  <Settings tunnelManager={tunnelManager} settings={settings} setSettings={setSettings} wiresockInstallDetails={wiresockInstallDetails} />
                 </div>
               }
             />

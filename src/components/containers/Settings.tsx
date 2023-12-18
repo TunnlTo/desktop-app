@@ -3,14 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { enable, isEnabled, disable } from 'tauri-plugin-autostart-api'
 import type TunnelManager from '../../models/TunnelManager.ts'
 import { useState } from 'react'
+import WiresockInstallDetails from '../../models/WiresockInstallDetails.ts'
 
 interface SettingsProps {
   tunnelManager: TunnelManager | null
   settings: SettingsModel
   setSettings: (settings: SettingsModel) => void
+  wiresockInstallDetails: WiresockInstallDetails
 }
 
-function Settings({ tunnelManager, settings, setSettings }: SettingsProps): JSX.Element {
+function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails }: SettingsProps): JSX.Element {
   const [editedSettings, setEditedSettings] = useState<SettingsModel>(() => ({ ...settings }))
 
   const navigate = useNavigate()
@@ -60,9 +62,12 @@ function Settings({ tunnelManager, settings, setSettings }: SettingsProps): JSX.
   }
 
   return (
-    <div className="container max-w-screen-lg mx-auto py-12 px-8 flex flex-col justify-center h-screen">
+    <div className="container max-w-screen-lg mx-auto px-8 flex flex-col justify-center h-screen">
       {/* Page Title section **/}
       <h1 className="text-2xl font-semibold leading-7 text-gray-900">Settings</h1>
+      <p className="text-xs text-gray-600 pt-2">
+        TunnlTo 1.0.3<br />WireSock {wiresockInstallDetails?.version}
+      </p>
 
       {/* Beginning of options section **/}
       <div className="my-6 divide-y border-y border-gray-200 divide-gray-200 items-center">
