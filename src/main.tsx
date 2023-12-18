@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import './main.css'
 import type SettingsModel from './models/SettingsModel.ts'
@@ -17,6 +17,7 @@ import {
   saveSelectedTunnelIDInStorage,
   convertOldData,
   convertInterfaceIPAddresses,
+  saveSettingsInStorage,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
@@ -28,6 +29,11 @@ import { WIRESOCK_VERSION } from './config.ts'
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 function Main(): JSX.Element {
+  /* ------------------------- */
+  /* -------- useRef --------- */
+  /* ------------------------- */
+  const isFirstRender = useRef(true)
+
   /* ------------------------- */
   /* ------- useState -------- */
   /* ------------------------- */
@@ -50,9 +56,24 @@ function Main(): JSX.Element {
     return getSelectedTunnelIDFromStorage() ?? null
   })
 
+  const [settings, setSettings] = useState<SettingsModel>(() => {
+    return getSettingsFromStorage()
+  })
+
   /* ------------------------- */
   /* ------- useEffect ------- */
   /* ------------------------- */
+
+  useEffect(() => {
+    // Don't need to save settings after they're first retrieved from storage
+    if (isFirstRender.current) {
+      isFirstRender.current = false
+      return
+    }
+
+    console.log('Saving settings to local storage')
+    saveSettingsInStorage(settings)
+  }, [settings])
 
   // Functions to run on component mount/dismount
   useEffect(() => {
@@ -73,6 +94,11 @@ function Main(): JSX.Element {
       const convertInterfaceResult = convertInterfaceIPAddresses(currentTunnelManager)
       return convertInterfaceResult ?? currentTunnelManager
     })
+
+    // Handle 1.0.3 adding logLevel to settings data
+    if (settings.logLevel === undefined) {
+      setSettings({ ...settings, logLevel: 'debug' })
+    }
   }, [])
 
   // Monitor selectedTunnelID for changes
@@ -87,9 +113,6 @@ function Main(): JSX.Element {
   useEffect(() => {
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
-
-      // Get the auto connect setting
-      const settings: SettingsModel = getSettingsFromStorage()
 
       if (settings.autoConnectTunnelID !== '') {
         // There is an auto connect tunnel so get its details from settings
@@ -142,6 +165,7 @@ function Main(): JSX.Element {
     // use tunnelData if provided, otherwise use selectedTunnel
     invoke('enable_wiresock', {
       tunnel: tunnelData ?? (selectedTunnelID != null ? tunnelManager.getTunnel(selectedTunnelID) : null),
+      logLevel: settings.logLevel
     }).catch((error) => {
       // Handle any issues starting the wiresock_process or the tunnel connecting
       console.error('Invoking enable_wiresock returned error: ', error)
@@ -243,7 +267,7 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnelManager={tunnelManager} />
+                  <Settings tunnelManager={tunnelManager} settings={settings} setSettings={setSettings} />
                 </div>
               }
             />

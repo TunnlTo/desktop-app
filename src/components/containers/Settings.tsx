@@ -1,40 +1,39 @@
 import type SettingsModel from '../../models/SettingsModel.ts'
 import { useNavigate } from 'react-router-dom'
-import { useState } from 'react'
-import { getSettingsFromStorage, saveSettingsInStorage } from '../../utilities/storageUtils.ts'
 import { enable, isEnabled, disable } from 'tauri-plugin-autostart-api'
 import type TunnelManager from '../../models/TunnelManager.ts'
+import { useState } from 'react'
 
 interface SettingsProps {
   tunnelManager: TunnelManager | null
+  settings: SettingsModel
+  setSettings: (settings: SettingsModel) => void
 }
 
-function Settings({ tunnelManager }: SettingsProps): JSX.Element {
-  const [settings, setSettings] = useState<SettingsModel>(() => {
-    return getSettingsFromStorage()
-  })
+function Settings({ tunnelManager, settings, setSettings }: SettingsProps): JSX.Element {
+  const [editedSettings, setEditedSettings] = useState<SettingsModel>(() => ({ ...settings }))
 
   const navigate = useNavigate()
 
   function handleSaveButtonClick(): void {
-    void enableAutoStart()
-    saveSettingsInStorage(settings)
+    void handleAutoStart()
+    setSettings(editedSettings)
     navigate('/')
   }
 
-  async function enableAutoStart(): Promise<void> {
+  async function handleAutoStart(): Promise<void> {
     try {
       // Note: If trying to enable autostart when its already enabled, it returns a system cannot find specified file error,
       //       so we check if its current status first to avoid the error
       const isAutoStartEnabled: boolean = await isEnabled()
       console.log('AutoStart enabled:', isAutoStartEnabled)
 
-      if (settings.autoStart && !isAutoStartEnabled) {
+      if (editedSettings.autoStart && !isAutoStartEnabled) {
         // Handle user turning on autostart
         await enable()
 
         console.log(`registered for autostart? ${await isEnabled()}`)
-      } else if (!settings.autoStart && isAutoStartEnabled) {
+      } else if (!editedSettings.autoStart && isAutoStartEnabled) {
         // User has turned off autostart and it is enabled
         await disable()
 
@@ -54,21 +53,21 @@ function Settings({ tunnelManager }: SettingsProps): JSX.Element {
 
     // Handle checkboxes so they save as booleans instead of "on" or "off"
     if (event.target instanceof HTMLInputElement && event.target.type === 'checkbox') {
-      setSettings({ ...settings, [name]: event.target.checked ?? '' })
+      setEditedSettings({ ...editedSettings, [name]: event.target.checked ?? '' })
     } else {
-      setSettings({ ...settings, [name]: value ?? '' })
+      setEditedSettings({ ...editedSettings, [name]: value ?? '' })
     }
   }
 
   return (
-    <div className="flex justify-center flex-col">
+    <div className="container max-w-screen-lg mx-auto py-12 px-8 flex flex-col justify-center h-screen">
       {/* Page Title section **/}
       <h1 className="text-2xl font-semibold leading-7 text-gray-900">Settings</h1>
 
       {/* Beginning of options section **/}
-      <div className="my-6 divide-y border-y border-gray-200 divide-gray-200">
+      <div className="my-6 divide-y border-y border-gray-200 divide-gray-200 items-center">
         <div className="sm:flex items-center py-6">
-          <div className="flex-auto sm:w-96 mb-6 sm:mb-0">
+          <div className="flex-auto sm:w-96 mb-6 sm:mb-0 pr-12">
             <label htmlFor="autoStart" className="block text-sm font-medium leading-6 text-gray-900">
               Auto Start
             </label>
@@ -76,7 +75,7 @@ function Settings({ tunnelManager }: SettingsProps): JSX.Element {
           </div>
           <input
             id="autoStart"
-            checked={settings?.autoStart}
+            checked={editedSettings?.autoStart}
             onChange={handleSettingChange}
             name="autoStart"
             type="checkbox"
@@ -93,10 +92,10 @@ function Settings({ tunnelManager }: SettingsProps): JSX.Element {
           </div>
           <select
             id="autoConnectTunnelID"
-            value={settings?.autoConnectTunnelID}
+            value={editedSettings?.autoConnectTunnelID}
             onChange={handleSettingChange}
             name="autoConnectTunnelID"
-            className="block rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6"
+            className="block rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6 w-full max-w-xs overflow-hidden overflow-ellipsis"
           >
             <option value="">Disabled</option>
             {tunnelManager?.tunnels != null &&
@@ -105,6 +104,27 @@ function Settings({ tunnelManager }: SettingsProps): JSX.Element {
                   {tunnel.name}
                 </option>
               ))}
+          </select>
+        </div>
+
+        <div className="sm:flex items-center py-6">
+          <div className="flex-auto sm:w-96 mb-6 sm:mb-0 pr-12">
+            <label htmlFor="logLevel" className="block text-sm font-medium leading-6 text-gray-900">
+              WireSock Log Level
+            </label>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              &apos;Show All Logs&apos; reduces performance and creates packet capture files in the TunnlTo directory.{' '}
+            </p>
+          </div>
+          <select
+            id="logLevel"
+            value={editedSettings?.logLevel}
+            onChange={handleSettingChange}
+            name="logLevel"
+            className="block rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6 w-full max-w-xs overflow-hidden overflow-ellipsis"
+          >
+            <option value="debug">Connection Status (default)</option>
+            <option value="all">Show All Logs</option>
           </select>
         </div>
       </div>

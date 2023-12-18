@@ -151,7 +151,7 @@ lazy_static! {
 mod tunnel;
 use tunnel::Tunnel;
 #[tauri::command]
-async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result<(), String> {
+async fn enable_wiresock(tunnel: Tunnel, log_level: String, app_handle: tauri::AppHandle) -> Result<(), String> {
     // Check if enable_wiresock is already running
     {
         let state = WIRESOCK_STATE.lock().unwrap();
@@ -349,7 +349,7 @@ async fn enable_wiresock(tunnel: Tunnel, app_handle: tauri::AppHandle) -> Result
         .arg("-config")
         .arg(wiresock_config_path)
         .arg("-log-level")
-        .arg("debug")
+        .arg(log_level)
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
         .stdout(Stdio::piped())
         .spawn()
