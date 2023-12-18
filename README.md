@@ -77,34 +77,7 @@ Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to do
 
 # Feature Requests
 
-These are requests made by the community. Please review them before making a new issue or discussion.
-
-| Feature                       | Status  |
-| ----------------------------- | ------- |
-| Dark Mode                     | Planned |
-| Kill Switch                   | Planned |
-| Nested Tunnels (Multi-Hop)    | Planned |
-| Simultaneous Tunnels          | Planned |
-| UWP App Support               | Planned |
-| Trigger System                | Planned |
-| System Tray Controls          | Planned |
-| Minimize on Startup           | Planned |
-| Statistics/Status in UI       | Planned |
-| Multi-file VPN Config Import  | Planned |
-| ARM64 Support                 | Planned |
-| Multi-Language Support        | Planned |
-| IP Leak Test                  | Planned |
-| WireSock Virtual Adapter Mode | Planned |
-| VPN Config Import             | ✔️      |
-| Auto Startup                  | ✔️      |
-| Auto Connect on Startup       | ✔️      |
-| Minimise to system tray| ✔️      |
-| Resizable windows and UI| ✔️      |
-| Add WireSock folder rules | ✔️      |
-| Add Preshared key support | ✔️      |
-| Add Persistent Keepalive | ✔️      |
-| Auto Updater | ✔️      |
-
+To request a feature, visit the [feature request discussion](https://github.com/TunnlTo/desktop-app/discussions/130).
 
 # Issues and Suggestions
 
