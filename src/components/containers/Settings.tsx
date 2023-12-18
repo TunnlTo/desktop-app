@@ -9,7 +9,7 @@ interface SettingsProps {
   tunnelManager: TunnelManager | null
   settings: SettingsModel
   setSettings: (settings: SettingsModel) => void
-  wiresockInstallDetails: WiresockInstallDetails
+  wiresockInstallDetails: WiresockInstallDetails | null
 }
 
 function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails }: SettingsProps): JSX.Element {
