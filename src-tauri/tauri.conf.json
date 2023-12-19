@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "TunnlTo",
-    "version": "1.0.3"
+    "version": "1.0.4"
   },
   "tauri": {
     "systemTray": {
@@ -66,8 +66,7 @@
         "resizable": true,
         "title": "TunnlTo",
         "width": 900,
-        "height": 700,
-        "decorations": false
+        "height": 700
       }
     ]
   }
