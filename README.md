@@ -1,11 +1,13 @@
+<style>h1,h2,h3,h4 { border-bottom: 0; } </style>
+
 <br />
 <div align="center">
   <img src="readme-images/logo.png" alt="Logo" width="80" height="80">
 
-  <h2 align="center">TunnlTo</h2>
+  <h1 align="center">TunnlTo</h1>
 
   <p align="center">
-    <b>TunnlTo is a lightweight, fast, Windows WireGuard VPN client built for split tunneling.</b>
+    <i><b>TunnlTo is a WireGuard VPN split tunneling client for Windows.</b></i>
     <br />
   </p>
   <img src="./readme-images/screenshot-main-page.PNG">
@@ -27,7 +29,7 @@
 
 </div>
 
-# What does this application do?
+## What does this application do?
 
 TunnlTo is a tool for controlling which Windows applications, processes, and IP addresses can use a WireGuard VPN tunnel.
 
@@ -43,7 +45,7 @@ TunnlTo is a tool for controlling which Windows applications, processes, and IP 
 - Route all applications within a folder through a VPN
 - Route all traffic through a VPN except applications within a folder
 
-# How does it work?
+## How does it work?
 
 TunnlTo is built in collaboration with the creator of [WireSock](https://www.wiresock.net/). TunnlTo 'wraps' the WireSock CLI application to provide a simple user interface for enhanced accessibility. WireSock is currently closed source and an open source version is being considered.
 
@@ -51,7 +53,7 @@ TunnlTo is built in collaboration with the creator of [WireSock](https://www.wir
 >
 > WireSock VPN Client combines the power of Windows Packet Filter and BoringTun (user space WireGuard implementation in Rust) to provide exceptional performance, security and scalability.
 
-# Performance
+## Performance
 
 |                        |     Download |       Upload |
 | :--------------------- | -----------: | -----------: |
@@ -59,59 +61,65 @@ TunnlTo is built in collaboration with the creator of [WireSock](https://www.wir
 | **TunnlTo**            | **892** Mbps |     879 Mbps |
 | **TunSafe**            |     284 Mbps |     435 Mbps |
 
-# Prerequisites
+## Prerequisites
 
 - A basic understanding of WireGuard
 - Access to a WireGuard server
 - Windows 10/11
 
-# Follow For Updates
+## Follow For Updates
 
 Please follow the project on Twitter to be notified of new releases and updates.
 
 - [Twitter](https://twitter.com/TunnlTo)
 
-# Get started
+## Get started
 
 Visit the [releases](https://github.com/TunnlTo/desktop-app/releases) page to download the installer for the latest version.
 
-# Feature Requests
+## Feature Requests
 
 To request a feature, visit the [feature request discussion](https://github.com/TunnlTo/desktop-app/discussions/130).
 
-# Issues and Suggestions
+## Issues and Suggestions
 
 Please use [issues](https://github.com/TunnlTo/desktop-app/issues) for any problems you may encounter and [discussions](https://github.com/TunnlTo/desktop-app/discussions) for any suggestions, ideas or feature requests you may have.
+</br></br>
 
 ---
+</br>
 
 # Tunnel Config
 
-### Tunnel Name (Required)
+### Tunnel Name
 
 The description of your WireGuard tunnel.
 
-#### Example
+- Required parameter.
+
+**Example**
 
 - `Work VPN`
 
----
-
 ## Local Interface
 
-### IPv4 Address (At least one IPv4 or IPv6 Address is required)
+### IPv4 Address
 
 The local interface IPv4 address.
 
-#### Example
+- At least one IPv4 or IPv6 Address is required.
+
+**Example**
 
 - `10.0.0.1`
 
-### IPv6 Address (At least one IPv4 or IPv6 Address is required)
+### IPv6 Address
 
 The local interface IPv6 address.
 
-#### Example
+- At least one IPv4 or IPv6 Address is required.
+
+**Example**
 
 - `662a:622d:33aa:6ad0:adba:865f:d13c:85f1`
 
@@ -121,48 +129,65 @@ The local interface port.
 
 - If nothing is set, the port will be automatically assigned.
 
-#### Example
+**Example**
 
 - `54236`
 
-### Private Key (Required)
+### Private Key
 
 The private key for the local interface.
 
+- Required parameter.
+
+### Public Key
+
+The public key for the local interface.
+
+- Automatically derived from the local interface private key.
+
 ### DNS
 
-The DNS server to use for the tunnel.
+When a DNS address is configured, it becomes the universal destination for all DNS requests across all applications (including those not in the allow list). In the absence of a specific DNS setting, the systems default DNS is employed as the global resolver for all applications.
 
+For further understanding of how this works, please see the examples listed further down on this page.
+
+- If set, becomes the DNS for all applications (including any applications not configured to route through the tunnel).
 - If left blank, the systems default DNS server will be used.
 - Use a comma to separate multiple DNS servers.
 
-#### Example
+**Example**
 
 - `1.1.1.1, 8.8.8.8`
 
 ### MTU
 
-The MTU for the tunnel.
+The MTU (Maximum Transmission Unit) for the tunnel.
 
-####
+- If left blank, the default size of 1420 is used.
 
-- `1420`
+**Example**
 
----
+- `1380`
 
 ## Remote Peer
 
-### Endpoint (Required)
+### Endpoint
 
 The address of the Wireguard endpoint.
 
-### Port (Required)
+- Required parameter.
+
+### Port
 
 The port of the Wireguard endpoint.
 
-### Public Key (Required)
+- Required parameter.
+
+### Public Key
 
 The Public key for the tunnel.
+
+- Required parameter.
 
 ### Preshared Key
 
@@ -174,8 +199,6 @@ The persistent keep-alive setting for the tunnel.
 
 ## Rules
 
-## Allow
-
 ### Allow Apps
 
 The list of applications that can use the tunnel.
@@ -184,13 +207,13 @@ The list of applications that can use the tunnel.
 - Use a comma to separate multiple applications.
 - If this parameter is used, the Allowed IP's parameter must also be set.
 
-#### Options
+**Options**
 
 - Use the full path to the executable
 - List the process name without the .exe extension
 - List the process name with the .exe extension
 
-#### Examples
+**Examples**
 
 - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 - `chrome, msoffice, firefox`
@@ -202,14 +225,14 @@ The list of applications that can use the tunnel.
 - Use a comma to separate multiple folders.
 - If this parameter is used, the Allowed IP's parameter must also be set.
 
-#### Options
+**Options**
 
 - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be included.
 
-#### Examples
+**Example**s
 
-- `C:\Program Files (x86)\`
-- `D:\Work Apps\, C:\Program Files\Slack\`
+- `C:\Program Files (x86)`
+- `D:\Work Apps\, C:\Program Files\Slack`
 
 ### Allow IP Addresses
 
@@ -218,12 +241,10 @@ The list of IP addresses and IP ranges that can use the tunnel.
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will forward all the listed IP addresses and IP ranges used by the Allowed Apps through the tunnel.
 
-#### Example
+**Example**
 
 - `0.0.0.0/0, ::/0`
 - `192.168.1.0/24, 662a:622d:33aa:6ad0:adba:865f:d13c:85f1, 1.1.1.1`
-
-## Disallow
 
 ### Disallow Apps
 
@@ -232,13 +253,13 @@ Apps that cannot use the tunnel.
 - Allowed Apps takes precedence, and if both are specified, then Allowed Apps is matched first.
 - Use a comma to separate multiple applications.
 
-#### Options
+**Options**
 
 - Use the full path to the executable
 - List the process name without the .exe extension
 - List the process name with the .exe extension
 
-#### Examples
+**Examples**
 
 - `C:\Program Files (x86)\Google\Chrome\Application\chrome.exe`
 - `chrome, msoffice,`
@@ -251,14 +272,14 @@ The folders containing apps that cannot use the tunnel.
 - Allowed Folders takes precedence, and if both are specified, then Allowed Apps is matched first.
 - Use a comma to separate multiple folders.
 
-#### Options
+**Options**
 
 - List a folder path (which should include at least one slash or backslash), and all executables within that folder and its subfolders will be excluded.
 
-#### Example
+**Example**
 
-- `C:\Program Files (x86)\`
-- `D:\Work Apps\, C:\Program Files\Slack\`
+- `C:\Program Files (x86)`
+- `D:\Work Apps, C:\Program Files\Slack`
 
 ### Disallow IP Addresses
 
@@ -267,11 +288,13 @@ The IP addresses and IP ranges that cannot use the tunnel.
 - Use a comma to separate multiple IP addresses and IP ranges.
 - If the Allowed Apps parameter is set, this will block all the listed IP addresses and IP ranges used by the Allowed Apps from using the tunnel.
 
-#### Example
+**Example**
 
 - `1.1.1.1, 192.168.1.0/24`
+</br></br>
 
 ---
+</br>
 
 # Example Configurations
 
@@ -285,7 +308,7 @@ You utilise a privacy VPN to protect your privacy when browsing the internet. Yo
 
 ### Expected Outcome
 
-In this example, FireFox and qBittorrent are routed through the tunnel while all other applications are routed through the default network adapter. DNS requests from FireFox and qBittorrent will route through the tunnel and use the DNS servers specified.
+In this example, FireFox and qBittorrent are routed through the tunnel while all other applications are routed through the default network adapter. All application (not just firefox and qBittorrent) DNS requests will route through the tunnel to the configured DNS servers.
 
 ### Configuration
 
@@ -304,7 +327,7 @@ You utilise a company VPN to access your employers servers. You want the Chrome 
 
 ### Expected Outcome
 
-In this example, all traffic is routed through the tunnel except Chrome.
+In this example, all traffic is routed through the tunnel except Chrome. All application (not just chrome) DNS requests will route through the tunnel to the configured DNS servers.
 
 ### Configuration
 
@@ -312,7 +335,7 @@ In this example, all traffic is routed through the tunnel except Chrome.
 - Disallowed Apps: `chrome`
 - Allowed IP's: `0.0.0.0/0`
 
-## Route all apps in a specific folder through a a tunnel
+## Route all apps in a specific folder through a tunnel
 
 ### Scenario
 
@@ -323,12 +346,12 @@ You utilise a company VPN to access your employers servers. You want all of your
 
 ### Expected Outcome
 
-In this example, all apps in the `C:\Work Apps\` folder are routed through the tunnel. The company DNS server is used for DNS requests.
+In this example, all apps in the `C:\Work Apps` folder are routed through the tunnel. The company DNS server is used for DNS requests for all applications (not just `D:\Work Apps`).
 
 ### Configuration
 
 - DNS: `10.64.0.1`
-- Allowed Apps: `D:\Work Apps\`
+- Allowed Apps: `D:\Work Apps`
 - Allowed IP's: `0.0.0.0/0`
 
 ## Route a specific IP address range when used by a specific app through a tunnel
@@ -339,7 +362,7 @@ You want to access a company intranet when using the Edge browser, otherwise it 
 
 ### Expected Outcome
 
-In this example, an IP address range is routed through the tunnel when the the IP range is accessed by the Edge browser. Otherwise, all Edge browser traffic is routed through the default network adapter. Note that in this example the DNS parameter is not set, so the default DNS server will be used by Edge. If the DNS parameter was set to the company DNS server, all Edge DNS requests would route through the tunnel to the company DNS server.
+In this example, an IP address range is routed through the tunnel when the the IP range is accessed by the Edge browser. Otherwise, all Edge browser traffic is routed through the default network adapter. Note that in this example the DNS parameter is not set, so the default DNS server will be used by Edge. If the DNS parameter was set to the company DNS server, all  DNS requests would route through the tunnel to the company DNS server.
 
 ### Configuration
 
@@ -354,7 +377,7 @@ You want to access company servers through a company VPN server, however all oth
 
 ### Expected Outcome
 
-In this example, an IP address and IP range are routed through the tunnel for all applications. All other traffic is routed through the default network adapter.
+In this example, a specific IP address and IP range are routed through the tunnel for all applications. All other traffic is routed through the default network adapter.
 
 ### Configuration
 
@@ -368,7 +391,7 @@ You want to use a privacy VPN service for all network traffic except some specif
 
 ### Expected Outcome
 
-In this example, an IP address and IP range are routed through the default network adapter and NOT the tunnel. All other traffic is routed through the tunnel.
+In this example, a specific IP address and IP range are routed through the default network adapter and NOT the tunnel. All other traffic is routed through the tunnel.
 
 ### Configuration
 
@@ -390,8 +413,10 @@ Counter Strike traffic is routed through the tunnel except for when a specific I
 - Allowed Apps: `csgo`
 - Allowed IP's: `0.0.0.0/0`
 - Disallowed IP's: `12.34.45.0/24`
+</br></br>
 
 ---
+</br>
 
 # Built With
 
@@ -402,7 +427,7 @@ Counter Strike traffic is routed through the tunnel except for when a specific I
 
 # License
 
-Copyright (c) 2023 TunnlTo. TunnlTo is not currently licensed.
+Copyright (c) 2023 TunnlTo. TunnlTo inherits licensing from WireSock. TunnlTo is free for personal (non-commercial), or educational (including non-profit organization) use. For commercial use, please contact us for licensing options.
 
 # Acknowledgments
 
