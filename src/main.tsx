@@ -64,6 +64,7 @@ function Main(): JSX.Element {
   /* ------- useEffect ------- */
   /* ------------------------- */
 
+  // Handle changes to settings
   useEffect(() => {
     // Don't need to save settings after they're first retrieved from storage
     if (isFirstRender.current) {
@@ -98,6 +99,17 @@ function Main(): JSX.Element {
     // Handle 1.0.3 adding logLevel to settings data
     if (settings.logLevel === undefined) {
       setSettings({ ...settings, logLevel: 'debug' })
+    }
+
+    // Handle 1.0.5 adding startMinimized to settings data
+    if (settings.startMinimized === undefined) {
+      setSettings({ ...settings, startMinimized: false })
+    }
+
+    // Show the app window depending on the setting
+    console.log(!settings.startMinimized)
+    if (!settings.startMinimized) {
+      void invoke('show_app')
     }
   }, [])
 
@@ -165,7 +177,7 @@ function Main(): JSX.Element {
     // use tunnelData if provided, otherwise use selectedTunnel
     invoke('enable_wiresock', {
       tunnel: tunnelData ?? (selectedTunnelID != null ? tunnelManager.getTunnel(selectedTunnelID) : null),
-      logLevel: settings.logLevel
+      logLevel: settings.logLevel,
     }).catch((error) => {
       // Handle any issues starting the wiresock_process or the tunnel connecting
       console.error('Invoking enable_wiresock returned error: ', error)
@@ -267,7 +279,12 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnelManager={tunnelManager} settings={settings} setSettings={setSettings} wiresockInstallDetails={wiresockInstallDetails} />
+                  <Settings
+                    tunnelManager={tunnelManager}
+                    settings={settings}
+                    setSettings={setSettings}
+                    wiresockInstallDetails={wiresockInstallDetails}
+                  />
                 </div>
               }
             />

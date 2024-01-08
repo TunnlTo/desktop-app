@@ -15,8 +15,8 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::Manager;
 use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use tauri::{Manager, Window};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use windows::{
@@ -151,7 +151,11 @@ lazy_static! {
 mod tunnel;
 use tunnel::Tunnel;
 #[tauri::command]
-async fn enable_wiresock(tunnel: Tunnel, log_level: String, app_handle: tauri::AppHandle) -> Result<(), String> {
+async fn enable_wiresock(
+    tunnel: Tunnel,
+    log_level: String,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
     // Check if enable_wiresock is already running
     {
         let state = WIRESOCK_STATE.lock().unwrap();
@@ -561,6 +565,17 @@ fn check_wiresock_service() -> Result<String, String> {
     }
 }
 
+#[tauri::command]
+async fn show_app(window: Window) {
+    // Show main window
+    println!("Showing the main window");
+    window
+        .get_window("main")
+        .expect("no window labeled 'main' found")
+        .show()
+        .unwrap();
+}
+
 fn main() {
     // Initialize global job object
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
@@ -582,7 +597,8 @@ fn main() {
             install_wiresock,
             check_wiresock_service,
             get_wiresock_state,
-            get_wiresock_version
+            get_wiresock_version,
+            show_app
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -597,13 +613,24 @@ fn main() {
             }
             SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
                 "minimize" => {
+                    // Hide the app window
                     if let Some(window) = app.get_window("main") {
                         window.hide().unwrap();
                     };
                 }
                 "quit" => {
+                    // Minimize the app window
+                    if let Some(window) = app.get_window("main") {
+                        window.hide().unwrap();
+                    };
+
+                    // Disable WireSock
                     disable_wiresock().expect("Failed to disable WireSock");
-                    let _ = app.save_window_state(StateFlags::all()); // will save the state of all open windows to disk
+
+                    // Save window state to disk
+                    let _ = app.save_window_state(StateFlags::all());
+
+                    // Exit the app
                     std::process::exit(0);
                 }
                 _ => {}
