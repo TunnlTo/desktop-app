@@ -418,6 +418,25 @@ async fn enable_wiresock(
     Ok(())
 }
 
+#[tauri::command]
+fn change_icon(app_handle: tauri::AppHandle, enabled: bool) {
+    if enabled {
+        app_handle
+            .tray_handle()
+            .set_icon(tauri::Icon::Raw(
+                include_bytes!("assets/icons/icon-enabled.ico").to_vec(),
+            ))
+            .unwrap();
+    } else {
+        app_handle
+            .tray_handle()
+            .set_icon(tauri::Icon::Raw(
+                include_bytes!("assets/icons/icon-default.ico").to_vec(),
+            ))
+            .unwrap();
+    }
+}
+
 fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
 where
     F: FnOnce(&mut WiresockState),
@@ -584,6 +603,7 @@ fn main() {
             get_wiresock_version,
             show_app,
             set_minimize_to_tray,
+            change_icon,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {

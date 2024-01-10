@@ -128,12 +128,12 @@ function Main(): JSX.Element {
     }
   }, [selectedTunnelID])
 
-  // Wait for wiresockState data to arrive from Tauri
-  // Auto connect a tunnel if one is set
+  // Handles changes to wiresockState
   useEffect(() => {
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
 
+      // Auto connect a tunnel if one is set
       if (settings.autoConnectTunnelID !== '') {
         // There is an auto connect tunnel so get its details from settings
         const tunnel: Tunnel | null = getTunnelFromStorage(settings.autoConnectTunnelID)
@@ -141,6 +141,13 @@ function Main(): JSX.Element {
           enableTunnel(tunnel)
         }
       }
+    }
+
+    // Update the system tray icon
+    if (wiresockState?.tunnel_status === 'CONNECTED') {
+      void invoke('change_icon', { enabled: true })
+    } else {
+      void invoke('change_icon', { enabled: false })
     }
   }, [wiresockState])
 
@@ -169,6 +176,7 @@ function Main(): JSX.Element {
     }
   }
 
+  // Listen for events emitted by Tauri with updates to the wiresock_state 
   async function setupTauriEventListener(): Promise<void> {
     console.log('Setting up wiresock_state listener')
 
