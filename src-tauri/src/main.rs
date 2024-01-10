@@ -544,28 +544,6 @@ async fn install_wiresock() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn check_wiresock_service() -> Result<String, String> {
-    // Check if the wiresock service is installed
-    let status = Command::new("powershell")
-        .arg("-command")
-        .arg("get-service")
-        .arg("-name")
-        .arg("wiresock-client-service")
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .status()
-        .expect("powershell failed to start");
-
-    println!("process finished with: {status}");
-
-    // Check the exit code
-    match status.code() {
-        Some(0) => return Ok("WIRESOCK_SERVICE_INSTALLED".into()),
-        Some(1) => return Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into()),
-        _ => return Ok(status.to_string().into()),
-    }
-}
-
-#[tauri::command]
 async fn show_app(window: Window) {
     // Show main window
     println!("Showing the main window");
@@ -605,7 +583,6 @@ fn main() {
             enable_wiresock,
             disable_wiresock,
             install_wiresock,
-            check_wiresock_service,
             get_wiresock_state,
             get_wiresock_version,
             show_app,
