@@ -145,9 +145,20 @@ function Main(): JSX.Element {
 
     // Update the system tray icon
     if (wiresockState?.tunnel_status === 'CONNECTED') {
+      // Show a connected icon
       void invoke('change_icon', { enabled: true })
+
+      // Get the name of the currently connected tunnel
+      const connectedTunnel = tunnelManager.getTunnel(wiresockState.tunnel_id)
+
+      // Show the currently connected tunnel name in the system tray tooltip
+      void invoke('change_systray_tooltip', { tooltip: `Connected: ${connectedTunnel?.name}` })
     } else {
+      // Show a disconnected icon
       void invoke('change_icon', { enabled: false })
+
+      // Update the system tray tooltip to show tunnel is disconnected
+      void invoke('change_systray_tooltip', { tooltip: 'TunnlTo: Disconnected' })
     }
   }, [wiresockState])
 
@@ -176,7 +187,7 @@ function Main(): JSX.Element {
     }
   }
 
-  // Listen for events emitted by Tauri with updates to the wiresock_state 
+  // Listen for events emitted by Tauri with updates to the wiresock_state
   async function setupTauriEventListener(): Promise<void> {
     console.log('Setting up wiresock_state listener')
 

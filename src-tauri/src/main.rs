@@ -437,6 +437,11 @@ fn change_icon(app_handle: tauri::AppHandle, enabled: bool) {
     }
 }
 
+#[tauri::command]
+fn change_systray_tooltip(app_handle: tauri::AppHandle, tooltip: String) {
+    let _ = app_handle.tray_handle().set_tooltip(&tooltip);
+}
+
 fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
 where
     F: FnOnce(&mut WiresockState),
@@ -604,6 +609,7 @@ fn main() {
             show_app,
             set_minimize_to_tray,
             change_icon,
+            change_systray_tooltip,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
