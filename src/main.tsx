@@ -66,13 +66,16 @@ function Main(): JSX.Element {
 
   // Handle changes to settings
   useEffect(() => {
+    // Sync the minimize to tray setting with Rust
+    void invoke('set_minimize_to_tray', { value: settings.minimizeToTray })
+
     // Don't need to save settings after they're first retrieved from storage
     if (isFirstRender.current) {
       isFirstRender.current = false
       return
     }
 
-    console.log('Saving settings to local storage')
+    // Save the settings to local storage
     saveSettingsInStorage(settings)
   }, [settings])
 
@@ -104,6 +107,11 @@ function Main(): JSX.Element {
     // Handle 1.0.5 adding startMinimized to settings data
     if (settings.startMinimized === undefined) {
       setSettings({ ...settings, startMinimized: false })
+    }
+
+    // Handle 1.0.5 adding minimizeToTray to settings data
+    if (settings.minimizeToTray === undefined) {
+      setSettings({ ...settings, minimizeToTray: true })
     }
 
     // Show the app window depending on the setting

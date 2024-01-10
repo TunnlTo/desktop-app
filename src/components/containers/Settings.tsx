@@ -95,13 +95,30 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
             <label htmlFor="startMinimized" className="block text-sm font-medium leading-6 text-gray-900">
               Auto Minimize on Start
             </label>
-            <p className="mt-1 text-sm leading-6 text-gray-600">Minimize to system tray when the app starts.</p>
+            <p className="mt-1 text-sm leading-6 text-gray-600">Automatically minimize the application window upon startup.</p>
           </div>
           <input
             id="startMinimized"
             checked={editedSettings?.startMinimized}
             onChange={handleSettingChange}
             name="startMinimized"
+            type="checkbox"
+            className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
+          />
+        </div>
+
+        <div className="sm:flex items-center py-6">
+          <div className="flex-auto sm:w-96 mb-6 sm:mb-0 pr-12">
+            <label htmlFor="minimizeToTray" className="block text-sm font-medium leading-6 text-gray-900">
+              Minimize to Tray
+            </label>
+            <p className="mt-1 text-sm leading-6 text-gray-600">Enable system tray minimization on clicking the close button.</p>
+          </div>
+          <input
+            id="minimizeToTray"
+            checked={editedSettings?.minimizeToTray}
+            onChange={handleSettingChange}
+            name="minimizeToTray"
             type="checkbox"
             className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600"
           />

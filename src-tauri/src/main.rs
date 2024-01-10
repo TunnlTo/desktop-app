@@ -576,6 +576,16 @@ async fn show_app(window: Window) {
         .unwrap();
 }
 
+lazy_static! {
+    static ref MINIMIZE_TO_TRAY: Mutex<bool> = Mutex::new(true);
+}
+
+#[tauri::command]
+fn set_minimize_to_tray(value: bool) {
+    let mut minimize = MINIMIZE_TO_TRAY.lock().unwrap();
+    *minimize = value;
+}
+
 fn main() {
     // Initialize global job object
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
@@ -598,7 +608,8 @@ fn main() {
             check_wiresock_service,
             get_wiresock_state,
             get_wiresock_version,
-            show_app
+            show_app,
+            set_minimize_to_tray,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -657,9 +668,12 @@ fn main() {
                 ..
             } => match win_event {
                 tauri::WindowEvent::CloseRequested { api, .. } => {
-                    let window = app.get_window(label.as_str()).unwrap();
-                    window.hide().unwrap();
-                    api.prevent_close();
+                    let minimize_to_tray = MINIMIZE_TO_TRAY.lock().unwrap();
+                    if *minimize_to_tray {
+                        let window = app.get_window(label.as_str()).unwrap();
+                        window.hide().unwrap();
+                        api.prevent_close();
+                    }
                 }
                 _ => {}
             },
