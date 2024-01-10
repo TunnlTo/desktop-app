@@ -153,12 +153,18 @@ function Main(): JSX.Element {
 
       // Show the currently connected tunnel name in the system tray tooltip
       void invoke('change_systray_tooltip', { tooltip: `Connected: ${connectedTunnel?.name}` })
+
+      // Update the system tray menu to add a disconnect option
+      console.log('sending update_systray_menu to rust')
+      void invoke('change_systray_menu', { itemId: 'disconnect', itemLabel: 'Disconnect' })
     } else {
       // Show a disconnected icon
       void invoke('change_icon', { enabled: false })
 
       // Update the system tray tooltip to show tunnel is disconnected
       void invoke('change_systray_tooltip', { tooltip: 'TunnlTo: Disconnected' })
+
+      // TODO: Remove the disconnect option from the system tray menu
     }
   }, [wiresockState])
 

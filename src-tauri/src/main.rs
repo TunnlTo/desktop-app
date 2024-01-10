@@ -15,7 +15,7 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tauri::{Manager, Window};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
@@ -31,6 +31,14 @@ use windows::{
 };
 use winreg::enums::*;
 use winreg::RegKey;
+
+lazy_static! {
+    static ref TRAY_MENU_ITEMS: Mutex<Vec<CustomMenuItem>> = Mutex::new(vec![
+        CustomMenuItem::new("quit".to_string(), "Quit"),
+        CustomMenuItem::new("minimize".to_string(), "Minimize to Tray"),
+        // Add other initial menu items here
+    ]);
+}
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -442,6 +450,38 @@ fn change_systray_tooltip(app_handle: tauri::AppHandle, tooltip: String) {
     let _ = app_handle.tray_handle().set_tooltip(&tooltip);
 }
 
+#[tauri::command]
+fn change_systray_menu(app_handle: tauri::AppHandle, item_id: String, item_label: String) {
+    println!("adding {} to the menu", item_label);
+
+    let mut tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap();
+
+    // Update or add the menu item
+    let pos = tray_menu_items
+        .iter()
+        .position(|item| item.id.to_string() == item_id);
+
+    match pos {
+        Some(index) => {
+            // Update existing item
+            tray_menu_items[index] = CustomMenuItem::new(item_id, item_label);
+        }
+        None => {
+            // Add new item
+            tray_menu_items.push(CustomMenuItem::new(item_id, item_label));
+        }
+    }
+
+    // Rebuild the system tray menu
+    let mut tray_menu = SystemTrayMenu::new();
+    for item in tray_menu_items.iter() {
+        tray_menu = tray_menu.add_item(item.clone());
+    }
+
+    // Set the updated menu
+    let _ = app_handle.tray_handle().set_menu(tray_menu);
+}
+
 fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
 where
     F: FnOnce(&mut WiresockState),
@@ -591,13 +631,12 @@ fn main() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
 
-    // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(quit)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(minimize);
+    // Clone the tray menu items
+    let tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap().clone();
+    let mut tray_menu = SystemTrayMenu::new();
+    for item in tray_menu_items.iter() {
+        tray_menu = tray_menu.add_item(item.clone());
+    }
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
@@ -610,6 +649,7 @@ fn main() {
             set_minimize_to_tray,
             change_icon,
             change_systray_tooltip,
+            change_systray_menu,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -643,6 +683,10 @@ fn main() {
 
                     // Exit the app
                     app.exit(0);
+                }
+                "disconnect" => {
+                    // Disable WireSock
+                    disable_wiresock().expect("Failed to disable WireSock");
                 }
                 _ => {}
             },
