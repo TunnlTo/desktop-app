@@ -455,8 +455,6 @@ fn get_wiresock_install_path() -> Result<String, String> {
 
 #[tauri::command]
 fn get_wiresock_version() -> Result<String, String> {
-    println!("Starting get_wiresock_version");
-
     let uninstall_keys = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
         .map_err(|e| e.to_string())?;
@@ -468,10 +466,9 @@ fn get_wiresock_version() -> Result<String, String> {
         match subkey.get_value::<String, _>("DisplayName") {
             Ok(display_name) => {
                 if display_name.starts_with("WireSock VPN Client") {
-                    println!("Found WireSock VPN Client key");
                     match subkey.get_value::<String, _>("DisplayVersion") {
                         Ok(version) => {
-                            println!("DisplayVersion: {}", version);
+                            println!("Installed WireSock Version: {}", version);
                             return Ok(version);
                         }
                         Err(e) => eprintln!("Error getting display version: {:?}", e),
