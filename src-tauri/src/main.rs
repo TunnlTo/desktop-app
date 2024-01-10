@@ -642,7 +642,7 @@ fn main() {
                     let _ = app.save_window_state(StateFlags::all());
 
                     // Exit the app
-                    std::process::exit(0);
+                    app.exit(0);
                 }
                 _ => {}
             },
