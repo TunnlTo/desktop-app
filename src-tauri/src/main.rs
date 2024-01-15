@@ -15,8 +15,9 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu};
+use systray_menu::TRAY_MENU_ITEMS;
 use tauri::{Manager, Window};
+use tauri::{SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use windows::{
@@ -32,13 +33,7 @@ use windows::{
 use winreg::enums::*;
 use winreg::RegKey;
 
-lazy_static! {
-    static ref TRAY_MENU_ITEMS: Mutex<Vec<CustomMenuItem>> = Mutex::new(vec![
-        CustomMenuItem::new("quit".to_string(), "Quit"),
-        CustomMenuItem::new("minimize".to_string(), "Minimize to Tray"),
-        // Add other initial menu items here
-    ]);
-}
+mod systray_menu;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -451,35 +446,28 @@ fn change_systray_tooltip(app_handle: tauri::AppHandle, tooltip: String) {
 }
 
 #[tauri::command]
-fn change_systray_menu(app_handle: tauri::AppHandle, item_id: String, item_label: String) {
-    println!("adding {} to the menu", item_label);
+fn add_systray_menu_item(app_handle: tauri::AppHandle, item_id: String, item_label: String) {
+    systray_menu::add_systray_menu_item(&app_handle, item_id, item_label);
+}
 
-    let mut tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap();
+#[tauri::command]
+fn add_systray_menu_submenu_item(
+    app_handle: tauri::AppHandle,
+    submenu_id: String,
+    item_id: String,
+    item_label: String,
+) {
+    systray_menu::add_systray_menu_submenu_item(&app_handle, submenu_id, item_id, item_label);
+}
 
-    // Update or add the menu item
-    let pos = tray_menu_items
-        .iter()
-        .position(|item| item.id.to_string() == item_id);
+#[tauri::command]
+fn remove_systray_menu_item(app_handle: tauri::AppHandle, item_id: String) {
+    systray_menu::remove_systray_menu_item(&app_handle, item_id);
+}
 
-    match pos {
-        Some(index) => {
-            // Update existing item
-            tray_menu_items[index] = CustomMenuItem::new(item_id, item_label);
-        }
-        None => {
-            // Add new item
-            tray_menu_items.push(CustomMenuItem::new(item_id, item_label));
-        }
-    }
-
-    // Rebuild the system tray menu
-    let mut tray_menu = SystemTrayMenu::new();
-    for item in tray_menu_items.iter() {
-        tray_menu = tray_menu.add_item(item.clone());
-    }
-
-    // Set the updated menu
-    let _ = app_handle.tray_handle().set_menu(tray_menu);
+#[tauri::command]
+fn remove_systray_submenu_item(app_handle: tauri::AppHandle, submenu_id: String, item_id: String) {
+    systray_menu::remove_systray_submenu_item(&app_handle, submenu_id, item_id);
 }
 
 fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
@@ -631,10 +619,10 @@ fn main() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
 
-    // Clone the tray menu items
+    // Clone the tray menu items from systray_menu.rs
     let tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap().clone();
     let mut tray_menu = SystemTrayMenu::new();
-    for item in tray_menu_items.iter() {
+    for (_, item) in tray_menu_items.iter() {
         tray_menu = tray_menu.add_item(item.clone());
     }
 
@@ -649,7 +637,10 @@ fn main() {
             set_minimize_to_tray,
             change_icon,
             change_systray_tooltip,
-            change_systray_menu,
+            add_systray_menu_item,
+            add_systray_menu_submenu_item,
+            remove_systray_menu_item,
+            remove_systray_submenu_item,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -669,7 +660,7 @@ fn main() {
                         window.hide().unwrap();
                     };
                 }
-                "quit" => {
+                "exit" => {
                     // Minimize the app window
                     if let Some(window) = app.get_window("main") {
                         window.hide().unwrap();
