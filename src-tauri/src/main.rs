@@ -682,6 +682,11 @@ fn main() {
             } => {
                 if let Some(window) = app.get_window("main") {
                     window.show().unwrap();
+                    window.unminimize().unwrap();
+                    match window.set_focus() {
+                        Ok(_) => println!("Window focus set successfully."),
+                        Err(e) => println!("Failed to set window focus: {:?}", e),
+                    }
                 };
             }
             SystemTrayEvent::MenuItemClick { id, .. } => {
