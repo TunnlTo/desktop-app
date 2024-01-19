@@ -1,25 +1,14 @@
-import { getAllTunnelsFromStorage, saveAllTunnelsInStorage } from '../utilities/storageUtils'
 import type Tunnel from './Tunnel'
 
 export default class TunnelManager {
   tunnels: Record<string, Tunnel>
 
-  constructor() {
-    this.tunnels = getAllTunnelsFromStorage()
-  }
-
-  addTunnel(tunnel: Tunnel): void {
-    this.tunnels[tunnel.id] = tunnel
-    saveAllTunnelsInStorage(this.tunnels)
-  }
-
-  removeTunnel(tunnelID: string): void {
-    Reflect.deleteProperty(this.tunnels, tunnelID)
-    saveAllTunnelsInStorage(this.tunnels)
+  constructor(initialTunnels: Record<string, Tunnel>) {
+    this.tunnels = initialTunnels
   }
 
   getTunnel(tunnelID: string): Tunnel | null {
-    return this.tunnels[tunnelID]
+    return this.tunnels[tunnelID] ?? null
   }
 
   getTunnelIDList(): string[] {

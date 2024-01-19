@@ -6,7 +6,7 @@ import type TunnelManager from '../../models/TunnelManager.ts'
 interface ConfigProps {
   selectedTunnelID: string
   wiresockState: WiresockStateModel | null
-  enableTunnel: () => void
+  enableTunnel: (tunnelID: string) => void
   disableTunnel: () => Promise<void>
   tunnelManager: TunnelManager
 }
@@ -80,7 +80,7 @@ function TunnelDisplay({
                   if (wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID) {
                     await disableTunnel()
                   } else {
-                    enableTunnel()
+                    enableTunnel(selectedTunnelID)
                   }
                 })()
               }}

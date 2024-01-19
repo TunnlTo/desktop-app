@@ -15,7 +15,7 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use systray_menu::TRAY_MENU_ITEMS;
+use systray_menu::{CONNECT_MENU_ITEMS, TRAY_MENU_ITEMS};
 use tauri::{Manager, Window};
 use tauri::{SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tauri_plugin_autostart::MacosLauncher;
@@ -446,28 +446,22 @@ fn change_systray_tooltip(app_handle: tauri::AppHandle, tooltip: String) {
 }
 
 #[tauri::command]
-fn add_systray_menu_item(app_handle: tauri::AppHandle, item_id: String, item_label: String) {
-    systray_menu::add_systray_menu_item(&app_handle, item_id, item_label);
-}
-
-#[tauri::command]
-fn add_systray_menu_submenu_item(
+fn add_or_update_systray_menu_item(
     app_handle: tauri::AppHandle,
-    submenu_id: String,
     item_id: String,
     item_label: String,
 ) {
-    systray_menu::add_systray_menu_submenu_item(&app_handle, submenu_id, item_id, item_label);
+    systray_menu::add_or_update_systray_menu_item(&app_handle, item_id, item_label);
+}
+
+#[tauri::command]
+fn update_systray_connect_menu_items(app_handle: tauri::AppHandle, items: Vec<(String, String)>) {
+    systray_menu::update_systray_connect_menu_items(&app_handle, items);
 }
 
 #[tauri::command]
 fn remove_systray_menu_item(app_handle: tauri::AppHandle, item_id: String) {
     systray_menu::remove_systray_menu_item(&app_handle, item_id);
-}
-
-#[tauri::command]
-fn remove_systray_submenu_item(app_handle: tauri::AppHandle, submenu_id: String, item_id: String) {
-    systray_menu::remove_systray_submenu_item(&app_handle, submenu_id, item_id);
 }
 
 fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
@@ -535,19 +529,34 @@ fn get_wiresock_version() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn disable_wiresock() -> Result<(), String> {
+async fn disable_wiresock() -> Result<(), String> {
     println!("Attempting to stop WireSock");
-    Command::new("taskkill")
+    let output = Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
         .arg("wiresock-client.exe")
         .arg("/T")
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .spawn()
-        .expect("command failed to start");
+        .output();
 
-    // If killing the process was succesful, it will be emitted from the child.wait in enable_wiresock function
-    Ok(())
+    // If killing the process was succesful, an event will emit from the child.wait in enable_wiresock function
+    match output {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stdout.contains("SUCCESS: The process with PID") || stderr.contains("not found") {
+                println!("WireSock successfully stopped or was not running.");
+                Ok(())
+            } else {
+                println!("Failed to stop WireSock: {}", stderr);
+                Err(format!("Failed to stop WireSock: {}", stderr))
+            }
+        }
+        Err(e) => {
+            println!("Failed to execute taskkill command: {}", e);
+            Err(format!("Failed to execute taskkill command: {}", e))
+        }
+    }
 }
 
 #[tauri::command]
@@ -613,6 +622,29 @@ fn set_minimize_to_tray(value: bool) {
     *minimize = value;
 }
 
+async fn connect_to_tunnel(app_handle: &tauri::AppHandle, tunnel_id: &str) {
+    println!("Connect systray menu selected tunnel id: {}", tunnel_id);
+
+    // Disable any existing tunnels
+    match disable_wiresock().await {
+        Ok(()) => {
+            // The disable_wiresock command was successful, you can proceed with the next steps
+            println!("WireSock has been disabled successfully.");
+
+            // Send the message up to the frontend to handle the tunnel enable. This is because
+            // we need the tunnel data which is stored in the frontend for now.
+            app_handle
+                .emit_all("systray_connect_menu_clicked", tunnel_id)
+                .unwrap();
+        }
+        Err(e) => {
+            // The disable_wiresock command failed, handle the error
+            eprintln!("Failed to disable WireSock: {}", e);
+            // ... your error handling code
+        }
+    }
+}
+
 fn main() {
     // Initialize global job object
     if let Ok(child_process_tracker) = ChildProcessTracker::new() {
@@ -637,10 +669,9 @@ fn main() {
             set_minimize_to_tray,
             change_icon,
             change_systray_tooltip,
-            add_systray_menu_item,
-            add_systray_menu_submenu_item,
+            add_or_update_systray_menu_item,
+            update_systray_connect_menu_items,
             remove_systray_menu_item,
-            remove_systray_submenu_item,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -653,34 +684,45 @@ fn main() {
                     window.show().unwrap();
                 };
             }
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "minimize" => {
-                    // Hide the app window
-                    if let Some(window) = app.get_window("main") {
-                        window.hide().unwrap();
-                    };
-                }
-                "exit" => {
-                    // Minimize the app window
-                    if let Some(window) = app.get_window("main") {
-                        window.hide().unwrap();
-                    };
+            SystemTrayEvent::MenuItemClick { id, .. } => {
+                let connect_menu_items = CONNECT_MENU_ITEMS.lock().unwrap();
+                match id.as_str() {
+                    "minimize" => {
+                        // Hide the app window
+                        if let Some(window) = app.get_window("main") {
+                            window.hide().unwrap();
+                        };
+                    }
+                    "exit" => {
+                        // Minimize the app window
+                        if let Some(window) = app.get_window("main") {
+                            window.hide().unwrap();
+                        };
 
-                    // Disable WireSock
-                    disable_wiresock().expect("Failed to disable WireSock");
+                        // Save window state to disk
+                        let _ = app.save_window_state(StateFlags::all());
 
-                    // Save window state to disk
-                    let _ = app.save_window_state(StateFlags::all());
-
-                    // Exit the app
-                    app.exit(0);
+                        // Exit the app
+                        app.exit(0);
+                    }
+                    "disconnect" => {
+                        // Disable WireSock
+                        tauri::async_runtime::spawn(async move {
+                            let _ = disable_wiresock().await;
+                        });
+                    }
+                    _ => {
+                        // Handle clicks on 'Connect' submenu items
+                        if connect_menu_items.contains(&id.to_string()) {
+                            let app_handle = app.clone();
+                            let id_clone = id.clone();
+                            tauri::async_runtime::spawn(async move {
+                                connect_to_tunnel(&app_handle, &id_clone).await;
+                            });
+                        }
+                    }
                 }
-                "disconnect" => {
-                    // Disable WireSock
-                    disable_wiresock().expect("Failed to disable WireSock");
-                }
-                _ => {}
-            },
+            }
             _ => {}
         })
         .plugin(tauri_plugin_window_state::Builder::default().build())
