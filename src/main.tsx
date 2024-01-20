@@ -74,16 +74,6 @@ function Main(): JSX.Element {
     void setupTauriEventListeners()
     void getWiresockVersion()
 
-    // Handle version 1.0.5 adding 'startMinimized' setting
-    if (settings.startMinimized === undefined) {
-      setSettings({ ...settings, startMinimized: false })
-    }
-
-    // Handle version 1.0.5 adding 'minimizeToTray' setting
-    if (settings.minimizeToTray === undefined) {
-      setSettings({ ...settings, minimizeToTray: true })
-    }
-
     // Show the app window
     if (!settings.startMinimized) {
       void invoke('show_app')

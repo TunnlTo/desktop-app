@@ -5,11 +5,11 @@ export default class SettingsModel {
   startMinimized: boolean
   minimizeToTray: boolean
 
-  constructor() {
-    this.autoStart = false
-    this.autoConnectTunnelID = ''
-    this.logLevel = 'debug'
-    this.startMinimized = false
-    this.minimizeToTray = true
+  constructor(data?: Partial<SettingsModel>) {
+    this.autoStart = data?.autoStart ?? false
+    this.autoConnectTunnelID = data?.autoConnectTunnelID ?? ''
+    this.logLevel = data?.logLevel ?? 'debug'
+    this.startMinimized = data?.startMinimized ?? false
+    this.minimizeToTray = data?.minimizeToTray ?? true
   }
 }

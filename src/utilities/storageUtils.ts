@@ -70,6 +70,7 @@ export function saveSettingsToStorage(settings: SettingsModel): void {
 export function getSettingsFromStorage(): SettingsModel {
   console.log('Retrieving settings from local storage')
   const settingsStorageItem = localStorage.getItem('settings')
-  const settings = settingsStorageItem !== null ? JSON.parse(settingsStorageItem) : new SettingsModel()
-  return settings
+  const settingsData = settingsStorageItem !== null ? JSON.parse(settingsStorageItem) : {}
+  // Use the constructor to handle default values
+  return new SettingsModel(settingsData)
 }
