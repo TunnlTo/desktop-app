@@ -69,6 +69,27 @@ function Main(): JSX.Element {
   /* ------- useEffect ------- */
   /* ------------------------- */
 
+  // Functions to run on component mount/dismount
+  useEffect(() => {
+    void setupTauriEventListeners()
+    void getWiresockVersion()
+
+    // Handle version 1.0.5 adding 'startMinimized' setting
+    if (settings.startMinimized === undefined) {
+      setSettings({ ...settings, startMinimized: false })
+    }
+
+    // Handle version 1.0.5 adding 'minimizeToTray' setting
+    if (settings.minimizeToTray === undefined) {
+      setSettings({ ...settings, minimizeToTray: true })
+    }
+
+    // Show the app window
+    if (!settings.startMinimized) {
+      void invoke('show_app')
+    }
+  }, [])
+
   // Handle changes to settings
   useEffect(() => {
     // Sync the minimize to tray setting with Rust
@@ -83,27 +104,6 @@ function Main(): JSX.Element {
       saveSettingsToStorage(settings)
     }
   }, [settings])
-
-  // Functions to run on component mount/dismount
-  useEffect(() => {
-    void setupTauriEventListeners()
-    void getWiresockVersion()
-
-    // Handle 1.0.5 adding startMinimized to settings data
-    if (settings.startMinimized === undefined) {
-      setSettings({ ...settings, startMinimized: false })
-    }
-
-    // Handle 1.0.5 adding minimizeToTray to settings data
-    if (settings.minimizeToTray === undefined) {
-      setSettings({ ...settings, minimizeToTray: true })
-    }
-
-    // Show the app window
-    if (!settings.startMinimized) {
-      void invoke('show_app')
-    }
-  }, [])
 
   // Handle changes to tunnelManager
   useEffect(() => {
