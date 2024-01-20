@@ -1,5 +1,3 @@
-<style>h1,h2,h3,h4 { border-bottom: 0; } </style>
-
 <br />
 <div align="center">
   <img src="readme-images/logo.png" alt="Logo" width="80" height="80">
