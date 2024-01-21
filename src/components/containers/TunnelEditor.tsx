@@ -3,7 +3,7 @@ import Tunnel from '../../models/Tunnel.ts'
 import { useNavigate } from 'react-router-dom'
 import DeleteModal from '../DeleteModal.tsx'
 import { ExclamationTriangleIcon, EyeIcon, EyeSlashIcon, LinkIcon } from '@heroicons/react/24/outline'
-import type TunnelManager from '../../models/TunnelManager.ts'
+import TunnelManager from '../../models/TunnelManager.ts'
 import { derivePublicKey, generateKeyPair } from '../../utilities/wireguard.ts'
 
 interface ConfigProps {
@@ -32,11 +32,14 @@ function TunnelEditor({
   const [isPublicKeyHidden, setIsPublicKeyHidden] = useState(true)
   const [isPresharedKeyHidden, setIsPresharedKeyHidden] = useState(true)
   const [editedTunnel, setEditedTunnel] = useState<Tunnel>(() => {
-    // If a tunnel is passed in we are editing it, otherwise we are creating a new tunnel
     if (selectedTunnelID === null) {
+      // No selectedTunnelID so we are creating a new tunnel.
+      // Construct a new tunnel with a unique ID.
       const newTunnel = new Tunnel(tunnelManager.getTunnelIDList())
       return newTunnel
     } else {
+      // selectedTunnelID is set so we retrieve the tunnel data
+      // In your React component
       const getTunnel = tunnelManager?.getTunnel(selectedTunnelID)
       if (getTunnel !== null) {
         return getTunnel
@@ -93,7 +96,7 @@ function TunnelEditor({
     setInterfacePublicKey(keys.publicKey)
     setEditedTunnel({
       ...editedTunnel,
-      interface: { ...editedTunnel.interface, 'privateKey': keys.privateKey },
+      interface: { ...editedTunnel.interface, privateKey: keys.privateKey },
     })
   }
 
@@ -157,13 +160,27 @@ function TunnelEditor({
   }
 
   function deleteTunnel(): void {
-    tunnelManager.removeTunnel(editedTunnel.id)
-    setTunnelManager(tunnelManager)
+    // Create a new object for the tunnels without the deleted tunnel
+    const { [editedTunnel.id]: deletedTunnel, ...remainingTunnels } = tunnelManager.tunnels
+
+    // Update the tunnelManager state with the remaining tunnels
+    setTunnelManager(new TunnelManager(remainingTunnels))
+
+    // Clear the selected tunnel ID
     setSelectedTunnelID(null)
   }
 
   function saveTunnel(): void {
-    tunnelManager.addTunnel(editedTunnel)
+    // Create a new object for the tunnels with the added/updated tunnel
+    const updatedTunnels = {
+      ...tunnelManager.tunnels,
+      [editedTunnel.id]: editedTunnel,
+    }
+
+    // Update the tunnelManager state with the updated tunnels
+    setTunnelManager(new TunnelManager(updatedTunnels))
+
+    // Update the selected tunnel ID
     setSelectedTunnelID(editedTunnel.id)
   }
 

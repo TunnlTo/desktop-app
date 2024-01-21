@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 import './main.css'
 import type SettingsModel from './models/SettingsModel.ts'
-import type Tunnel from './models/Tunnel.ts'
 import { invoke } from '@tauri-apps/api'
 import { listen } from '@tauri-apps/api/event'
 import type WiresockStateModel from './models/WiresockStateModel.ts'
@@ -12,12 +11,12 @@ import TunnelDisplay from './components/containers/TunnelDisplay.tsx'
 import TunnelEditor from './components/containers/TunnelEditor.tsx'
 import {
   getSelectedTunnelIDFromStorage,
-  getTunnelFromStorage,
   getSettingsFromStorage,
-  saveSelectedTunnelIDInStorage,
-  convertOldData,
-  convertInterfaceIPAddresses,
-  saveSettingsInStorage,
+  saveSelectedTunnelIDToStorage,
+  saveSettingsToStorage,
+  saveTunnelsToStorage,
+  getAllTunnelsFromStorage,
+  deleteSelectedTunnelIDKeyFromStorage,
 } from './utilities/storageUtils.ts'
 import Settings from './components/containers/Settings.tsx'
 import Setup from './components/containers/Setup.tsx'
@@ -30,11 +29,6 @@ const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 function Main(): JSX.Element {
   /* ------------------------- */
-  /* -------- useRef --------- */
-  /* ------------------------- */
-  const isFirstRender = useRef(true)
-
-  /* ------------------------- */
   /* ------- useState -------- */
   /* ------------------------- */
 
@@ -45,7 +39,10 @@ function Main(): JSX.Element {
   const [hasRunAutoConnect, setHasRunAutoConnect] = useState(false)
 
   // Get the tunnels from local storage
-  const [tunnelManager, setTunnelManager] = useState(new TunnelManager())
+  const [tunnelManager, setTunnelManager] = useState(() => {
+    const initialTunnels = getAllTunnelsFromStorage()
+    return new TunnelManager(initialTunnels)
+  })
 
   // For checking if WireSock is installed and its version
   const [wiresockInstallDetails, setWiresockInstallDetails] = useState<WiresockInstallDetails | null>(null)
@@ -61,66 +58,118 @@ function Main(): JSX.Element {
   })
 
   /* ------------------------- */
+  /* -------- useRef --------- */
+  /* ------------------------- */
+  const isSettingsFirstChange = useRef(true)
+  const isTunnelManagerFirstChange = useRef(true)
+  const isSelectedTunnelIDFirstChange = useRef(true)
+  const tunnelManagerRef = useRef(tunnelManager)
+
+  /* ------------------------- */
   /* ------- useEffect ------- */
   /* ------------------------- */
 
-  useEffect(() => {
-    // Don't need to save settings after they're first retrieved from storage
-    if (isFirstRender.current) {
-      isFirstRender.current = false
-      return
-    }
-
-    console.log('Saving settings to local storage')
-    saveSettingsInStorage(settings)
-  }, [settings])
-
   // Functions to run on component mount/dismount
   useEffect(() => {
-    void setupTauriEventListener()
+    void setupTauriEventListeners()
     void getWiresockVersion()
 
-    // Handle <1.0.0 > 1.0.0 tunnel data structure changes
-    const convertOldResult = convertOldData(tunnelManager)
-    if (convertOldResult !== null) {
-      // Update tunnelManager state with converted data
-      setTunnelManager(convertOldResult)
-    }
-
-    // Handle 1.0.0 > 1.0.1 tunnel data structure changes
-    // Use functional update form of setState to ensure we're working with the most recent state
-    setTunnelManager((currentTunnelManager) => {
-      // Convert interface IP addresses and update state
-      const convertInterfaceResult = convertInterfaceIPAddresses(currentTunnelManager)
-      return convertInterfaceResult ?? currentTunnelManager
-    })
-
-    // Handle 1.0.3 adding logLevel to settings data
-    if (settings.logLevel === undefined) {
-      setSettings({ ...settings, logLevel: 'debug' })
+    // Show the app window
+    if (!settings.startMinimized) {
+      void invoke('show_app')
     }
   }, [])
 
-  // Monitor selectedTunnelID for changes
+  // Handle changes to settings
   useEffect(() => {
-    if (selectedTunnelID !== null) {
-      saveSelectedTunnelIDInStorage(selectedTunnelID)
+    // Sync the minimize to tray setting with Rust
+    void invoke('set_minimize_to_tray', { value: settings.minimizeToTray })
+
+    // Save the updated settings to local storage
+    if (isSettingsFirstChange.current) {
+      // Don't need to save as its the first time retrieving the settings
+      isSettingsFirstChange.current = false
+    } else {
+      // Save the settings to local storage
+      saveSettingsToStorage(settings)
+    }
+  }, [settings])
+
+  // Handle changes to tunnelManager
+  useEffect(() => {
+    console.log('change to tunnelManager')
+    tunnelManagerRef.current = tunnelManager
+
+    // Handle the system tray Connect menu items
+    if (settings.minimizeToTray) {
+      const connectMenuItems = Object.entries(tunnelManager.tunnels).map(([tunnelId, tunnel]) => [
+        tunnelId,
+        tunnel.name,
+      ])
+
+      console.log('Updating system tray connect menu items')
+      void invoke('update_systray_connect_menu_items', { items: connectMenuItems })
+    }
+
+    // Save the updated tunnels to local storage
+    if (isTunnelManagerFirstChange.current) {
+      // Don't need to save as its the first time retrieving the tunnel manager data
+      isTunnelManagerFirstChange.current = false
+    } else {
+      // Save the settings to local storage
+      saveTunnelsToStorage(tunnelManager.tunnels)
+    }
+  }, [tunnelManager])
+
+  // Handle changes to selectedTunnelID
+  useEffect(() => {
+    if (isSelectedTunnelIDFirstChange.current) {
+      // Don't need to save as its the first time retrieving the selectedTunnelID
+      isSelectedTunnelIDFirstChange.current = false
+    } else {
+      if (selectedTunnelID !== null) {
+        saveSelectedTunnelIDToStorage(selectedTunnelID)
+      } else {
+        deleteSelectedTunnelIDKeyFromStorage()
+      }
     }
   }, [selectedTunnelID])
 
-  // Wait for wiresockState data to arrive from Tauri
-  // Auto connect a tunnel if one is set
+  // Handles changes to wiresockState
   useEffect(() => {
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
 
+      // Auto connect a tunnel if one is set
       if (settings.autoConnectTunnelID !== '') {
         // There is an auto connect tunnel so get its details from settings
-        const tunnel: Tunnel | null = getTunnelFromStorage(settings.autoConnectTunnelID)
-        if (tunnel !== null) {
-          enableTunnel(tunnel)
-        }
+        enableTunnel(settings.autoConnectTunnelID)
       }
+    }
+
+    // Update the system tray icon
+    if (wiresockState?.tunnel_status === 'CONNECTED') {
+      // Show a connected icon
+      void invoke('change_icon', { enabled: true })
+
+      // Get the name of the currently connected tunnel
+      const connectedTunnel = tunnelManager.getTunnel(wiresockState.tunnel_id)
+
+      // Show the currently connected tunnel name in the system tray tooltip
+      void invoke('change_systray_tooltip', { tooltip: `Connected: ${connectedTunnel?.name}` })
+
+      // Update the system tray menu to add a disconnect option
+      console.log('sending update_systray_menu to rust')
+      void invoke('add_or_update_systray_menu_item', { itemId: 'disconnect', itemLabel: 'Disconnect' })
+    } else {
+      // Show a disconnected icon
+      void invoke('change_icon', { enabled: false })
+
+      // Update the system tray tooltip to show tunnel is disconnected
+      void invoke('change_systray_tooltip', { tooltip: 'TunnlTo: Disconnected' })
+
+      // Remove the disconnect option from the system tray menu
+      void invoke('remove_systray_menu_item', { itemId: 'disconnect', itemLabel: 'Disconnect' })
     }
   }, [wiresockState])
 
@@ -149,27 +198,43 @@ function Main(): JSX.Element {
     }
   }
 
-  async function setupTauriEventListener(): Promise<void> {
+  // Listen for events emitted by Tauri with updates to the wiresock_state
+  async function setupTauriEventListeners(): Promise<void> {
     console.log('Setting up wiresock_state listener')
 
     await listen('wiresock_state', function (event) {
-      console.log('New wiresock_state event.payload received: ', event.payload)
+      console.log('Received new wiresock_state event')
       setWiresockState(event.payload as WiresockStateModel)
+    })
+
+    // Listen for when items are clicked in the system tray "Connect" menu
+    await listen('systray_connect_menu_clicked', function (event) {
+      console.log('Received new systray_connect_menu_clicked event')
+      const tunnelId = event.payload as string // Event payload is tunnel id
+      enableTunnel(tunnelId)
     })
 
     console.log('Retrieving wiresock_state from Tauri')
     await invoke('get_wiresock_state')
   }
 
-  function enableTunnel(tunnelData?: Tunnel): void {
-    // use tunnelData if provided, otherwise use selectedTunnel
-    invoke('enable_wiresock', {
-      tunnel: tunnelData ?? (selectedTunnelID != null ? tunnelManager.getTunnel(selectedTunnelID) : null),
-      logLevel: settings.logLevel
-    }).catch((error) => {
-      // Handle any issues starting the wiresock_process or the tunnel connecting
-      console.error('Invoking enable_wiresock returned error: ', error)
-    })
+  function enableTunnel(tunnelId: string): void {
+    // Retrieve the tunnel data from the tunnelManager ref.
+    // If we retrieve it directly from tunnelManager, the data will be stale
+    // as it is locked to when the listener was initiated.
+    const tunnelData = tunnelManagerRef.current.getTunnel(tunnelId)
+
+    if (tunnelData != null) {
+      invoke('enable_wiresock', {
+        tunnel: tunnelData,
+        logLevel: settings.logLevel,
+      }).catch((error) => {
+        // Handle any issues starting the wiresock_process or the tunnel connecting
+        console.error('Invoking enable_wiresock returned error: ', error)
+      })
+    } else {
+      console.error('Tunnel not found for ID:', tunnelId)
+    }
   }
 
   async function disableTunnel(): Promise<void> {
@@ -267,7 +332,12 @@ function Main(): JSX.Element {
               path="/settings"
               element={
                 <div className="flex min-h-screen justify-center">
-                  <Settings tunnelManager={tunnelManager} settings={settings} setSettings={setSettings} wiresockInstallDetails={wiresockInstallDetails} />
+                  <Settings
+                    tunnelManager={tunnelManager}
+                    settings={settings}
+                    setSettings={setSettings}
+                    wiresockInstallDetails={wiresockInstallDetails}
+                  />
                 </div>
               }
             />

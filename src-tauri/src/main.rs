@@ -15,8 +15,9 @@ use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
 use std::sync::Mutex;
-use tauri::Manager;
-use tauri::{CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem};
+use systray_menu::{CONNECT_MENU_ITEMS, TRAY_MENU_ITEMS};
+use tauri::{Manager, Window};
+use tauri::{SystemTray, SystemTrayEvent, SystemTrayMenu};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use windows::{
@@ -31,6 +32,8 @@ use windows::{
 };
 use winreg::enums::*;
 use winreg::RegKey;
+
+mod systray_menu;
 
 #[derive(Clone, serde::Serialize)]
 struct Payload {
@@ -151,7 +154,11 @@ lazy_static! {
 mod tunnel;
 use tunnel::Tunnel;
 #[tauri::command]
-async fn enable_wiresock(tunnel: Tunnel, log_level: String, app_handle: tauri::AppHandle) -> Result<(), String> {
+async fn enable_wiresock(
+    tunnel: Tunnel,
+    log_level: String,
+    app_handle: tauri::AppHandle,
+) -> Result<(), String> {
     // Check if enable_wiresock is already running
     {
         let state = WIRESOCK_STATE.lock().unwrap();
@@ -414,6 +421,49 @@ async fn enable_wiresock(tunnel: Tunnel, log_level: String, app_handle: tauri::A
     Ok(())
 }
 
+#[tauri::command]
+fn change_icon(app_handle: tauri::AppHandle, enabled: bool) {
+    if enabled {
+        app_handle
+            .tray_handle()
+            .set_icon(tauri::Icon::Raw(
+                include_bytes!("assets/icons/icon-enabled.ico").to_vec(),
+            ))
+            .unwrap();
+    } else {
+        app_handle
+            .tray_handle()
+            .set_icon(tauri::Icon::Raw(
+                include_bytes!("assets/icons/icon-default.ico").to_vec(),
+            ))
+            .unwrap();
+    }
+}
+
+#[tauri::command]
+fn change_systray_tooltip(app_handle: tauri::AppHandle, tooltip: String) {
+    let _ = app_handle.tray_handle().set_tooltip(&tooltip);
+}
+
+#[tauri::command]
+fn add_or_update_systray_menu_item(
+    app_handle: tauri::AppHandle,
+    item_id: String,
+    item_label: String,
+) {
+    systray_menu::add_or_update_systray_menu_item(&app_handle, item_id, item_label);
+}
+
+#[tauri::command]
+fn update_systray_connect_menu_items(app_handle: tauri::AppHandle, items: Vec<(String, String)>) {
+    systray_menu::update_systray_connect_menu_items(&app_handle, items);
+}
+
+#[tauri::command]
+fn remove_systray_menu_item(app_handle: tauri::AppHandle, item_id: String) {
+    systray_menu::remove_systray_menu_item(&app_handle, item_id);
+}
+
 fn update_state<F>(app_handle: &tauri::AppHandle, update: F)
 where
     F: FnOnce(&mut WiresockState),
@@ -451,8 +501,6 @@ fn get_wiresock_install_path() -> Result<String, String> {
 
 #[tauri::command]
 fn get_wiresock_version() -> Result<String, String> {
-    println!("Starting get_wiresock_version");
-
     let uninstall_keys = RegKey::predef(HKEY_LOCAL_MACHINE)
         .open_subkey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
         .map_err(|e| e.to_string())?;
@@ -464,10 +512,9 @@ fn get_wiresock_version() -> Result<String, String> {
         match subkey.get_value::<String, _>("DisplayName") {
             Ok(display_name) => {
                 if display_name.starts_with("WireSock VPN Client") {
-                    println!("Found WireSock VPN Client key");
                     match subkey.get_value::<String, _>("DisplayVersion") {
                         Ok(version) => {
-                            println!("DisplayVersion: {}", version);
+                            println!("Installed WireSock Version: {}", version);
                             return Ok(version);
                         }
                         Err(e) => eprintln!("Error getting display version: {:?}", e),
@@ -482,19 +529,34 @@ fn get_wiresock_version() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn disable_wiresock() -> Result<(), String> {
+async fn disable_wiresock() -> Result<(), String> {
     println!("Attempting to stop WireSock");
-    Command::new("taskkill")
+    let output = Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
         .arg("wiresock-client.exe")
         .arg("/T")
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .spawn()
-        .expect("command failed to start");
+        .output();
 
-    // If killing the process was succesful, it will be emitted from the child.wait in enable_wiresock function
-    Ok(())
+    // If killing the process was succesful, an event will emit from the child.wait in enable_wiresock function
+    match output {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+            if stdout.contains("SUCCESS: The process with PID") || stderr.contains("not found") {
+                println!("WireSock successfully stopped or was not running.");
+                Ok(())
+            } else {
+                println!("Failed to stop WireSock: {}", stderr);
+                Err(format!("Failed to stop WireSock: {}", stderr))
+            }
+        }
+        Err(e) => {
+            println!("Failed to execute taskkill command: {}", e);
+            Err(format!("Failed to execute taskkill command: {}", e))
+        }
+    }
 }
 
 #[tauri::command]
@@ -540,24 +602,46 @@ async fn install_wiresock() -> Result<String, String> {
 }
 
 #[tauri::command]
-fn check_wiresock_service() -> Result<String, String> {
-    // Check if the wiresock service is installed
-    let status = Command::new("powershell")
-        .arg("-command")
-        .arg("get-service")
-        .arg("-name")
-        .arg("wiresock-client-service")
-        .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .status()
-        .expect("powershell failed to start");
+async fn show_app(window: Window) {
+    // Show main window
+    println!("Showing the main window");
+    window
+        .get_window("main")
+        .expect("no window labeled 'main' found")
+        .show()
+        .unwrap();
+}
 
-    println!("process finished with: {status}");
+lazy_static! {
+    static ref MINIMIZE_TO_TRAY: Mutex<bool> = Mutex::new(true);
+}
 
-    // Check the exit code
-    match status.code() {
-        Some(0) => return Ok("WIRESOCK_SERVICE_INSTALLED".into()),
-        Some(1) => return Ok("WIRESOCK_SERVICE_NOT_INSTALLED".into()),
-        _ => return Ok(status.to_string().into()),
+#[tauri::command]
+fn set_minimize_to_tray(value: bool) {
+    let mut minimize = MINIMIZE_TO_TRAY.lock().unwrap();
+    *minimize = value;
+}
+
+async fn connect_to_tunnel(app_handle: &tauri::AppHandle, tunnel_id: &str) {
+    println!("Connect systray menu selected tunnel id: {}", tunnel_id);
+
+    // Disable any existing tunnels
+    match disable_wiresock().await {
+        Ok(()) => {
+            // The disable_wiresock command was successful, you can proceed with the next steps
+            println!("WireSock has been disabled successfully.");
+
+            // Send the message up to the frontend to handle the tunnel enable. This is because
+            // we need the tunnel data which is stored in the frontend for now.
+            app_handle
+                .emit_all("systray_connect_menu_clicked", tunnel_id)
+                .unwrap();
+        }
+        Err(e) => {
+            // The disable_wiresock command failed, handle the error
+            eprintln!("Failed to disable WireSock: {}", e);
+            // ... your error handling code
+        }
     }
 }
 
@@ -567,22 +651,27 @@ fn main() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
 
-    // here `"quit".to_string()` defines the menu item id, and the second parameter is the menu item label.
-    let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let minimize = CustomMenuItem::new("minimize".to_string(), "Minimize to Tray");
-    let tray_menu = SystemTrayMenu::new()
-        .add_item(quit)
-        .add_native_item(SystemTrayMenuItem::Separator)
-        .add_item(minimize);
+    // Clone the tray menu items from systray_menu.rs
+    let tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap().clone();
+    let mut tray_menu = SystemTrayMenu::new();
+    for (_, item) in tray_menu_items.iter() {
+        tray_menu = tray_menu.add_item(item.clone());
+    }
 
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
             disable_wiresock,
             install_wiresock,
-            check_wiresock_service,
             get_wiresock_state,
-            get_wiresock_version
+            get_wiresock_version,
+            show_app,
+            set_minimize_to_tray,
+            change_icon,
+            change_systray_tooltip,
+            add_or_update_systray_menu_item,
+            update_systray_connect_menu_items,
+            remove_systray_menu_item,
         ])
         .system_tray(SystemTray::new().with_menu(tray_menu))
         .on_system_tray_event(|app, event| match event {
@@ -593,21 +682,52 @@ fn main() {
             } => {
                 if let Some(window) = app.get_window("main") {
                     window.show().unwrap();
+                    window.unminimize().unwrap();
+                    match window.set_focus() {
+                        Ok(_) => println!("Window focus set successfully."),
+                        Err(e) => println!("Failed to set window focus: {:?}", e),
+                    }
                 };
             }
-            SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-                "minimize" => {
-                    if let Some(window) = app.get_window("main") {
-                        window.hide().unwrap();
-                    };
+            SystemTrayEvent::MenuItemClick { id, .. } => {
+                let connect_menu_items = CONNECT_MENU_ITEMS.lock().unwrap();
+                match id.as_str() {
+                    "minimize" => {
+                        // Hide the app window
+                        if let Some(window) = app.get_window("main") {
+                            window.hide().unwrap();
+                        };
+                    }
+                    "exit" => {
+                        // Minimize the app window
+                        if let Some(window) = app.get_window("main") {
+                            window.hide().unwrap();
+                        };
+
+                        // Save window state to disk
+                        let _ = app.save_window_state(StateFlags::all());
+
+                        // Exit the app
+                        app.exit(0);
+                    }
+                    "disconnect" => {
+                        // Disable WireSock
+                        tauri::async_runtime::spawn(async move {
+                            let _ = disable_wiresock().await;
+                        });
+                    }
+                    _ => {
+                        // Handle clicks on 'Connect' submenu items
+                        if connect_menu_items.contains(&id.to_string()) {
+                            let app_handle = app.clone();
+                            let id_clone = id.clone();
+                            tauri::async_runtime::spawn(async move {
+                                connect_to_tunnel(&app_handle, &id_clone).await;
+                            });
+                        }
+                    }
                 }
-                "quit" => {
-                    disable_wiresock().expect("Failed to disable WireSock");
-                    let _ = app.save_window_state(StateFlags::all()); // will save the state of all open windows to disk
-                    std::process::exit(0);
-                }
-                _ => {}
-            },
+            }
             _ => {}
         })
         .plugin(tauri_plugin_window_state::Builder::default().build())
@@ -630,9 +750,12 @@ fn main() {
                 ..
             } => match win_event {
                 tauri::WindowEvent::CloseRequested { api, .. } => {
-                    let window = app.get_window(label.as_str()).unwrap();
-                    window.hide().unwrap();
-                    api.prevent_close();
+                    let minimize_to_tray = MINIMIZE_TO_TRAY.lock().unwrap();
+                    if *minimize_to_tray {
+                        let window = app.get_window(label.as_str()).unwrap();
+                        window.hide().unwrap();
+                        api.prevent_close();
+                    }
                 }
                 _ => {}
             },

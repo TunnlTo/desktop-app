@@ -6,7 +6,7 @@ import type TunnelManager from '../../models/TunnelManager.ts'
 interface ConfigProps {
   selectedTunnelID: string
   wiresockState: WiresockStateModel | null
-  enableTunnel: () => void
+  enableTunnel: (tunnelID: string) => void
   disableTunnel: () => Promise<void>
   tunnelManager: TunnelManager
 }
@@ -38,13 +38,13 @@ function TunnelDisplay({
 
             {/* Tunnel status section */}
             <div className="flex items-center align-center mt-1">
-              {/* Start of Tunnel status icon */}
+              {/* Tunnel status icon */}
               <div
                 className={`${
                   wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID
-                    ? 'bg-green-400/30 p-1 text-green-400'
-                    : 'text-red-400'
-                } flex-none rounded-full mr-2`}
+                    ? 'bg-green-400/30 text-green-400'
+                    : 'bg-red-400/20 text-red-400'
+                } flex-none rounded-full p-1 mr-2`}
               >
                 <div className="h-2 w-2 rounded-full bg-current" />
               </div>
@@ -80,7 +80,7 @@ function TunnelDisplay({
                   if (wiresockState?.tunnel_status === 'CONNECTED' && wiresockState.tunnel_id === selectedTunnelID) {
                     await disableTunnel()
                   } else {
-                    enableTunnel()
+                    enableTunnel(selectedTunnelID)
                   }
                 })()
               }}

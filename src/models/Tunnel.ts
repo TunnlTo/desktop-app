@@ -31,6 +31,7 @@ export default class Tunnel {
     }
   }
 
+  // Construct a new tunnel with a unique id
   constructor(tunnelIDList: string[]) {
     this.id = ''
     this.name = ''
@@ -70,7 +71,7 @@ export default class Tunnel {
       for (let i = 0; i < 4; i++) {
         uniqueId += characters.charAt(Math.floor(Math.random() * characters.length))
       }
-    } while (tunnelIDList.includes(uniqueId))
+    } while (tunnelIDList.includes(uniqueId)) // Check the unique ID against existing tunnel id's
 
     this.id = uniqueId
   }
