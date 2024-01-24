@@ -1,6 +1,6 @@
 [package]
 name = "tunnlto"
-version = "1.0.5"
+version = "1.0.6"
 description = "TunnlTo"
 authors = ["Brendan Osborne"]
 license = ""
