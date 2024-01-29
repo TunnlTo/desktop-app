@@ -64,6 +64,7 @@ function Main(): JSX.Element {
   const isTunnelManagerFirstChange = useRef(true)
   const isSelectedTunnelIDFirstChange = useRef(true)
   const tunnelManagerRef = useRef(tunnelManager)
+  const prevTunnelStatusRef = useRef(wiresockState?.tunnel_status)
 
   /* ------------------------- */
   /* ------- useEffect ------- */
@@ -137,6 +138,12 @@ function Main(): JSX.Element {
 
   // Handles changes to wiresockState
   useEffect(() => {
+    const prevTunnelStatus = prevTunnelStatusRef.current
+    const currentTunnelStatus = wiresockState?.tunnel_status
+
+    // Update the ref with the new tunnel status
+    prevTunnelStatusRef.current = currentTunnelStatus
+
     if (!hasRunAutoConnect && wiresockState !== null && wiresockState.wiresock_status === 'STOPPED') {
       setHasRunAutoConnect(true)
 
@@ -148,7 +155,7 @@ function Main(): JSX.Element {
     }
 
     // Update the system tray icon
-    if (wiresockState?.tunnel_status === 'CONNECTED') {
+    if (wiresockState !== null && prevTunnelStatus === 'DISCONNECTED' && currentTunnelStatus === 'CONNECTED') {
       // Show a connected icon
       void invoke('change_icon', { enabled: true })
 
@@ -161,7 +168,7 @@ function Main(): JSX.Element {
       // Update the system tray menu to add a disconnect option
       console.log('sending update_systray_menu to rust')
       void invoke('add_or_update_systray_menu_item', { itemId: 'disconnect', itemLabel: 'Disconnect' })
-    } else {
+    } else if (wiresockState !== null && prevTunnelStatus === 'CONNECTED' && currentTunnelStatus === 'DISCONNECTED') {
       // Show a disconnected icon
       void invoke('change_icon', { enabled: false })
 

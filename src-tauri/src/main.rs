@@ -530,28 +530,33 @@ fn get_wiresock_version() -> Result<String, String> {
 
 #[tauri::command]
 async fn disable_wiresock() -> Result<(), String> {
-    println!("Attempting to stop WireSock");
-    let output = Command::new("taskkill")
+    println!("Attempting to kill the WireSock process");
+    let status = Command::new("taskkill")
         .arg("/F")
         .arg("/IM")
         .arg("wiresock-client.exe")
         .arg("/T")
         .creation_flags(0x08000000) // CREATE_NO_WINDOW - stop a command window showing
-        .output();
+        .status();
 
-    // If killing the process was succesful, an event will emit from the child.wait in enable_wiresock function
-    match output {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let stderr = String::from_utf8_lossy(&output.stderr);
-            if stdout.contains("SUCCESS: The process with PID") || stderr.contains("not found") {
+    match status {
+        Ok(exit_status) => match exit_status.code() {
+            Some(0) | Some(128) => {
                 println!("WireSock successfully stopped or was not running.");
                 Ok(())
-            } else {
-                println!("Failed to stop WireSock: {}", stderr);
-                Err(format!("Failed to stop WireSock: {}", stderr))
             }
-        }
+            Some(error_code) => {
+                println!("Failed to stop WireSock, exit code: {}", error_code);
+                Err(format!(
+                    "Failed to stop WireSock, exit code: {}",
+                    error_code
+                ))
+            }
+            None => {
+                println!("Failed to stop WireSock, no exit code available.");
+                Err("Failed to stop WireSock, no exit code available.".to_string())
+            }
+        },
         Err(e) => {
             println!("Failed to execute taskkill command: {}", e);
             Err(format!("Failed to execute taskkill command: {}", e))
@@ -628,9 +633,6 @@ async fn connect_to_tunnel(app_handle: &tauri::AppHandle, tunnel_id: &str) {
     // Disable any existing tunnels
     match disable_wiresock().await {
         Ok(()) => {
-            // The disable_wiresock command was successful, you can proceed with the next steps
-            println!("WireSock has been disabled successfully.");
-
             // Send the message up to the frontend to handle the tunnel enable. This is because
             // we need the tunnel data which is stored in the frontend for now.
             app_handle
