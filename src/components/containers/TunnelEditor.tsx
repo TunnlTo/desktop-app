@@ -433,7 +433,7 @@ function TunnelEditor({
       <div className="flex flex-row items-center gap-2 mt-4">
         <LinkIcon className="h-4 w-4 text-gray-600" />
         <a
-          href="https://github.com/TunnlTo/desktop-app#documentation"
+          href="https://github.com/TunnlTo/desktop-app#tunnel-config"
           target="_blank"
           className="text-sm leading-6 text-gray-600 hover:text-gray-900"
           rel="noreferrer"
