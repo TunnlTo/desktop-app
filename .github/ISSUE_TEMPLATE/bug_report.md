@@ -4,17 +4,11 @@ about: Create a report to help us improve
 title: 'ISSUE: '
 labels: bug
 assignees: ''
-
 ---
 
-*** IF YOU IGNORE THIS TEMPLATE, YOUR ISSUE MAY BE IGNORED AND CLOSED. Please take the time to provide as much information as possible so that we can diagnose your issue without having to reply with individual questions. ***
+**If you disregard this template, your issue may risk being overlooked and closed. Kindly invest some time in furnishing as much information as possible. This enables us to promptly diagnose your issue without necessitating multiple follow-up inquiries. Your cooperation is greatly appreciated.**
 
----
-name: Issue Template
-about: Create a new Issue
-title: ''
-labels: ''
----
+If any of the following questions are irrelevant, indicate them as "Not Applicable."
 
 **Describe the issue**
 A clear and concise description of what the issue is.
@@ -53,6 +47,6 @@ If possible, follow the instructions below and comment on the outcome:
 ```
 cd "C:\Program Files\WireSock VPN Client\bin"
 
-// Ensure you alter the <YOUR USERNAME> part of the path
+// Ensure you alter the <YOUR USERNAME> component of the path
 wiresock-client.exe run -config C:\Users\<YOUR USERNAME>\AppData\Local\TunnlTo\tunnel.conf -log-level all
 ```
