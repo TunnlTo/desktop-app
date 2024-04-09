@@ -114,8 +114,8 @@ function TunnelEditor({
     const { name, value } = event.target
     const keys = name.split('.')
 
-    // Remove any quotes from the input value
-    const sanitizedValue = value.replace(/"/g, '')
+    // Remove any quotes and line breakers from the input value
+    const sanitizedValue = value.replace(/"/g, '').replace(/[\n\r]+/g, " ")
 
     if (keys.length === 1) {
       if (keys[0] === 'name') {
