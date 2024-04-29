@@ -4,7 +4,10 @@ about: Create a report to help us improve
 title: 'ISSUE: '
 labels: bug
 assignees: ''
+
 ---
+
+**Please see the [WireSock support site](https://www.wiresock.net/wiresock-vpn-client/effective-troubleshooting-for-wiresock-vpn-client/) before posting an issue. If the issue is a WireSock problem and not specific to TunnlTo, it may be removed.**
 
 **If you disregard this template, your issue may risk being overlooked and closed. Kindly invest some time in furnishing as much information as possible. This enables us to promptly diagnose your issue without necessitating multiple follow-up inquiries. Your cooperation is greatly appreciated.**
 
