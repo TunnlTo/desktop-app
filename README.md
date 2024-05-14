@@ -1,5 +1,10 @@
 <br />
 <div align="center">
+  <img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/TunnlTo/desktop-app/total">
+  <span style="margin-left: 10px;"></span>
+  <img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/TunnlTo/desktop-app">
+  <br />
+  <br />
   <img src="readme-images/logo.png" alt="Logo" width="80" height="80">
 
   <h1 align="center">TunnlTo</h1>
