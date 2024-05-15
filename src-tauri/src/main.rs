@@ -394,6 +394,12 @@ async fn enable_wiresock(
                     state.tunnel_status = "CONNECTED".to_string();
                 }
 
+                // Check if the logs array has reached the maximum limit
+                if state.logs.len() >= 50 {
+                    // Remove the oldest log
+                    state.logs.remove(0);
+                }
+
                 // Append the log data to the state
                 state.logs.push(line_string.clone());
             });
