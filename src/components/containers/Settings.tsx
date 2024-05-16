@@ -1,9 +1,10 @@
+import { useEffect, useState } from 'react'
 import type SettingsModel from '../../models/SettingsModel.ts'
 import { useNavigate } from 'react-router-dom'
 import { enable, isEnabled, disable } from 'tauri-plugin-autostart-api'
 import type TunnelManager from '../../models/TunnelManager.ts'
-import { useState } from 'react'
 import WiresockInstallDetails from '../../models/WiresockInstallDetails.ts'
+import { getVersion } from '@tauri-apps/api/app'
 
 interface SettingsProps {
   tunnelManager: TunnelManager | null
@@ -14,8 +15,18 @@ interface SettingsProps {
 
 function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails }: SettingsProps): JSX.Element {
   const [editedSettings, setEditedSettings] = useState<SettingsModel>(() => ({ ...settings }))
+  const [appVersion, setAppVersion] = useState<string>('')
 
   const navigate = useNavigate()
+
+  useEffect(() => {
+    const fetchAppVersion = async () => {
+      const version = await getVersion()
+      setAppVersion(version)
+    }
+
+    fetchAppVersion()
+  }, [])
 
   function handleSaveButtonClick(): void {
     void handleAutoStart()
@@ -60,7 +71,7 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
         return
       }
     }
-    
+
     // Handle checkboxes so they save as booleans instead of "on" or "off"
     if (event.target instanceof HTMLInputElement && event.target.type === 'checkbox') {
       setEditedSettings({ ...editedSettings, [name]: event.target.checked ?? '' })
@@ -74,7 +85,7 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
       {/* Page Title section **/}
       <h1 className="text-2xl font-semibold leading-7 text-gray-900">Settings</h1>
       <p className="text-xs text-gray-600 pt-2">
-        TunnlTo 1.0.7
+        TunnlTo {appVersion}
         <br />
         WireSock {wiresockInstallDetails?.version}
       </p>
