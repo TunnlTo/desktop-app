@@ -394,8 +394,11 @@ async fn enable_wiresock(
                     state.tunnel_status = "CONNECTED".to_string();
                 }
 
+                // Lock the mutex to safely access LOG_LIMIT
+                let log_limit = LOG_LIMIT.lock().unwrap();
+
                 // Check if the logs array has reached the maximum limit
-                if state.logs.len() >= 50 {
+                if state.logs.len() >= (*log_limit).try_into().unwrap() {
                     // Remove the oldest log
                     state.logs.remove(0);
                 }
@@ -633,6 +636,16 @@ fn set_minimize_to_tray(value: bool) {
     *minimize = value;
 }
 
+lazy_static! {
+    static ref LOG_LIMIT: Mutex<i32> = Mutex::new(50);
+}
+
+#[tauri::command]
+fn set_log_limit(value: String) {
+    let mut loglim = LOG_LIMIT.lock().unwrap();
+    *loglim = value.parse::<i32>().unwrap();
+}
+
 async fn connect_to_tunnel(app_handle: &tauri::AppHandle, tunnel_id: &str) {
     println!("Connect systray menu selected tunnel id: {}", tunnel_id);
 
@@ -675,6 +688,7 @@ fn main() {
             get_wiresock_version,
             show_app,
             set_minimize_to_tray,
+            set_log_limit,
             change_icon,
             change_systray_tooltip,
             add_or_update_systray_menu_item,

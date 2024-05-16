@@ -86,6 +86,9 @@ function Main(): JSX.Element {
     // Sync the minimize to tray setting with Rust
     void invoke('set_minimize_to_tray', { value: settings.minimizeToTray })
 
+    // Sync the log limit setting with Rust
+    void invoke('set_log_limit', { value: settings.logLimit })
+
     // Save the updated settings to local storage
     if (isSettingsFirstChange.current) {
       // Don't need to save as its the first time retrieving the settings

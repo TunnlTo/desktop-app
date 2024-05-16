@@ -53,6 +53,14 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
   function handleSettingChange(event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>): void {
     const { name, value } = event.target
 
+    // Check if the change is for the "logLimit" input
+    if (name === 'logLimit') {
+      // Check if the value is a number
+      if (isNaN(Number(value))) {
+        return
+      }
+    }
+    
     // Handle checkboxes so they save as booleans instead of "on" or "off"
     if (event.target instanceof HTMLInputElement && event.target.type === 'checkbox') {
       setEditedSettings({ ...editedSettings, [name]: event.target.checked ?? '' })
@@ -62,7 +70,7 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
   }
 
   return (
-    <div className="container max-w-screen-lg mx-auto px-8 flex flex-col justify-center h-screen">
+    <div className="container py-12 px-8">
       {/* Page Title section **/}
       <h1 className="text-2xl font-semibold leading-7 text-gray-900">Settings</h1>
       <p className="text-xs text-gray-600 pt-2">
@@ -95,7 +103,9 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
             <label htmlFor="startMinimized" className="block text-sm font-medium leading-6 text-gray-900">
               Auto Minimize on Start
             </label>
-            <p className="mt-1 text-sm leading-6 text-gray-600">Automatically minimize the application window upon startup.</p>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              Automatically minimize the application window upon startup.
+            </p>
           </div>
           <input
             id="startMinimized"
@@ -112,7 +122,9 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
             <label htmlFor="minimizeToTray" className="block text-sm font-medium leading-6 text-gray-900">
               Minimize to Tray
             </label>
-            <p className="mt-1 text-sm leading-6 text-gray-600">Enable system tray minimization on clicking the close button.</p>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              Enable system tray minimization on clicking the close button.
+            </p>
           </div>
           <input
             id="minimizeToTray"
@@ -167,6 +179,28 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
             <option value="debug">Connection Status (default)</option>
             <option value="all">Show All Logs</option>
           </select>
+        </div>
+
+        <div className="sm:flex items-center py-6">
+          <div className="flex-auto sm:w-96 mb-6 sm:mb-0 pr-12">
+            <label htmlFor="logLimit" className="block text-sm font-medium leading-6 text-gray-900">
+              Log Limit
+            </label>
+            <p className="mt-1 text-sm leading-6 text-gray-600">
+              Set the number of lines to display in the logs. Increasing this number will provide more extensive log
+              visibility, but it may also consume more memory.{' '}
+            </p>
+          </div>
+          <div className="flex-grow"></div>
+          <input
+            value={editedSettings?.logLimit}
+            type="text"
+            name="logLimit"
+            onChange={handleSettingChange}
+            id="logLimit"
+            autoComplete="off"
+            className="w-16 rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 text-sm leading-6 text-right"
+          />
         </div>
       </div>
       {/* End of options section **/}
