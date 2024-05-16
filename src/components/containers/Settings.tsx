@@ -74,7 +74,7 @@ function Settings({ tunnelManager, settings, setSettings, wiresockInstallDetails
       {/* Page Title section **/}
       <h1 className="text-2xl font-semibold leading-7 text-gray-900">Settings</h1>
       <p className="text-xs text-gray-600 pt-2">
-        TunnlTo 1.0.6
+        TunnlTo 1.0.7
         <br />
         WireSock {wiresockInstallDetails?.version}
       </p>
