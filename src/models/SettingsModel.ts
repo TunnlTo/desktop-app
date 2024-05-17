@@ -4,7 +4,7 @@ export default class SettingsModel {
   logLevel: 'debug' | 'all'
   startMinimized: boolean
   minimizeToTray: boolean
-  logLimit: number
+  logLimit: string
 
   constructor(data?: Partial<SettingsModel>) {
     this.autoStart = data?.autoStart ?? false
@@ -12,6 +12,6 @@ export default class SettingsModel {
     this.logLevel = data?.logLevel ?? 'debug'
     this.startMinimized = data?.startMinimized ?? false
     this.minimizeToTray = data?.minimizeToTray ?? true
-    this.logLimit = data?.logLimit ?? 50
+    this.logLimit = data?.logLimit ?? '50'
   }
 }

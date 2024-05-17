@@ -25,6 +25,7 @@ import GetStarted from './components/GetStarted.tsx'
 import WiresockInstallDetails from './models/WiresockInstallDetails.ts'
 import { WIRESOCK_VERSION } from './config.ts'
 
+// eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 function Main(): JSX.Element {
