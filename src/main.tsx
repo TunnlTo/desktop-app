@@ -214,7 +214,6 @@ function Main(): JSX.Element {
     console.log('Setting up wiresock_state listener')
 
     await listen('wiresock_state', function (event) {
-      console.log('Received new wiresock_state event')
       setWiresockState(event.payload as WiresockStateModel)
     })
 
