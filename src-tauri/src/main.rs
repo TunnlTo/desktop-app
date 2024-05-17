@@ -14,10 +14,9 @@ extern crate winreg;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
+use systray_menu::CONNECT_MENU_ITEMS;
 use std::sync::Mutex;
-use systray_menu::{CONNECT_MENU_ITEMS, TRAY_MENU_ITEMS};
-use tauri::{Manager, Window};
-use tauri::{SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tauri::{Manager, Window, SystemTray, SystemTrayEvent};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use windows::{
@@ -672,13 +671,6 @@ fn main() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
 
-    // Clone the tray menu items from systray_menu.rs
-    let tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap().clone();
-    let mut tray_menu = SystemTrayMenu::new();
-    for (_, item) in tray_menu_items.iter() {
-        tray_menu = tray_menu.add_item(item.clone());
-    }
-
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
@@ -695,7 +687,7 @@ fn main() {
             update_systray_connect_menu_items,
             remove_systray_menu_item,
         ])
-        .system_tray(SystemTray::new().with_menu(tray_menu))
+        .system_tray(SystemTray::new().with_tooltip("TunnlTo: Disconnected"))
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::LeftClick {
                 position: _,
