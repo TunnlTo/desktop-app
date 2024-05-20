@@ -81,7 +81,7 @@ function Sidebar({ tunnelManager, selectedTunnelID, wiresockState, setSelectedTu
             <ul role="list" className="-mx-2 space-y-1 mt-auto pb-4">
               <li>
                 <a
-                  href="https://github.com/TunnlTo/desktop-app/discussions/110"
+                  href="https://github.com/TunnlTo/desktop-app/discussions"
                   target="_blank"
                   className="flex"
                   rel="noreferrer"
