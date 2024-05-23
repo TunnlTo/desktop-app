@@ -14,10 +14,9 @@ extern crate winreg;
 use lazy_static::lazy_static;
 use once_cell::sync::OnceCell;
 use serde::Serialize;
+use systray_menu::CONNECT_MENU_ITEMS;
 use std::sync::Mutex;
-use systray_menu::{CONNECT_MENU_ITEMS, TRAY_MENU_ITEMS};
-use tauri::{Manager, Window};
-use tauri::{SystemTray, SystemTrayEvent, SystemTrayMenu};
+use tauri::{Manager, Window, SystemTray, SystemTrayEvent};
 use tauri_plugin_autostart::MacosLauncher;
 use tauri_plugin_window_state::{AppHandleExt, StateFlags};
 use windows::{
@@ -394,6 +393,15 @@ async fn enable_wiresock(
                     state.tunnel_status = "CONNECTED".to_string();
                 }
 
+                // Lock the mutex to safely access LOG_LIMIT
+                let log_limit = LOG_LIMIT.lock().unwrap();
+
+                // Check if the logs array has reached the maximum limit
+                if state.logs.len() >= (*log_limit).try_into().unwrap() {
+                    // Remove the oldest log
+                    state.logs.remove(0);
+                }
+
                 // Append the log data to the state
                 state.logs.push(line_string.clone());
             });
@@ -627,6 +635,16 @@ fn set_minimize_to_tray(value: bool) {
     *minimize = value;
 }
 
+lazy_static! {
+    static ref LOG_LIMIT: Mutex<i32> = Mutex::new(50);
+}
+
+#[tauri::command]
+fn set_log_limit(value: String) {
+    let mut loglim = LOG_LIMIT.lock().unwrap();
+    *loglim = value.parse::<i32>().unwrap();
+}
+
 async fn connect_to_tunnel(app_handle: &tauri::AppHandle, tunnel_id: &str) {
     println!("Connect systray menu selected tunnel id: {}", tunnel_id);
 
@@ -653,13 +671,6 @@ fn main() {
         CHILD_PROCESS_TRACKER.set(child_process_tracker).ok();
     }
 
-    // Clone the tray menu items from systray_menu.rs
-    let tray_menu_items = TRAY_MENU_ITEMS.lock().unwrap().clone();
-    let mut tray_menu = SystemTrayMenu::new();
-    for (_, item) in tray_menu_items.iter() {
-        tray_menu = tray_menu.add_item(item.clone());
-    }
-
     tauri::Builder::default()
         .invoke_handler(tauri::generate_handler![
             enable_wiresock,
@@ -669,13 +680,14 @@ fn main() {
             get_wiresock_version,
             show_app,
             set_minimize_to_tray,
+            set_log_limit,
             change_icon,
             change_systray_tooltip,
             add_or_update_systray_menu_item,
             update_systray_connect_menu_items,
             remove_systray_menu_item,
         ])
-        .system_tray(SystemTray::new().with_menu(tray_menu))
+        .system_tray(SystemTray::new().with_tooltip("TunnlTo: Disconnected"))
         .on_system_tray_event(|app, event| match event {
             SystemTrayEvent::LeftClick {
                 position: _,

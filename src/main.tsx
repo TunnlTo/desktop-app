@@ -25,6 +25,7 @@ import GetStarted from './components/GetStarted.tsx'
 import WiresockInstallDetails from './models/WiresockInstallDetails.ts'
 import { WIRESOCK_VERSION } from './config.ts'
 
+// eslint-disable-next-line @typescript-eslint/non-nullable-type-assertion-style
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement)
 
 function Main(): JSX.Element {
@@ -85,6 +86,9 @@ function Main(): JSX.Element {
   useEffect(() => {
     // Sync the minimize to tray setting with Rust
     void invoke('set_minimize_to_tray', { value: settings.minimizeToTray })
+
+    // Sync the log limit setting with Rust
+    void invoke('set_log_limit', { value: settings.logLimit })
 
     // Save the updated settings to local storage
     if (isSettingsFirstChange.current) {
@@ -210,7 +214,6 @@ function Main(): JSX.Element {
     console.log('Setting up wiresock_state listener')
 
     await listen('wiresock_state', function (event) {
-      console.log('Received new wiresock_state event')
       setWiresockState(event.payload as WiresockStateModel)
     })
 
