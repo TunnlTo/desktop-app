@@ -744,7 +744,7 @@ fn main() {
             }
             _ => {}
         })
-        .plugin(tauri_plugin_window_state::Builder::default().build())
+        .plugin(tauri_plugin_window_state::Builder::default().with_state_flags(!StateFlags::VISIBLE).build())
         .plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
             println!("{}, {argv:?}, {cwd}", app.package_info().name);
 
