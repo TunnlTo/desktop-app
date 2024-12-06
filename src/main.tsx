@@ -54,9 +54,7 @@ function Main(): JSX.Element {
     return getSelectedTunnelIDFromStorage() ?? null
   })
 
-  const [settings, setSettings] = useState<SettingsModel>(() => {
-    return getSettingsFromStorage()
-  })
+  const [settings, setSettings] = useState<SettingsModel>(getSettingsFromStorage())
 
   /* ------------------------- */
   /* -------- useRef --------- */
