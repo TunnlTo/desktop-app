@@ -3,20 +3,23 @@ _A powerful WireGuard client for Windows with advanced split tunneling and an in
 
 ![Screenshot description](./screenshots/main-dark-mode-1.png)
 
-## Website
-- [Visit the TunnlTo Website](https://tunnl.to)
-
-## Follow For Updates
-Please follow the project on Twitter to be notified of new releases and updates.
-- [Follow TunnlTo on X](https://x.com/TunnlTo)
+## What does TunnlTo do?
+TunnlTo allows you to precisely control which Windows applications, processes, and IP addresses can or cannot use a WireGuard VPN tunnel.
 
 ## Download
 Download for Windows 10/11 on the [Releases](https://github.com/TunnlTo/desktop-app/releases) page.
 
 Looking for the old open source TunnlTo? You can still download it [here](https://github.com/TunnlTo/desktop-app/releases/tag/1.0.7).
 
-## What does TunnlTo do?
-TunnlTo seamlessly integrates with the [Wiresock CLI Client](https://wiresock.net) to let you precisely control which Windows applications, processes, and IP addresses can or cannot use a WireGuard VPN tunnel.
+## Support
+Email: contact [AT] tunnl.to
+
+## Website
+- [Visit the TunnlTo Website](https://tunnl.to)
+
+## Follow For Updates
+Please follow the project on Twitter to be notified of new releases and updates.
+- [Follow TunnlTo on X](https://x.com/TunnlTo)
 
 ## Example use cases
 
@@ -34,12 +37,6 @@ TunnlTo seamlessly integrates with the [Wiresock CLI Client](https://wiresock.ne
 - Stop a game from routing through a privacy VPN
 - Route all games within the Steam folder through a VPN
 - Route all traffic through a VPN except applications within a folder
-
-## Issues
-Please create an [issue](https://github.com/TunnlTo/desktop-app/issues).
-
-## Feedback
-Please email for feedback that could not be described as a bug/issue. The email address is in the app under Help > About.
 
 ### Screenshots
 ![Screenshot description](./screenshots/main-light-mode-1.png)
