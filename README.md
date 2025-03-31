@@ -12,7 +12,7 @@ Download for Windows 10/11 on the [Releases](https://github.com/TunnlTo/desktop-
 Looking for the old open source TunnlTo? You can still download it [here](https://github.com/TunnlTo/desktop-app/releases/tag/1.0.7).
 
 ## Support
-Email (obfuscated to reduce spam): contact [AT] tunnl.to 
+Email: contact [AT] tunnl.to
 
 ## Website
 - [Visit the TunnlTo Website](https://tunnl.to)
