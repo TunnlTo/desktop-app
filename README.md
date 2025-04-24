@@ -1,18 +1,22 @@
 # TunnlTo
 _A powerful WireGuard client for Windows with advanced split tunneling and an intuitive, user-friendly interface._
 
+## Download
+Download for Windows 10/11 on the [Releases](https://github.com/TunnlTo/desktop-app/releases) page.
+
 ![Screenshot description](./screenshots/main-dark-mode-1.png)
 
 ## What does TunnlTo do?
 TunnlTo allows you to precisely control which Windows applications, processes, and IP addresses can or cannot use a WireGuard VPN tunnel.
 
-## Download
-Download for Windows 10/11 on the [Releases](https://github.com/TunnlTo/desktop-app/releases) page.
-
-Looking for the old open source TunnlTo? You can still download it [here](https://github.com/TunnlTo/desktop-app/releases/tag/1.0.7).
+## Contact
+Email: contact [AT] tunnl.to
 
 ## Support
-Email: contact [AT] tunnl.to
+Email: support [AT] tunnl.to
+
+## Feedback
+Email: feedback [AT] tunnl.to
 
 ## Website
 - [Visit the TunnlTo Website](https://tunnl.to)
