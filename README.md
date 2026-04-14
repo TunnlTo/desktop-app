@@ -21,10 +21,12 @@ A standalone Rust binary that serves a Hello World HTML page over HTTPS with aut
 ## Build
 
 ```bash
-cargo build --release
+cargo build --release -p server_bin
 ```
 
 The binary is at `target/release/rust-html-server`.
+
+Incremental compile note: the project uses a Cargo Workspace split into two crates. `server_core` holds all heavy dependencies (Axum, TLS, ACME) and `server_bin` holds only the static assets. When you change `server_bin/static/index.html`, only the thin `server_bin` crate recompiles — `server_core` and its dependency graph stay cached, making asset-only rebuilds near-instant.
 
 ## Usage
 
@@ -88,9 +90,19 @@ cargo run -- --domain example.com --domain www.example.com --email you@example.c
 ## Project Structure
 
 ```
-src/
-  main.rs          # Server, ACME setup, CLI
-static/
-  index.html       # Embedded Hello World page (included at compile time)
-acme_cache/        # Certificate cache (created at runtime, gitignored)
+server_core/
+  Cargo.toml         # All heavy dependencies (axum, tokio full, rustls-acme, clap, tracing)
+  src/
+    lib.rs           # Router, ACME setup, CLI args, start_server(html_content) entry point
+server_bin/
+  Cargo.toml         # Minimal deps: tokio (rt-multi-thread + macros), server_core
+  src/
+    main.rs          # include_str! assets, #[tokio::main] that calls server_core::start_server
+  static/
+    index.html       # Embedded Hello World page (baked in at compile time)
+acme_cache/          # Certificate cache (created at runtime, gitignored)
+patches/
+  rustls-acme/       # Local patch for the dns-persist-01 token field issue
 ```
+
+The old `src/` and `static/` directories at the workspace root are no longer used and can be deleted.

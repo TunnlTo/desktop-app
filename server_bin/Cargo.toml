@@ -1,0 +1,13 @@
+[package]
+name = "server_bin"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "rust-html-server"
+path = "src/main.rs"
+
+[dependencies]
+tokio = { version = "1.51.1", features = ["rt-multi-thread", "macros"] }
+tracing-subscriber = "0.3.23"
+server_core = { path = "../server_core" }

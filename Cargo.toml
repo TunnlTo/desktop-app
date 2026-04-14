@@ -1,22 +1,18 @@
-[package]
-name = "rust-html-server"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-axum = "0.8.8"
-axum-server = "0.8.0"
-rustls-acme = { version = "0.15.1", features = ["axum"] }
-tokio = { version = "1.51.1", features = ["full"] }
-tokio-stream = "0.1.18"
-clap = { version = "4.6.0", features = ["derive"] }
-tracing = "0.1.44"
-tracing-subscriber = "0.3.23"
+[workspace]
+members = ["server_core", "server_bin"]
+resolver = "2"
 
 # Temporary patch for https://github.com/FlorianUekermann/rustls-acme/issues/92
 # Let's Encrypt now sends dns-persist-01 challenges without a `token` field,
 # which breaks deserialization of the entire challenge list. The fix adds
 # #[serde(default)] to the token field. Remove this patch once a fixed version
-# is released and update rustls-acme in [dependencies].
+# is released and update rustls-acme in server_core/Cargo.toml and remove this section.
 [patch.crates-io]
 rustls-acme = { path = "patches/rustls-acme" }
+
+[profile.release]
+strip = true          # strip debug symbols (~1MB saving)
+lto = true            # link-time optimisation: dead code elimination across crates
+codegen-units = 1     # single codegen unit enables better LTO (slower compile, smaller binary)
+opt-level = "z"       # optimise for binary size rather than speed
+panic = "abort"       # remove panic-unwind machinery (~50-100KB saving)

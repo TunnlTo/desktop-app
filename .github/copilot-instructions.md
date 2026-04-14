@@ -20,11 +20,23 @@ This is a standalone Rust binary that serves a Hello World HTML page over HTTPS 
 
 ## Project Structure
 
+This is a Cargo Workspace split into two crates for near-instant incremental rebuilds when static assets change:
+
 ```
-src/main.rs        — All server logic, CLI, ACME setup
-static/index.html  — Embedded at compile time via include_str!
-acme_cache/        — Runtime cert cache (not in source control)
+Cargo.toml                   — Workspace root (members: server_core, server_bin)
+server_core/
+  Cargo.toml                 — All heavy deps (axum, tokio full, rustls-acme, clap, tracing)
+  src/lib.rs                 — Router, ACME setup, CLI args, pub start_server(html_content)
+server_bin/
+  Cargo.toml                 — Minimal deps: tokio (rt-multi-thread + macros), server_core
+  src/main.rs                — include_str! assets, #[tokio::main] → server_core::start_server
+  static/index.html          — Embedded at compile time via include_str!
+acme_cache/                  — Runtime cert cache (not in source control)
+patches/rustls-acme/         — Local patch for the dns-persist-01 token field bug
 ```
+
+When `server_bin/static/index.html` changes, only `server_bin` recompiles. `server_core` and its
+heavy dependency graph remain cached, making asset-only rebuilds near-instant.
 
 ## Key Architectural Decisions
 
@@ -60,7 +72,7 @@ Do not mark a task complete until `cargo check` passes.
 ## Common Tasks
 
 ### Add a new route
-Add a handler using `Response::builder()` and register it on the `Router` in `main()`:
+Add a handler in `server_core/src/lib.rs` and register it in `start_server`:
 ```rust
 async fn about() -> Response {
     Response::builder()
@@ -69,9 +81,9 @@ async fn about() -> Response {
         .body(Body::from("<h1>About</h1>"))
         .unwrap()
 }
-// in main():
+// in start_server():
 let app = Router::new()
-    .route("/", get(index))
+    .route("/", get(move || async move { ... }))
     .route("/about", get(about));
 ```
 
@@ -84,9 +96,16 @@ verbose: bool,
 ```
 
 ### Embed a new static file
-Add the file to `static/` and embed it:
+Add the file to `server_bin/static/` and embed it in `server_bin/src/main.rs`:
 ```rust
 const STYLE_CSS: &str = include_str!("../static/style.css");
+```
+Then pass it through `server_core::start_server` (or a new function signature) as a `&'static str`.
+
+### Build and run the binary
+```bash
+cargo run -p server_bin -- --no-tls --port 8080   # dev mode
+cargo build --release -p server_bin               # release build
 ```
 
 ### Update Let's Encrypt to production
